@@ -4,126 +4,180 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LASTLINE — FPS multiplayer grátis no navegador</title>
-<meta name="description" content="LASTLINE: FPS multiplayer grátis direto no navegador. Battle Royale, Tático com Modo Bomba, Survival contra zumbis, campanha, mais de 100 armas, 19 mapas e ranqueado por temporadas. Sem instalar nada.">
-<meta property="og:type" content="website">
+<meta name="description" content="LASTLINE: FPS multiplayer grátis direto no navegador. Battle Royale, Tático com Modo Bomba, Survival, campanha, mais de 100 armas, 19 mapas e ranqueado por temporadas.">
+<link rel="canonical" href="https://lastline.gahsouza.com.br/">
+<meta property="og:url" content="https://lastline.gahsouza.com.br/"><meta property="og:type" content="website">
 <meta property="og:title" content="LASTLINE — jogue agora no navegador">
 <meta property="og:description" content="Battle Royale, Tático com Modo Bomba, Survival, campanha e ranqueado por temporadas. Grátis, sem instalar.">
-<meta property="og:image" content="img/seasons/season-1.jpg">
+<meta property="og:image" content="https://lastline.gahsouza.com.br/img/og.jpg"><meta name="robots" content="index,follow,max-image-preview:large"><meta name="author" content="Gah Souza"><meta property="og:site_name" content="LASTLINE"><meta property="og:locale" content="pt_BR"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:title" content="LASTLINE — FPS multiplayer grátis no navegador"><meta name="twitter:image" content="https://lastline.gahsouza.com.br/img/og.jpg"><link rel="manifest" href="site.webmanifest">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"LASTLINE","url":"https://lastline.gahsouza.com.br/","description":"FPS multiplayer grátis no navegador com Battle Royale, Tático, Modo Bomba, Survival, campanha e ranqueado por temporadas.","image":"https://lastline.gahsouza.com.br/img/og.jpg","genre":["Tiro em primeira pessoa","Battle Royale"],"gamePlatform":"Navegador web","applicationCategory":"Game","inLanguage":"pt-BR","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"},"playMode":"MultiPlayer","author":{"@type":"Person","name":"Gah Souza","url":"https://gahsouza.com.br"}}</script>
+
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0a0d11">
+<meta name="theme-color" content="#07090c">
 <link rel="icon" href="img/brand/favicon.ico"><link rel="apple-touch-icon" href="img/brand/icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
-<script src="config.js"></script><script src="data.js"></script>
+<script src="config.js"></script><script src="data.js"></script><script src="content.js"></script>
 </head>
 <body>
-<div class="grain" aria-hidden="true"></div>
 
+<div class="grain" aria-hidden="true"></div>
 <header class="nav" id="nav">
-  <a class="brand" href="#top" aria-label="LASTLINE"><img src="img/brand/logo-600.png" alt="LASTLINE"></a>
+  <a class="brand" href="#top" aria-label="LASTLINE"><img src="img/brand/logo-600.png" alt="LASTLINE" width="132" height="35"></a>
   <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><i></i><i></i><i></i></button>
-  <nav id="menu">
-    <a href="#campanha">Campanha</a><a href="#modos">Modos</a><a href="#mapas">Mapas</a><a href="#arsenal">Arsenal</a><a href="#como">Como jogar</a><a href="#historia">História</a><a href="#ranking">Ranking</a><a href="#sobre">Sobre</a>
+  <nav id="menu" aria-label="Seções">
+    <a href="#estreia" id="nav-estreia" hidden>Estreia</a><a href="#campanha">Campanha</a><a href="#modos">Modos</a><a href="#mapas">Mapas</a><a href="#arsenal">Arsenal</a><a href="#como">Como jogar</a><a href="#historia">História</a><a href="#ranking">Ranking</a><a href="#sobre">Sobre</a>
   </nav>
   <span class="srv" id="srv-chip" title="Status do servidor"><i></i><b>—</b></span>
   <a class="btn btn-sm play-link" href="#" target="_blank" rel="noopener">▶ JOGAR</a>
 </header>
 
-<!-- HERO -->
+<!-- ============ HERO (início igual ao site atual) ============ -->
 <section class="hero" id="top">
-  <div class="slides" id="slides"></div>
+  <div class="slides" id="slides" aria-hidden="true"></div>
   <div class="hero-shade"></div><div class="scan"></div>
   <div class="hero-in">
-    <div class="tag"><i></i> GRÁTIS · NO NAVEGADOR · SEM INSTALAR</div>
-    <h1 class="hero-logo"><img src="img/brand/logo.png" alt="LASTLINE"></h1>
+    <div class="tag-pill"><i></i> GRÁTIS · NO NAVEGADOR · SEM INSTALAR</div>
+    <h1 class="hero-logo"><img src="img/brand/logo.png" alt="LASTLINE" width="1400" height="374"></h1>
     <p class="sub">Battle Royale, Tático com <b>Modo Bomba</b>, hordas de zumbis e campanha. <b>Seu arsenal, sua skin, seu rank.</b></p>
     <div class="cta"><a class="btn btn-xl play-link" href="#" target="_blank" rel="noopener"><span>▶ JOGAR AGORA</span></a><a class="btn btn-ghost" href="#como">COMO JOGAR</a></div>
-    <div class="live"><b data-count="19">0</b> mapas <em>·</em> <b data-count="11">0</b> modos <em>·</em> <b data-count="40">0</b> personagens <em>·</em> <b data-count="100" data-plus="1">0</b> armas</div>
+    <div class="live"><b data-count="19">0</b> mapas <em>·</em> <b data-count="11">0</b> modos <em>·</em> <b data-count="40" data-plus="1">0</b> personagens <em>·</em> <b data-count="100" data-plus="1">0</b> armas</div>
   </div>
-  <a class="down" href="#campanha" aria-label="descer">⌄</a>
+  <a class="down" href="#campanha" aria-label="Descer">⌄</a>
 </section>
 <div class="ticker" aria-hidden="true"><div class="tk-in"><span>HEADSHOT</span><span>DOUBLE KILL</span><span>RAMPAGE</span><span>UNSTOPPABLE</span><span>PENTAKILL</span><span>SOBREVIVA</span><span>ÚLTIMA LINHA</span><span>HEADSHOT</span><span>DOUBLE KILL</span><span>RAMPAGE</span><span>UNSTOPPABLE</span><span>PENTAKILL</span><span>SOBREVIVA</span><span>ÚLTIMA LINHA</span></div></div>
 
-<!-- CAMPANHA DO MOMENTO -->
-<section class="sec" id="campanha">
-  <div class="sh reveal"><small>// 01 · EM DESTAQUE</small><h2>A CAMPANHA <em>DO MOMENTO</em></h2><p id="camp-lead">Eventos, recompensas exclusivas e a temporada do ranqueado.</p></div>
-  <div class="camp reveal" id="camp"></div>
-  <div class="camp-grid">
-    <div class="season reveal" id="season-box"></div>
-    <div class="cal reveal"><h3>CALENDÁRIO DE EVENTOS <small>cada mês, uma missão e recompensas que só existem naquele mês</small></h3><div class="cal-grid" id="cal"></div></div>
+<!-- ============ ESTREIA ============ -->
+<section class="sec" id="estreia">
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Lançamento</span><h2 id="est-title">A estreia do <em>LASTLINE</em></h2><p id="est-lead"></p></header>
+    <div class="launch">
+      <div class="launch-main panel">
+        <img class="launch-banner" src="img/banners/estreia.jpg" alt="A estreia começa agora" width="1400" height="560" data-lb="img/banners/estreia.jpg">
+        <div class="launch-body">
+          <div class="count" id="est-count"></div>
+          <p id="est-when"></p>
+          <a class="btn btn-l play-link" href="#" target="_blank" rel="noopener">▶ Criar conta e jogar</a>
+        </div>
+      </div>
+      <div class="launch-kit panel">
+        <h3>Baú da estreia <small>exclusivo de quem cria a conta na janela</small></h3>
+        <div class="kit">
+          <figure><img src="img/estreia/sniper_estreia.png" alt=""><figcaption>Sniper</figcaption></figure>
+          <figure><img src="img/estreia/smg_estreia.png" alt=""><figcaption>Submetralhadora</figcaption></figure>
+          <figure><img src="img/estreia/heavy_estreia.png" alt=""><figcaption>Metralhadora</figcaption></figure>
+          <figure><img src="img/estreia/pistol_estreia.png" alt=""><figcaption>Pistola</figcaption></figure>
+        </div>
+        <ul class="ticks"><li>Skin <b>Estreia LASTLINE</b> para as 4 classes: metralhadora, submetralhadora, sniper e pistola</li><li>Personagem <b>Operador da Estreia</b></li><li>Vale para contas <b>criadas</b> de <b>16/10 às 18:00</b> até <b>18/10 às 23:45</b> (Brasília)</li></ul>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- MODOS -->
-<section class="sec alt" id="modos">
-  <div class="sh reveal"><small>// 02</small><h2>ESCOLHA SEU <em>CAMPO DE GUERRA</em></h2><p>Do duelo 1v1 ao Battle Royale com carros e paraquedas. Tem modo para todo tipo de jogador.</p></div>
-  <div class="modes" id="modes"></div>
-  <div class="shots reveal" id="shots-modes"></div>
+<!-- ============ CAMPANHA ============ -->
+<section class="sec alt" id="campanha">
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Campanha do mês</span><h2>Um evento <em>por mês</em></h2><p>Toda virada de mês traz uma missão, um mapa e skins que só existem naquele mês. Clique em um mês para ver.</p></header>
+    <div class="showcase" id="showcase"></div>
+    <div class="rail-head"><h3>Calendário de eventos</h3><div class="arrows"><button data-rail="cal" data-dir="-1" aria-label="Anterior">‹</button><button data-rail="cal" data-dir="1" aria-label="Próximo">›</button></div></div>
+    <div class="rail" id="cal"></div>
+    <div class="season panel" id="season-box"></div>
+  </div>
 </section>
 
-<!-- MAPAS -->
+<!-- ============ MODOS ============ -->
+<section class="sec" id="modos">
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Modos de jogo</span><h2>Onze modos, <em>um só jogo</em></h2><p>Do duelo 1 contra 1 ao Battle Royale com carros e paraquedas.</p></header>
+    <div class="modes" id="modes"></div>
+  </div>
+</section>
+
+<!-- ============ GALERIA ============ -->
+<section class="sec alt" id="galeria">
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Direto do jogo</span><h2>Veja o jogo <em>por dentro</em></h2></header>
+    <div class="gallery" id="gallery"></div>
+  </div>
+</section>
+
+<!-- ============ MAPAS ============ -->
 <section class="sec" id="mapas">
-  <div class="sh reveal"><small>// 03</small><h2>19 MAPAS, <em>NENHUM IGUAL</em></h2><p>Do Corredor apertado à Ilha colossal do Battle Royale. Clique no filtro para ver cada tamanho.</p></div>
-  <div class="filters" id="map-filters"></div>
-  <div class="maps" id="maps"></div>
+  <div class="wrap">
+    <header class="sh"><span class="tag">// 19 mapas</span><h2>Cada mapa, <em>outra guerra</em></h2><p>Do Corredor apertado à Ilha colossal do Battle Royale.</p></header>
+    <div class="mapview" id="mapview"></div>
+    <div class="filters" id="map-filters"></div>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
 </section>
 
-<!-- ARSENAL -->
+<!-- ============ ARSENAL ============ -->
 <section class="sec alt" id="arsenal">
-  <div class="sh reveal"><small>// 04</small><h2>MAIS DE 100 ARMAS, <em>40 PERSONAGENS</em></h2><p>Fuzis, SMGs, escopetas, snipers, armas de energia, facas e lançadores. Cada categoria tem skins próprias, e tudo se conquista jogando.</p></div>
-  <div class="filters" id="gun-filters"></div>
-  <div class="guns" id="guns"></div>
-  <div class="marq" aria-hidden="true"><div class="marq-in" id="marq-chars"></div></div>
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Arsenal</span><h2>Mais de 100 armas. <em>40 personagens.</em></h2><p>Fuzis, SMGs, escopetas, snipers, energia, armas brancas e lançadores. Tudo aparece para todos, bloqueado ou não, com pré-visualização em 3D no jogo.</p></header>
+    <div class="filters" id="gun-filters"></div>
+    <div class="guns" id="guns"></div>
+    <div class="rail-head chars-head"><h3>Personagens</h3><div class="arrows"><button data-rail="chars" data-dir="-1" aria-label="Anterior">‹</button><button data-rail="chars" data-dir="1" aria-label="Próximo">›</button></div></div>
+    <div class="rail chars" id="chars"></div>
+  </div>
 </section>
 
-<!-- COMO JOGAR -->
+<!-- ============ COMO JOGAR ============ -->
 <section class="sec" id="como">
-  <div class="sh reveal"><small>// 05</small><h2>COMO <em>JOGAR</em></h2><p>Abra o link, crie sua conta e entre. Em menos de um minuto você está em partida.</p></div>
-  <div class="steps reveal"><div><b>1</b><h4>Crie sua conta</h4><p>Só usuário e senha. Seu apelido é único e todo o progresso fica salvo na conta.</p></div><div><b>2</b><h4>Monte seu arsenal</h4><p>Escolha armas, anexos, skins e o personagem. Tudo que você desbloqueia pode ser visto e testado em 3D.</p></div><div><b>3</b><h4>Entre em uma partida</h4><p>Crie uma sala com amigos, entre por código ou jogue o ranqueado. Casual, ranqueado e campanha solo.</p></div><div><b>4</b><h4>Suba de nível</h4><p>XP, patentes, prestígio, eventos mensais e temporadas: sempre há algo novo para conquistar.</p></div></div>
-  <div class="tabs" id="how-tabs"></div>
-  <div class="pane" id="how-pane"></div>
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Como jogar</span><h2>Em um minuto você <em>está em partida</em></h2></header>
+    <ol class="steps"><li><b>01</b><h4>Crie sua conta</h4><p>Só usuário e senha. O apelido é único e todo o progresso fica salvo.</p></li><li><b>02</b><h4>Monte seu arsenal</h4><p>Armas, anexos, skins e personagem. Tudo pode ser visto e testado em 3D.</p></li><li><b>03</b><h4>Entre em uma partida</h4><p>Sala com amigos, código, ranqueado ou campanha solo.</p></li><li><b>04</b><h4>Suba de nível</h4><p>XP, patentes, eventos mensais e temporadas.</p></li></ol>
+    <div class="tabs" id="how-tabs"></div>
+    <div class="pane panel" id="how-pane"></div>
+  </div>
 </section>
 
-<!-- PROGRESSÃO -->
+<!-- ============ PROGRESSÃO ============ -->
 <section class="sec alt" id="progressao">
-  <div class="sh reveal"><small>// 06</small><h2>PATENTES, <em>ELOS E MEDALHAS</em></h2><p>Nível geral dá patente. O ranqueado dá elo, e o elo é reiniciado a cada temporada.</p></div>
-  <div class="prog-grid">
-    <div class="card reveal"><h3>Patentes (nível 1 a 100)</h3><div class="rks" id="levels"></div></div>
-    <div class="card reveal"><h3>Elos do ranqueado</h3><div class="rks" id="ranks"></div><p class="mini">Ferro a Diamante têm 3 divisões de 100 RP. Grão-Mestre e Lenda são só para o topo da classificação.</p></div>
-    <div class="card wide reveal"><h3>Medalhas de abate</h3><div class="meds" id="medals"></div></div>
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Progressão</span><h2>Patentes, elos <em>e medalhas</em></h2><p>O nível dá patente. O ranqueado dá elo, e o elo reinicia a cada temporada.</p></header>
+    <div class="prog">
+      <div class="panel"><h3>Patentes · nível 1 a 100</h3><div class="icons" id="levels"></div></div>
+      <div class="panel"><h3>Elos do ranqueado</h3><div class="icons" id="ranks"></div><p class="mini">Ferro a Diamante têm 3 divisões de 100 RP. Grão-Mestre e Lenda são para o topo.</p></div>
+      <div class="panel wide"><h3>Medalhas de abate</h3><div class="icons med" id="medals"></div></div>
+    </div>
   </div>
-  <div class="shots reveal" id="shots-prog"></div>
 </section>
 
-<!-- HISTÓRIA -->
+<!-- ============ HISTÓRIA ============ -->
 <section class="sec" id="historia">
-  <div class="sh reveal"><small>// 07</small><h2>A CAMPANHA <em>DA UMBRA</em></h2><p>Modo História solo e offline: 8 capítulos pelo Brasil, pela Antártida e até a Lua. Cada capítulo tem mapa, kit, personagem e recompensa únicos.</p></div>
-  <div class="story reveal" id="story"></div>
-</section>
-
-<!-- RANKING AO VIVO -->
-<section class="sec alt" id="ranking">
-  <div class="sh reveal"><small>// 08 · AO VIVO</small><h2>RANKING DA <em>TEMPORADA</em></h2><p id="rank-lead">Os melhores do ranqueado, direto do servidor.</p></div>
-  <div class="stats reveal" id="stats"></div>
-  <div class="rank-wrap reveal"><table class="rank" id="rank"><thead><tr><th>#</th><th>Jogador</th><th>Elo</th><th>RP</th><th>Nível</th><th>Vitórias</th></tr></thead><tbody id="rank-body"><tr><td colspan="6" class="mut">Carregando…</td></tr></tbody></table><p class="mini">Entram no ranking quem fez pelo menos 5 partidas ranqueadas na temporada. Só o apelido é público.</p></div>
-</section>
-
-<!-- SOBRE -->
-<section class="sec" id="sobre">
-  <div class="sh reveal"><small>// 09</small><h2>SOBRE O <em>PROJETO</em></h2></div>
-  <div class="about reveal">
-    <div class="ab-text"><p>O <b>LASTLINE</b> nasceu de uma ideia simples: um FPS completo que qualquer pessoa abre no navegador, sem baixar nada e sem pagar. Tiro tático, hordas, campanha e competição, tudo com visual low poly e muito conteúdo para conquistar.</p>
-    <p>O jogo é um projeto independente criado e mantido por <b id="au-name">Gah Souza</b>. As novidades chegam todo mês com os eventos e a cada trimestre com uma nova temporada do ranqueado.</p>
-    <p class="mini">Encontrou um bug ou tem uma ideia? Conte na comunidade ou fale direto com o criador pelo site abaixo.</p>
-    <div class="cta"><a class="btn play-link" href="#" target="_blank" rel="noopener">▶ JOGAR AGORA</a><a class="btn btn-ghost" id="au-link" href="https://gahsouza.com.br" target="_blank" rel="noopener">gahsouza.com.br</a></div></div>
-    <div class="ab-card"><img src="img/brand/icon-192.png" alt=""><b>LASTLINE</b><small>FPS multiplayer no navegador</small><ul><li>11 modos de jogo</li><li>19 mapas</li><li>Mais de 100 armas</li><li>Ranqueado por temporadas</li></ul></div>
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Modo história</span><h2>A campanha <em>da UMBRA</em></h2><p>Oito capítulos solo e offline, do Brasil à Lua. Cada um tem mapa, kit, personagem e recompensa próprios.</p></header>
+    <div class="story" id="story"></div>
   </div>
 </section>
 
-<section class="final"><div class="slides" id="slides2"></div><div class="hero-shade"></div><div class="final-in"><h2>A ÚLTIMA LINHA <em>É SUA</em></h2><a class="btn btn-xl play-link" href="#" target="_blank" rel="noopener"><span>▶ ENTRAR NA PARTIDA</span></a></div></section>
-<footer><img src="img/brand/logo-600.png" alt="LASTLINE"><p>© 2026 LASTLINE · feito no Brasil · <a href="#top">voltar ao topo</a></p></footer>
-<a class="fab play-link" href="#" target="_blank" rel="noopener">▶ JOGAR</a>
+<!-- ============ RANKING ============ -->
+<section class="sec alt" id="ranking">
+  <div class="wrap">
+    <header class="sh"><span class="tag">// Ao vivo</span><h2>Ranking da <em>temporada</em></h2><p id="rank-lead">Os melhores do ranqueado, direto do servidor.</p></header>
+    <div class="stats" id="stats"></div>
+    <div class="panel rank-wrap"><table class="rank"><thead><tr><th>#</th><th>Jogador</th><th>Elo</th><th>RP</th><th>Nível</th><th>Vitórias</th></tr></thead><tbody id="rank-body"><tr><td colspan="6" class="mut">Carregando…</td></tr></tbody></table></div>
+    <p class="mini c">Entram no ranking quem fez pelo menos 5 partidas ranqueadas na temporada. Só o apelido é público.</p>
+  </div>
+</section>
+
+<!-- ============ SOBRE ============ -->
+<section class="sec" id="sobre">
+  <div class="wrap about">
+    <div>
+      <span class="tag">// Sobre</span><h2>Feito por <em id="au-name">Gah Souza</em></h2>
+      <p>O <b>LASTLINE</b> nasceu de uma ideia simples: um FPS completo que qualquer pessoa abre no navegador, sem baixar nada e sem pagar. Tiro tático, hordas, campanha e competição, tudo com visual low poly e muito conteúdo para conquistar.</p>
+      <p>É um projeto independente, criado e mantido por uma pessoa. Novidades chegam todo mês com os eventos e a cada trimestre com uma nova temporada.</p>
+      <div class="cta"><a class="btn play-link" href="#" target="_blank" rel="noopener">▶ Jogar agora</a><a class="btn btn-ghost" id="au-link" href="https://gahsouza.com.br" target="_blank" rel="noopener">gahsouza.com.br</a></div>
+    </div>
+    <div class="ab-card panel"><img src="img/brand/icon-192.png" alt="" width="84" height="84"><b>LASTLINE</b><small>FPS multiplayer no navegador</small><ul><li>11 modos de jogo</li><li>19 mapas</li><li>Mais de 100 armas</li><li>Ranqueado por temporadas</li></ul></div>
+  </div>
+</section>
+
+<section class="final"><div class="slides" id="slides2" aria-hidden="true"></div><div class="hero-shade"></div><div class="final-in"><h2>A última linha <em>é sua</em></h2><a class="btn btn-l play-link" href="#" target="_blank" rel="noopener">▶ Entrar na partida</a></div></section>
+<footer><img src="img/brand/logo-600.png" alt="LASTLINE" width="120" height="32"><p>© 2026 LASTLINE · feito no Brasil · <a href="#top">voltar ao topo</a></p></footer>
+<a class="fab play-link" href="#" target="_blank" rel="noopener">▶ Jogar</a>
 <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://lastline.gahsouza.com.br/sitemap.xml
