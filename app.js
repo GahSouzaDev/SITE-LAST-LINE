@@ -64,7 +64,7 @@ let sel = br().ym; if (!EVM[sel]) sel = EV[EV.length - 1].ym;
 function renderShowcase(ym) {
   sel = ym; const e = EVM[ym], b = br(), stt = ym === b.ym ? 'now' : ym < b.ym ? 'past' : 'next', has = ART.has(ym);
   const left = b.last - b.day + 1, tx = { now: ['st now', 'Valendo agora'], past: ['st past', 'Encerrado'], next: ['st next', 'Em breve'] }[stt];
-  $('#showcase').innerHTML = `<div class="poster ${has ? '' : 'ph'}" ${has ? `data-lb="${e.img}"` : ''}>${has ? img(e.img, 'Evento ' + e.n) : `<div><b>${esc(e.n)}</b><span>ARTE EM BREVE</span></div>`}</div><div class="sc-info"><span class="${tx[0]}">${tx[1]}</span><div class="kick">${ymTxt(ym)}</div><h3>${esc(e.n)}</h3><p>${esc(e.desc)}</p><div class="chips"><span class="chip">Missão <b>${e.goal} partidas</b></span><span class="chip">Mapa <b>${esc(e.map)}</b></span><span class="chip">Skin <b>${esc(e.skin)}</b></span>${stt === 'now' ? `<span class="chip">Faltam <b>${left} ${left === 1 ? 'dia' : 'dias'}</b></span>` : ''}</div>${stt === 'now' ? `<div class="bar"><i style="width:${Math.round(100 * (b.day - 1) / b.last)}%"></i></div>` : ''}<p class="mini">${stt === 'past' ? 'Esse evento só existia nesse mês.' : 'A recompensa é exclusiva do mês: quem não completar a missão até o último dia perde. Os itens aparecem bloqueados para todos, no Arsenal e na seleção de personagem.'}</p><div class="cta"><a class="btn play-link" href="${GAME}" target="_blank" rel="noopener">▶ ${stt === 'now' ? 'Jogar o evento' : 'Jogar'}</a></div></div>`;
+  $('#showcase').innerHTML = `<div class="poster ${has ? '' : 'ph'}" ${has ? `data-lb="${e.img}"` : ''}>${has ? img(e.img, 'Evento ' + e.n) : `<div><b>${esc(e.n)}</b><span>ARTE EM BREVE</span></div>`}</div><div class="sc-info"><span class="${tx[0]}">${tx[1]}</span><div class="kick">${ymTxt(ym)}</div><h3>${esc(e.n)}</h3><p>${esc(e.desc)}</p><div class="chips"><span class="chip">Missão <b>${e.goal} partidas de 5 min ou mais</b></span><span class="chip">Mapa <b>${esc(e.map)}</b></span><span class="chip">Skin <b>${esc(e.skin)}</b></span>${stt === 'now' ? `<span class="chip">Faltam <b>${left} ${left === 1 ? 'dia' : 'dias'}</b></span>` : ''}</div>${stt === 'now' ? `<div class="bar"><i style="width:${Math.round(100 * (b.day - 1) / b.last)}%"></i></div>` : ''}<p class="mini">${stt === 'past' ? 'Esse evento só existia nesse mês.' : 'A recompensa é exclusiva do mês: quem não completar a missão até o último dia perde. Os itens aparecem bloqueados para todos, no Arsenal e na seleção de personagem.'}</p><div class="cta"><a class="btn play-link" href="${GAME}" target="_blank" rel="noopener">▶ ${stt === 'now' ? 'Jogar o evento' : 'Jogar'}</a></div></div>`;
   $$('#cal .cm').forEach((x) => x.classList.toggle('sel', x.dataset.ym === ym));
 }
 function renderCal() {
@@ -127,7 +127,11 @@ async function loadRank() {
     body.innerHTML = r.top.length ? r.top.map((u) => `<tr class="${u.pos <= 3 ? 'top' : ''}"><td>${u.pos}</td><td class="nk">${esc(u.nick)}</td><td><div class="el"><img src="img/ranks/${esc(u.tier)}.png" alt="">${esc(u.tierName)}${u.division ? ' ' + 'I'.repeat(u.division) : ''}</div></td><td>${u.rp}</td><td>${u.level}</td><td>${u.wins}</td></tr>`).join('') : '<tr><td colspan="6" class="mut">Ninguém classificado ainda. Jogue 5 partidas ranqueadas e entre na lista!</td></tr>';
   } catch { $('#rank-body').innerHTML = '<tr><td colspan="6" class="mut">Ranking indisponível no momento.</td></tr>'; }
 }
-loadStatus(); loadRank(); setInterval(loadStatus, 30000); setInterval(loadRank, 60000);
+async function loadModes() {   // MELHORES POR MODO: só aparece o modo que já tem vencedor
+  const box = $('#modes-rank'); if (!box) return;
+  try { const r = await j('/api/public/modes'); box.innerHTML = r.modes.length ? r.modes.map((g) => `<div class="panel mrk"><h4>${esc(g.name)}</h4>${g.rows.slice(0, 5).map((u) => `<div class="mr p${u.pos}"><i>${u.pos}</i><b>${esc(u.nick)}</b><span>${u.wins} vit. · ${u.kills} abates</span></div>`).join('')}</div>`).join('') : '<p class="mut c">Os campeões de cada modo aparecem aqui assim que as primeiras partidas terminarem.</p>'; } catch { box.innerHTML = ''; }
+}
+loadStatus(); loadRank(); loadModes(); setInterval(loadStatus, 30000); setInterval(loadRank, 60000); setInterval(loadModes, 90000);
 
 /* ============ UI geral ============ */
 const nav = $('#nav'), fab = $('.fab');
