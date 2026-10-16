@@ -115,7 +115,7 @@ $('#story').innerHTML = CH.map(([m, t, pl, d], i) => `<article class="ch8">${img
 
 /* ============ API: status + ranking ============ */
 const j = async (p) => { const r = await fetch(API + p, { cache: 'no-store' }); if (!r.ok) throw new Error(r.status); return r.json(); };
-function setSrv(on, txt) { const c = $('#srv-chip'); c.className = 'srv ' + (on ? 'on' : 'off'); $('b', c).textContent = txt; }
+function setSrv(on, txt) { const c = $('#srv-chip'); c.className = 'srv ' + (on ? 'on' : 'off'); document.querySelector('.tag-pill')?.classList.toggle('off', !on); $('b', c).textContent = txt; }
 async function loadStatus() {
   try { const s = await j('/api/public/status'); setSrv(true, `${s.online} online`); $('#stats').innerHTML = [[s.online, 'jogadores online'], [s.playersInMatch, 'em partida agora'], [s.matches, 'partidas ativas'], [s.accounts, 'contas criadas']].map(([n, l]) => `<div class="stat"><b>${n}</b><small>${l}</small></div>`).join(''); }
   catch { setSrv(false, 'offline'); $('#stats').innerHTML = '<p class="mut" style="grid-column:1/-1">Servidor indisponível no momento. Tente novamente em instantes.</p>'; }

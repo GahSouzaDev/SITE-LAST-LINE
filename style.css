@@ -44,7 +44,7 @@ img{max-width:100%;height:auto;display:block}a{color:inherit;text-decoration:non
 @keyframes fl{50%{transform:translateY(-12px)}}
 .hero-in{position:relative;max-width:660px;z-index:3}
 .tag-pill{display:inline-flex;align-items:center;gap:9px;font:700 14px 'Barlow Condensed','Arial Narrow',sans-serif;letter-spacing:.2em;color:var(--y2);border:1px solid #e6b42266;padding:6px 14px;border-radius:99px;background:#e6b4221a;margin-bottom:22px}
-.tag-pill i{width:8px;height:8px;border-radius:50%;background:var(--r);animation:pl 1.2s infinite}
+.tag-pill i{width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);animation:pl 1.6s infinite}.tag-pill.off i{background:var(--r);box-shadow:0 0 8px var(--r);animation:pl 1s infinite}
 .hero-logo img{width:min(560px,86vw);height:auto;filter:drop-shadow(0 10px 40px #000)}
 .sub{font-size:clamp(17px,2vw,21px);color:#d4dae4;margin:20px 0 30px;max-width:540px}.sub b{color:var(--y2)}
 .cta{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
