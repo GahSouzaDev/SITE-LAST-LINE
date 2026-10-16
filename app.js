@@ -60,7 +60,7 @@ renderLaunch();
 setInterval(() => { $$('.count[data-to]').forEach((c) => { c.innerHTML = cnt(+c.dataset.to - NOW()); }); const p = phase(); if (p !== (renderLaunch.last || p)) { renderHero(); renderLaunch(); renderShowcase(sel); } renderLaunch.last = p; }, 1000);
 
 /* ============ BANNERS DOS EVENTOS — vêm do JOGO (painel Admin › Eventos): o site não guarda nada, só lê ============
-   Leve para o servidor: 1 requisição pequena com ETag (resposta 304 quando nada mudou), a cada 5 min só com a aba visível;
+   Leve para o servidor: 1 requisição pequena com ETag (resposta 304 quando nada mudou), 1x ao abrir + no máx. 1x a cada 6 h;
    as imagens têm ?v=carimbo (cache do navegador por tempo longo) e só são baixadas de novo quando o admin troca a arte. */
 const BN = {};
 const bnAbs = (u) => (/^https?:/.test(u) ? u : API + u);
@@ -74,10 +74,10 @@ async function loadBanners() {
     const sig = JSON.stringify(list.map((b) => [b.ym, b.show, b.url])); if (sig === bnSig) return; bnSig = sig;
     for (const k of Object.keys(BN)) delete BN[k]; for (const b of list) BN[b.ym] = b;
     try { localStorage.setItem('ll.bn', JSON.stringify(list)); } catch { /* ok */ }
-    if (typeof renderCal === 'function') { renderCal(); renderShowcase(sel);
-loadBanners(); setInterval(() => { if (!document.hidden) loadBanners(); }, 300000); document.addEventListener('visibilitychange', () => { if (!document.hidden) loadBanners(); }); }
+    if (typeof renderCal === 'function') { renderCal(); renderShowcase(sel); }
   } catch { /* sem rede: segue com o que tem */ }
 }
+loadBanners(); { let last = Date.now(); setInterval(() => { if (!document.hidden && Date.now() - last > 6 * 3600000) { last = Date.now(); loadBanners(); } }, 600000); }   // evento dura 1 mês: 1 leitura ao abrir a página (ETag/304) + no máximo 1 a cada 6 h com a aba aberta (economiza o servidor)
 /* ============ CAMPANHA: vitrine + calendário ============ */
 let sel = br().ym; if (!EVM[sel]) sel = EV[EV.length - 1].ym;
 function renderShowcase(ym) {
@@ -151,7 +151,7 @@ async function loadModes() {   // MELHORES POR MODO: só aparece o modo que já 
   const box = $('#modes-rank'); if (!box) return;
   try { const r = await j('/api/public/modes'); box.innerHTML = r.modes.length ? r.modes.map((g) => `<div class="panel mrk"><h4>${esc(g.name)}</h4>${g.rows.slice(0, 5).map((u) => `<div class="mr p${u.pos}"><i>${u.pos}</i><b>${av(u.avatar)}${esc(u.nick)}</b><span>${u.wins} vit. · ${u.kills} abates</span></div>`).join('')}</div>`).join('') : '<p class="mut c">Os campeões de cada modo aparecem aqui assim que as primeiras partidas terminarem.</p>'; } catch { box.innerHTML = ''; }
 }
-loadStatus(); loadRank(); loadModes(); setInterval(loadStatus, 30000); setInterval(loadRank, 60000); setInterval(loadModes, 90000);
+loadStatus(); loadRank(); loadModes(); const vis = (f) => () => { if (!document.hidden) f(); }; setInterval(vis(loadStatus), 120000); setInterval(vis(loadRank), 600000); setInterval(vis(loadModes), 900000);   // economiza o servidor: só com a aba visível e em intervalos longos
 
 /* ============ UI geral ============ */
 const nav = $('#nav'), fab = $('.fab');
