@@ -59,17 +59,36 @@ function renderLaunch() {
 renderLaunch();
 setInterval(() => { $$('.count[data-to]').forEach((c) => { c.innerHTML = cnt(+c.dataset.to - NOW()); }); const p = phase(); if (p !== (renderLaunch.last || p)) { renderHero(); renderLaunch(); renderShowcase(sel); } renderLaunch.last = p; }, 1000);
 
+/* ============ BANNERS DOS EVENTOS — vêm do JOGO (painel Admin › Eventos): o site não guarda nada, só lê ============
+   Leve para o servidor: 1 requisição pequena com ETag (resposta 304 quando nada mudou), a cada 5 min só com a aba visível;
+   as imagens têm ?v=carimbo (cache do navegador por tempo longo) e só são baixadas de novo quando o admin troca a arte. */
+const BN = {};
+const bnAbs = (u) => (/^https?:/.test(u) ? u : API + u);
+const hasArt = (ym) => (BN[ym] ? !!BN[ym].show : ART.has(ym));
+const artSrc = (ym, e) => (BN[ym]?.url ? bnAbs(BN[ym].url) : (e?.img || `img/banners/${ym}.jpg`));
+try { for (const b of JSON.parse(localStorage.getItem('ll.bn') || '[]')) BN[b.ym] = b; } catch { /* sem cache */ }
+let bnSig = JSON.stringify(BN);
+async function loadBanners() {
+  try {
+    const r = await fetch(API + '/api/event-banners', { cache: 'no-cache' }); if (!r.ok) return; const j = await r.json(), list = j.list || [];
+    const sig = JSON.stringify(list.map((b) => [b.ym, b.show, b.url])); if (sig === bnSig) return; bnSig = sig;
+    for (const k of Object.keys(BN)) delete BN[k]; for (const b of list) BN[b.ym] = b;
+    try { localStorage.setItem('ll.bn', JSON.stringify(list)); } catch { /* ok */ }
+    if (typeof renderCal === 'function') { renderCal(); renderShowcase(sel);
+loadBanners(); setInterval(() => { if (!document.hidden) loadBanners(); }, 300000); document.addEventListener('visibilitychange', () => { if (!document.hidden) loadBanners(); }); }
+  } catch { /* sem rede: segue com o que tem */ }
+}
 /* ============ CAMPANHA: vitrine + calendário ============ */
 let sel = br().ym; if (!EVM[sel]) sel = EV[EV.length - 1].ym;
 function renderShowcase(ym) {
-  sel = ym; const e = EVM[ym], b = br(), stt = ym === b.ym ? 'now' : ym < b.ym ? 'past' : 'next', has = ART.has(ym);
+  sel = ym; const e = EVM[ym], b = br(), stt = ym === b.ym ? 'now' : ym < b.ym ? 'past' : 'next', has = hasArt(ym);
   const left = b.last - b.day + 1, tx = { now: ['st now', 'Valendo agora'], past: ['st past', 'Encerrado'], next: ['st next', 'Em breve'] }[stt];
-  $('#showcase').innerHTML = `<div class="poster ${has ? '' : 'ph'}" ${has ? `data-lb="${e.img}"` : ''}>${has ? img(e.img, 'Evento ' + e.n) : `<div><b>${esc(e.n)}</b><span>ARTE EM BREVE</span></div>`}</div><div class="sc-info"><span class="${tx[0]}">${tx[1]}</span><div class="kick">${ymTxt(ym)}</div><h3>${esc(e.n)}</h3><p>${esc(e.desc)}</p><div class="chips"><span class="chip">Missão <b>${e.goal} partidas de 5 min ou mais</b></span><span class="chip">Mapa <b>${esc(e.map)}</b></span><span class="chip">Skin <b>${esc(e.skin)}</b></span>${stt === 'now' ? `<span class="chip">Faltam <b>${left} ${left === 1 ? 'dia' : 'dias'}</b></span>` : ''}</div>${stt === 'now' ? `<div class="bar"><i style="width:${Math.round(100 * (b.day - 1) / b.last)}%"></i></div>` : ''}<p class="mini">${stt === 'past' ? 'Esse evento só existia nesse mês.' : 'A recompensa é exclusiva do mês: quem não completar a missão até o último dia perde. Os itens aparecem bloqueados para todos, no Arsenal e na seleção de personagem.'}</p><div class="cta"><a class="btn play-link" href="${GAME}" target="_blank" rel="noopener">▶ ${stt === 'now' ? 'Jogar o evento' : 'Jogar'}</a></div></div>`;
+  $('#showcase').innerHTML = `<div class="poster ${has ? '' : 'ph'}" ${has ? `data-lb="${artSrc(ym, e)}"` : ''}>${has ? img(artSrc(ym, e), 'Evento ' + e.n) : `<div><b>${esc(e.n)}</b><span>ARTE EM BREVE</span></div>`}</div><div class="sc-info"><span class="${tx[0]}">${tx[1]}</span><div class="kick">${ymTxt(ym)}</div><h3>${esc(e.n)}</h3><p>${esc(e.desc)}</p><div class="chips"><span class="chip">Missão <b>${e.goal} partidas de 5 min ou mais</b></span><span class="chip">Mapa <b>${esc(e.map)}</b></span><span class="chip">Skin <b>${esc(e.skin)}</b></span>${stt === 'now' ? `<span class="chip">Faltam <b>${left} ${left === 1 ? 'dia' : 'dias'}</b></span>` : ''}</div>${stt === 'now' ? `<div class="bar"><i style="width:${Math.round(100 * (b.day - 1) / b.last)}%"></i></div>` : ''}<p class="mini">${stt === 'past' ? 'Esse evento só existia nesse mês.' : 'A recompensa é exclusiva do mês: quem não completar a missão até o último dia perde. Os itens aparecem bloqueados para todos, no Arsenal e na seleção de personagem.'}</p><div class="cta"><a class="btn play-link" href="${GAME}" target="_blank" rel="noopener">▶ ${stt === 'now' ? 'Jogar o evento' : 'Jogar'}</a></div></div>`;
   $$('#cal .cm').forEach((x) => x.classList.toggle('sel', x.dataset.ym === ym));
 }
 function renderCal() {
   const b = br(), items = [...EV.map((e) => e.ym), ...SOON];
-  $('#cal').innerHTML = items.map((ym) => { const e = EVM[ym]; if (!e) return `<div class="cm"><div class="ph"><b>Em breve</b></div><span>${ymLabel(ym)}<small>a anunciar</small></span></div>`; return `<button class="cm ${ym === b.ym ? 'now' : ym < b.ym ? 'past' : ''}" data-ym="${ym}">${ART.has(ym) ? img(e.img, e.n, 'loading="lazy"') : `<div class="ph"><b>${esc(e.n)}</b></div>`}<span>${esc(e.n)}<small>${ymLabel(ym)}</small></span></button>`; }).join('');
+  $('#cal').innerHTML = items.map((ym) => { const e = EVM[ym]; if (!e) return `<div class="cm">${hasArt(ym) ? img(artSrc(ym, null), 'Em breve', 'loading="lazy"') : '<div class="ph"><b>Em breve</b></div>'}<span>${ymLabel(ym)}<small>a anunciar</small></span></div>`; return `<button class="cm ${ym === b.ym ? 'now' : ym < b.ym ? 'past' : ''}" data-ym="${ym}">${hasArt(ym) ? img(artSrc(ym, e), e.n, 'loading="lazy"') : `<div class="ph"><b>${esc(e.n)}</b></div>`}<span>${esc(e.n)}<small>${ymLabel(ym)}</small></span></button>`; }).join('');
   $('#cal').onclick = (ev) => { const b2 = ev.target.closest('.cm[data-ym]'); if (b2) renderShowcase(b2.dataset.ym); };
   const cur = $('#cal .cm.now'); if (cur) $('#cal').scrollLeft = Math.max(0, cur.offsetLeft - 20);
 }
