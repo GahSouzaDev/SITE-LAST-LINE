@@ -133,6 +133,7 @@ $('#medals').innerHTML = MD.map(([i, n]) => `<div>${img('img/medals/' + i + '.pn
 $('#story').innerHTML = CH.map(([m, t, pl, d], i) => `<article class="ch8">${img('img/maps/' + m + '.jpg', t, 'loading="lazy"')}<span class="n">0${i + 1}</span><div class="mi"><small>${pl}</small><h4>${t}</h4><p>${d}</p></div></article>`).join('');
 
 /* ============ API: status + ranking ============ */
+const av = (a) => `<img class="pav" src="img/avatars/${String(a || '01').replace(/[^0-9a-z_-]/gi, '')}.webp" alt="" width="28" height="28" loading="lazy" onerror="this.src='img/avatars/01.webp';this.onerror=null">`;
 const j = async (p) => { const r = await fetch(API + p, { cache: 'no-store' }); if (!r.ok) throw new Error(r.status); return r.json(); };
 function setSrv(on, txt) { const c = $('#srv-chip'); c.className = 'srv ' + (on ? 'on' : 'off'); document.querySelector('.tag-pill')?.classList.toggle('off', !on); $('b', c).textContent = txt; }
 async function loadStatus() {
@@ -143,12 +144,12 @@ async function loadRank() {
   try {
     const r = await j('/api/public/ranking'), body = $('#rank-body');
     $('#rank-lead').textContent = r.top.length ? `Temporada ${r.season.n} · ${r.top.length} ${r.top.length === 1 ? 'jogador no topo' : 'jogadores no topo'}` : `Temporada ${r.season.n} · a disputa está aberta`;
-    body.innerHTML = r.top.length ? r.top.map((u) => `<tr class="${u.pos <= 3 ? 'top' : ''}"><td>${u.pos}</td><td class="nk">${esc(u.nick)}</td><td><div class="el"><img src="img/ranks/${esc(u.tier)}.png" alt="">${esc(u.tierName)}${u.division ? ' ' + 'I'.repeat(u.division) : ''}</div></td><td>${u.rp}</td><td>${u.level}</td><td>${u.wins}</td></tr>`).join('') : '<tr><td colspan="6" class="mut">Ninguém classificado ainda. Jogue 5 partidas ranqueadas e entre na lista!</td></tr>';
+    body.innerHTML = r.top.length ? r.top.map((u) => `<tr class="${u.pos <= 3 ? 'top' : ''}"><td>${u.pos}</td><td class="nk">${av(u.avatar)}${esc(u.nick)}</td><td><div class="el"><img src="img/ranks/${esc(u.tier)}.png" alt="">${esc(u.tierName)}${u.division ? ' ' + 'I'.repeat(u.division) : ''}</div></td><td>${u.rp}</td><td>${u.level}</td><td>${u.wins}</td></tr>`).join('') : '<tr><td colspan="6" class="mut">Ninguém classificado ainda. Jogue 5 partidas ranqueadas e entre na lista!</td></tr>';
   } catch { $('#rank-body').innerHTML = '<tr><td colspan="6" class="mut">Ranking indisponível no momento.</td></tr>'; }
 }
 async function loadModes() {   // MELHORES POR MODO: só aparece o modo que já tem vencedor
   const box = $('#modes-rank'); if (!box) return;
-  try { const r = await j('/api/public/modes'); box.innerHTML = r.modes.length ? r.modes.map((g) => `<div class="panel mrk"><h4>${esc(g.name)}</h4>${g.rows.slice(0, 5).map((u) => `<div class="mr p${u.pos}"><i>${u.pos}</i><b>${esc(u.nick)}</b><span>${u.wins} vit. · ${u.kills} abates</span></div>`).join('')}</div>`).join('') : '<p class="mut c">Os campeões de cada modo aparecem aqui assim que as primeiras partidas terminarem.</p>'; } catch { box.innerHTML = ''; }
+  try { const r = await j('/api/public/modes'); box.innerHTML = r.modes.length ? r.modes.map((g) => `<div class="panel mrk"><h4>${esc(g.name)}</h4>${g.rows.slice(0, 5).map((u) => `<div class="mr p${u.pos}"><i>${u.pos}</i><b>${av(u.avatar)}${esc(u.nick)}</b><span>${u.wins} vit. · ${u.kills} abates</span></div>`).join('')}</div>`).join('') : '<p class="mut c">Os campeões de cada modo aparecem aqui assim que as primeiras partidas terminarem.</p>'; } catch { box.innerHTML = ''; }
 }
 loadStatus(); loadRank(); loadModes(); setInterval(loadStatus, 30000); setInterval(loadRank, 60000); setInterval(loadModes, 90000);
 

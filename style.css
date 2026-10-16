@@ -203,3 +203,10 @@ footer{padding:30px 20px;text-align:center;color:var(--mut);font-size:13.5px;bor
 .poster img{aspect-ratio:16/9;object-fit:cover;max-height:none}.cm{flex:0 0 240px}.cm img,.cm .ph{aspect-ratio:16/9}
 .poster.ph{min-height:0;aspect-ratio:16/9}
 @media(max-width:640px){.cm{flex-basis:200px}}
+.shopg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.shc{background:#0d141c;border:1px solid #223040;padding:14px;display:flex;flex-direction:column;gap:6px;transition:.2s}.shc:hover{transform:translateY(-3px);border-color:#f0b400}
+.shc img{width:100%;height:auto;aspect-ratio:8/5;object-fit:cover;background:#070b10}.shc h3{margin:6px 0 0;font-size:18px}.shc p{margin:0;color:#9fb0c8}
+.shbig{font-size:54px;text-align:center;padding:30px 0;background:#070b10}.shc.hot{border-color:#f0b400}.shc.soon{opacity:.8}.shc em{font-style:normal;font-size:11px;background:#ff9d00;color:#000;padding:2px 8px;border-radius:10px;vertical-align:middle}
+/* banners de evento: NUNCA cortar a arte (qualquer proporção cabe inteira) */
+.poster img,.cm img{object-fit:contain!important;background:#05080c}.poster,.cm{background:#05080c}
+.pav{width:28px;height:28px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:8px;background:#0a0f15;border:1px solid #2a3846}.mr b{display:flex;align-items:center}
