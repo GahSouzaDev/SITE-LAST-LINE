@@ -163,3 +163,20 @@ const links = $$('#menu a'), spy = new IntersectionObserver((es) => es.forEach((
 $$('section[id]').forEach((s) => spy.observe(s));
 $$('.sh,.panel,.showcase,.gallery,.modes,.story').forEach((e) => e.classList.add('reveal'));
 })();
+
+/* ============ MOEDAS: prévia de pacotes (sem pagamento real) ============ */
+(() => {
+  const pay = document.getElementById('pay'); if (!pay) return;
+  const close = () => pay.classList.add('hidden');
+  document.getElementById('packs').addEventListener('click', (e) => {
+    const b = e.target.closest('.pk'); if (!b) return;
+    b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+    document.getElementById('pay-img').src = b.querySelector('img').src;
+    document.getElementById('pay-t').textContent = Number(b.dataset.c).toLocaleString('pt-BR') + ' moedas';
+    document.getElementById('pay-s').textContent = 'R$ ' + b.dataset.p + ',00';
+    setTimeout(() => pay.classList.remove('hidden'), 280);
+  });
+  ['pay-x', 'pay-ok'].forEach((id) => document.getElementById(id).addEventListener('click', close));
+  pay.addEventListener('click', (e) => { if (e.target === pay) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+})();
