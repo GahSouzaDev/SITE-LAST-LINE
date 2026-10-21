@@ -29,7 +29,7 @@ const MODES = [
   ['monstro', 'Monstro', 'HUMANOS × SUPER ZUMBIS', 'O zumbi pula mais alto, corre mais e dá o dobro de dano. Morreu para ele? Você vira zumbi.', 0],
   ['off', 'Campanha solo', 'OFFLINE · 8 CAPÍTULOS', 'A história da UMBRA, do Brasil à Lua. Sem internet e sem pressa.', 0]
 ];
-const SH = [['battle-royale', 'Battle Royale'], ['modo-bomba', 'Modo Bomba'], ['tatico', 'Tático: loja da rodada'], ['inventario', 'Arsenal e inventário'], ['elo', 'Elos e temporada'], ['menu', 'Menu principal']];
+const SH = [['torneios', 'Torneios: contagem regressiva, prêmios e classificação'], ['chave', 'Chave do torneio com janelas de horário'], ['campanha', 'Modo História: escolha a campanha'], ['arsenal', 'Arsenal: kits, acessórios e skins'], ['battle-royale', 'Battle Royale'], ['modo-bomba', 'Modo Bomba'], ['tatico', 'Tático: loja da rodada'], ['elo', 'Elos e temporada'], ['menu', 'Menu principal']];
 const K = (k) => `<kbd>${k}</kbd>`;
 const KEYS = [['Andar', 'W A S D'], ['Correr', 'Shift'], ['Pular', 'Espaço'], ['Agachar / devagar', 'X'], ['Deslizar', 'C'], ['Atirar', 'Mouse esq.'], ['Mirar', 'Mouse dir.'], ['Recarregar', 'R'], ['Corpo a corpo', 'Clique na rolagem'], ['Primária ↔ Secundária', 'Q'], ['Slots', '1 · 2 · 3'], ['Granada', '4'], ['Bomba especial (fumaça, luz, mina)', '5'], ['Bomba (Modo Bomba)', '6'], ['Pegar item do chão', 'E'], ['Interagir: entrar/sair do carro · reviver aliado · desarmar bomba', 'T'], ['Largar item', 'G'], ['Lanterna', 'L'], ['Usar cura (Battle Royale)', 'H'], ['Construir barricada', 'N'], ['Marcar ponto (ping)', 'Z'], ['Loja / Arsenal / Mochila', 'B'], ['Placar', 'Tab'], ['Câmera 1ª / 3ª pessoa', 'V'], ['Estou preso', 'U'], ['Jogadores online / amigos', 'O']];
 const HOW = {
