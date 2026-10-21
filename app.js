@@ -7,7 +7,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const q = new URLSearchParams(location.search), T0 = Date.now();
 const NOW = () => (q.get('now') ? Date.parse(q.get('now')) + (Date.now() - T0) : Date.now());   // ?now=2026-10-17T12:00:00-03:00 só para testar datas
 const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-const br = (ts = NOW()) => { const d = new Date(ts - 3 * 3600e3); return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, ym: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`, last: new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate(), day: d.getUTCDate() }; };
+const br = (ts = NOW()) => { const d = new Date(ts - 3 * 3600e3); return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, ym: (() => { const y = d.getUTCFullYear(), m = d.getUTCMonth() + 1, mm = String(m).padStart(2, '0'); return y * 12 + m < 2026 * 12 + 10 ? `${y}-${mm}` : `${m >= 10 ? 2026 : 2027}-${mm}`; })(), last: new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate(), day: d.getUTCDate() }; };
 const PS = Date.parse(P.start), PE = Date.parse(P.end);
 const EVM = Object.fromEntries(EV.map((e) => [e.ym, e]));
 const ymTxt = (ym) => { const [y, m] = ym.split('-'); return `${MES[m - 1]} de ${y}`; };
@@ -26,7 +26,7 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.lb').forEach((
 const cnt = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return [['dias', Math.floor(s / 86400)], ['horas', Math.floor(s / 3600) % 24], ['min', Math.floor(s / 60) % 60], ['seg', s % 60]].map(([l, v]) => `<div><b>${String(v).padStart(2, '0')}</b><small>${l}</small></div>`).join(''); };
 
 /* ---- temporadas (iguais às do jogo) ---- */
-const seasonOf = (ts = NOW()) => { const d = new Date(ts - 3 * 3600e3), n = Math.max(1, (d.getUTCFullYear() - 2026) * 4 + Math.floor(d.getUTCMonth() / 3) - 3 + 1), idx = n - 1 + 3, y = 2026 + Math.floor(idx / 4), qq = idx % 4, s = Date.UTC(y, qq * 3, 1) + 3 * 3600e3, e = Date.UTC(y, qq * 3 + 3, 1) + 3 * 3600e3; return { n, label: `${MS[qq * 3]}–${MS[qq * 3 + 2]} ${y}`, daysLeft: Math.max(0, Math.ceil((e - ts) / 864e5)), pct: Math.max(0, Math.min(1, (ts - s) / (e - s))) }; };
+const seasonOf = (ts = NOW()) => { const d = new Date(ts - 3 * 3600e3), mi = d.getUTCFullYear() * 12 + d.getUTCMonth(), f = 2026 * 12 + 9, S2 = 2027 * 12, n = mi < S2 ? 1 : Math.floor((mi - S2) / 6) + 2, i0 = n === 1 ? f : S2 + (n - 2) * 6, i1 = n === 1 ? S2 - 1 : i0 + 5, s = Date.UTC(Math.floor(i0 / 12), i0 % 12, 1) + 3 * 3600e3, e = Date.UTC(Math.floor((i1 + 1) / 12), (i1 + 1) % 12, 1) + 3 * 3600e3; return { n, label: `${MS[i0 % 12]} ${Math.floor(i0 / 12)} – ${MS[i1 % 12]} ${Math.floor(i1 / 12)}`, daysLeft: Math.max(0, Math.ceil((e - ts) / 864e5)), pct: Math.max(0, Math.min(1, (ts - s) / (e - s))) }; };
 
 /* ============ HERO ============ */
 function slides(id, list) { const box = $(id); box.innerHTML = list.map((s) => `<div style="background-image:url('${s}')"></div>`).join(''); const els = $$('div', box); let i = 0; els[0].classList.add('on'); setInterval(() => { els[i].classList.remove('on'); i = (i + 1) % els.length; els[i].classList.add('on'); }, 6000); }
@@ -127,6 +127,8 @@ const tabs = Object.keys(HOW);
 $('#how-tabs').innerHTML = tabs.map((t, i) => `<button class="${i ? '' : 'on'}">${t}</button>`).join('');
 const showHow = (t) => { $('#how-pane').innerHTML = HOW[t](); }; showHow(tabs[0]);
 $('#how-tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#how-tabs button').forEach((x) => x.classList.toggle('on', x === b)); showHow(b.textContent); };
+$('#insignias').innerHTML = Array.from({ length: 48 }, (_, i) => `<div>${img('img/insignias/' + String(i + 1).padStart(2, '0') + '.png', 'Insígnia ' + (i + 1), 'loading="lazy"')}<small>${i + 1}</small></div>`).join('');
+$('#prestige').innerHTML = PR.map(([i, l]) => `<div>${img('img/prestige/' + i + '.png', 'Nível ' + l, 'loading="lazy"')}<small>nível ${l}</small></div>`).join('');
 $('#levels').innerHTML = LV.map(([i, n, l]) => `<div>${img('img/levels/' + i + '.png', n, 'loading="lazy"')}${n}<small>nível ${l}</small></div>`).join('');
 $('#ranks').innerHTML = EL.map(([i, n, rp]) => `<div>${img('img/ranks/' + i + '.png', n, 'loading="lazy"')}${n}<small>${rp}+ RP</small></div>`).join('');
 $('#medals').innerHTML = MD.map(([i, n]) => `<div>${img('img/medals/' + i + '.png', n, 'loading="lazy"')}${n}</div>`).join('');
