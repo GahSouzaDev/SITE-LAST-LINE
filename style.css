@@ -230,3 +230,7 @@ footer{padding:30px 20px;text-align:center;color:var(--mut);font-size:13.5px;bor
 
 .shopg{grid-template-columns:repeat(5,1fr)}@media(max-width:980px){.shopg{grid-template-columns:repeat(2,1fr)}}
 .shc img{width:100%;aspect-ratio:3/5;object-fit:contain;background:#07090d;display:block}.shopg{align-items:stretch!important}
+/* loja: cartões centralizados (4 ou 5 cartões, qualquer largura) */
+.shopg{display:flex!important;flex-wrap:wrap;justify-content:center;align-items:stretch!important;gap:18px}
+.shopg .shc{flex:0 1 250px;width:250px;max-width:100%}
+@media(max-width:560px){.shopg .shc{flex:1 1 100%;width:100%}}
