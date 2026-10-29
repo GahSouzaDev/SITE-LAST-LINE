@@ -135,7 +135,7 @@ $('#medals').innerHTML = MD.map(([i, n]) => `<div>${img('img/medals/' + i + '.pn
 $('#story').innerHTML = CH.map(([m, t, pl, d], i) => `<article class="ch8">${img('img/maps/' + m + '.jpg', t, 'loading="lazy"')}<span class="n">0${i + 1}</span><div class="mi"><small>${pl}</small><h4>${t}</h4><p>${d}</p></div></article>`).join('');
 
 /* ============ API: status + ranking ============ */
-const av = (a) => `<img class="pav" src="img/avatars/${String(a || '01').replace(/[^0-9a-z_-]/gi, '')}.webp" alt="" width="28" height="28" loading="lazy" onerror="this.src='img/avatars/01.webp';this.onerror=null">`;
+const av = (a) => `<img class="pav" src="img/avatars/${String(a || '01').replace(/[^0-9a-z_-]/gi, '')}.png" alt="" width="28" height="28" loading="lazy" onerror="this.src='img/avatars/01.png';this.onerror=null">`;
 const j = async (p) => { const r = await fetch(API + p, { cache: 'no-store' }); if (!r.ok) throw new Error(r.status); return r.json(); };
 function setSrv(on, txt) { const c = $('#srv-chip'); c.className = 'srv ' + (on ? 'on' : 'off'); document.querySelector('.tag-pill')?.classList.toggle('off', !on); $('b', c).textContent = txt; }
 async function loadStatus() {
