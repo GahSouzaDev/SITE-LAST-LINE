@@ -30,7 +30,7 @@ const seasonOf = (ts = NOW()) => { const d = new Date(ts - 3 * 3600e3), mi = d.g
 
 /* ============ HERO ============ */
 function slides(id, list) { const box = $(id); box.innerHTML = list.map((s) => `<div style="background-image:url('${s}')"></div>`).join(''); const els = $$('div', box); let i = 0; els[0].classList.add('on'); setInterval(() => { els[i].classList.remove('on'); i = (i + 1) % els.length; els[i].classList.add('on'); }, 6000); }
-slides('#slides', ['img/maps/ilha.jpg', 'img/maps/favela.jpg', 'img/maps/lua.jpg', 'img/maps/porto.jpg', 'img/maps/cidade.jpg']); slides('#slides2', ['img/maps/laboratorio.jpg', 'img/maps/montanha-de-gelo.jpg', 'img/maps/deserto.jpg']);
+slides('#slides', ['img/maps/ilha.jpg', 'img/maps/serra.jpg', 'img/maps/umbra.jpg', 'img/maps/favela.jpg', 'img/maps/lua.jpg', 'img/maps/porto.jpg', 'img/maps/cidade.jpg']); slides('#slides2', ['img/maps/laboratorio.jpg', 'img/maps/montanha-de-gelo.jpg', 'img/maps/deserto.jpg']);
 $$('[data-count]').forEach((el) => { const to = +el.dataset.count, t0 = performance.now(); const f = (t) => { const k = Math.min(1, (t - t0) / 1300); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + (k === 1 && el.dataset.plus ? '+' : ''); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); });
 
 function phase() { const n = NOW(); return n < PS ? 'pre' : n <= PE ? 'live' : 'post'; }
