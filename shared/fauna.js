@@ -46,8 +46,8 @@ export const MAMMALS = {
 export const MONSTROS = {
   mapinguari: { id: 'mapinguari', name: 'Mapinguari', kind: 'monstro', rig: 'biped', temper: 'agressivo', colors: { sk: '#7b3a24', bl: '#b9805a', ac: '#2e140c' }, legL: 1.7, bodyL: 2.4, bodyH: 2.4, w: 1.7, neckL: 0.5, headL: 0.8, tailL: 0.5, armL: 2.3, armK: 1.2,
     hp: 900, walk: 2.4, run: 6.6, dmg: 22, reach: 3.6, cd: 2.3, hear: 100, sight: 95, atk: ['claw', 'bite'], hit: { r: 1.5, h: 3.6 }, power: 'fedor' },
-  mula: { id: 'mula', name: 'Mula sem Cabeça', kind: 'monstro', rig: 'quad', temper: 'agressivo', colors: { sk: '#2e2420', bl: '#5a4639', ac: '#ff7a1a' }, legL: 1.55, bodyL: 2.4, bodyH: 1.05, bodyW: 0.9, neckL: 1.0, headL: 0.2, tailL: 1.7,
-    hp: 620, walk: 3.4, run: 12.5, dmg: 19, reach: 2.6, cd: 1.7, hear: 90, sight: 85, atk: ['pounce', 'swat'], hit: { r: 0.9, h: 2.7 }, power: 'fogo' }
+  mula: { id: 'mula', name: 'Mula sem Cabeça', kind: 'monstro', rig: 'quad', temper: 'agressivo', colors: { sk: '#2e2420', bl: '#5a4639', ac: '#ff7a1a' }, legL: 1.95, bodyL: 3.1, bodyH: 1.35, bodyW: 1.1, neckL: 1.3, headL: 0.2, tailL: 2.4,
+    hp: 620, walk: 3.4, run: 12.5, dmg: 19, reach: 2.6, cd: 1.7, hear: 90, sight: 85, atk: ['pounce', 'swat'], hit: { r: 1.15, h: 3.4 }, power: 'fogo' }
 };
 export const FAUNA = { ...DINOS, ...MAMMALS, ...MONSTROS };
 export const hunts = (sp) => sp?.kind === 'dino' || sp?.kind === 'monstro';   // quem caça (dinossauros e monstros) × quem foge (mamíferos)

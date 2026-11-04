@@ -94,7 +94,7 @@ export class Creature {
 
   // ------------------------------------------------------------------ controle
   setMotion(speed, mood = 'calm') { this.want = Math.max(0, speed); this.mood = mood; }
-  attack(kind) { const k = kind || this.sp.atk[0]; if (!k || this.dead) return false; const dur = { bite: 0.9, claw: 1.0, headbutt: 1.0, gore: 1.2, pounce: 1.3, swat: 1.0 }[k] ?? 1; this.atk = { k, t: 0, dur }; return true; }
+  attack(kind, big = false) { const k = kind || this.sp.atk[0]; if (!k || this.dead) return false; const dur = ({ bite: 0.9, claw: 1.0, headbutt: 1.0, gore: 1.2, pounce: 1.3, swat: 1.0 }[k] ?? 1) * (big === 'fast' ? 0.6 : big ? 1.0 : 0.6); this.atk = { k, t: 0, dur, big: !!big }; return true; }   // golpe RÁPIDO = curto e seco; golpe FORTE = o bicho recua a cabeça e ataca com o corpo todo
   hurt() { this.hurtT = 0; }
   roar() { if (!this.dead) this.roarT = 0; }
   die() { if (this.sp.kind !== 'mamifero' && !this.dead) { this.dead = true; this.dyingT = 0; this.atk = null; } }   // mamíferos não morrem
@@ -110,13 +110,13 @@ export class Creature {
     this.alertK += ((this.mood === 'alert' ? 1 : 0) - this.alertK) * Math.min(1, dt * 5); this.fleeK += ((this.mood === 'flee' ? 1 : 0) - this.fleeK) * Math.min(1, dt * 7);
     const ph = this.ph, amp = lerp(0.38, 0.78, runK) * mv, breath = Math.sin(t * 1.8);
     // ---- envelopes das ações ----
-    let atkP = 0, A = null; if (this.atk) { this.atk.t += dt; atkP = this.atk.t / this.atk.dur; if (atkP >= 1) this.atk = null; else A = this.atk.k; }
+    const bg = this.atk?.big ? 1.7 : 1; let atkP = 0, A = null; if (this.atk) { this.atk.t += dt; atkP = this.atk.t / this.atk.dur; if (atkP >= 1) this.atk = null; else A = this.atk.k; }
     let hurtE = 0; if (this.hurtT >= 0) { this.hurtT += dt; if (this.hurtT > 0.5) this.hurtT = -1; else hurtE = (1 - this.hurtT / 0.5); }
     let roarE = 0; if (this.roarT >= 0) { this.roarT += dt; if (this.roarT > 1.7) this.roarT = -1; else roarE = env(this.roarT / 1.7, 0, 0.2, 0.75, 1); }
     let dieE = 0; if (this.dead) { this.dyingT += dt; dieE = sm(this.dyingT / 1.3); }
     let neckAdd = 0, lunge = 0, jawOpen = 0, bodyPitch = 0, hop = 0, armSwing = 0, crouch = 0, frontSwat = 0, tailYaw = 0;
-    if (A === 'bite') { const up = env(atkP, 0, 0.3, 0.34, 0.46), dn = env(atkP, 0.34, 0.46, 0.54, 0.9); neckAdd = -0.5 * up + 0.85 * dn; lunge = dn * sp.legL * 0.28; jawOpen = env(atkP, 0.1, 0.34, 0.5, 0.62); bodyPitch = dn * 0.1; }
-    else if (A === 'claw') { const up = env(atkP, 0, 0.3, 0.34, 0.46), dn = env(atkP, 0.34, 0.46, 0.54, 0.9); armSwing = -1.5 * up + 1.7 * dn; lunge = dn * sp.legL * 0.15; neckAdd = 0.25 * dn; frontSwat = armSwing; }
+    if (A === 'bite') { const up = env(atkP, 0, 0.3, 0.34, 0.46), dn = env(atkP, 0.34, 0.46, 0.54, 0.9); neckAdd = (-0.5 * up + 0.85 * dn) * bg; lunge = dn * sp.legL * 0.28 * bg; jawOpen = env(atkP, 0.1, 0.34, 0.5, 0.62) * (bg > 1 ? 1.4 : 1); bodyPitch = dn * 0.1 * bg - (bg > 1 ? up * 0.12 : 0); }
+    else if (A === 'claw') { const up = env(atkP, 0, 0.3, 0.34, 0.46), dn = env(atkP, 0.34, 0.46, 0.54, 0.9); armSwing = (-1.5 * up + 1.7 * dn) * bg; lunge = dn * sp.legL * 0.15 * bg; neckAdd = 0.25 * dn * bg; frontSwat = armSwing; }
     else if (A === 'headbutt') { const bk = env(atkP, 0, 0.3, 0.34, 0.5), fw = env(atkP, 0.34, 0.46, 0.55, 0.9); neckAdd = -0.3 * bk + 0.7 * fw; lunge = fw * sp.legL * 0.4; bodyPitch = fw * 0.15; }
     else if (A === 'gore') { const dn = env(atkP, 0, 0.3, 0.38, 0.45), tossE = env(atkP, 0.4, 0.5, 0.56, 0.9); neckAdd = 0.75 * dn - 1.0 * tossE; lunge = (dn * 0.5 + tossE) * sp.legL * 0.22; bodyPitch = dn * 0.08 - tossE * 0.1; }
     else if (A === 'pounce') { const cr = env(atkP, 0, 0.25, 0.32, 0.4), lp = env(atkP, 0.32, 0.5, 0.62, 0.92); crouch = cr * 0.35; lunge = lp * sp.legL * 2.2; hop = Math.sin(clamp((atkP - 0.32) / 0.45) * Math.PI) * sp.legL * 0.7; jawOpen = env(atkP, 0.4, 0.55, 0.68, 0.8); bodyPitch = -lp * 0.12; frontSwat = -1.2 * env(atkP, 0.4, 0.55, 0.65, 0.85); }
@@ -173,14 +173,31 @@ const FEATURES = {
     const puffs = []; for (let i = 0; i < 4; i++) { const p = put(c.root, new THREE.SphereGeometry(0.5, 7, 5), M('#8fd35a', { transparent: true, opacity: 0.28, roughness: 1, depthWrite: false }), 0, 1, 0); puffs.push(p); }
     c.fx.push((t) => puffs.forEach((p, i) => { const a = t * 0.6 + i * 1.57; p.position.set(Math.cos(a) * 1.4, 0.8 + 0.5 * Math.sin(t * 1.3 + i), Math.sin(a) * 1.4); p.scale.setScalar(0.7 + 0.3 * Math.sin(t * 2 + i)); }));   // nuvem fedorenta em volta
   },
-  // MULA SEM CABEÇA: égua negra sem cabeça, com chamas saindo do pescoço e ferraduras de metal
+  // MULA SEM CABEÇA (versão assustadora): égua carbonizada e enorme, costelas à mostra, rachaduras de brasa no corpo, coto de pescoço com osso e uma FOGUEIRA no lugar da cabeça,
+  // crina e cauda em chamas, ferraduras em brasa que soltam fogo a cada passada, brasas subindo e luz laranja pulsando
   mula(c) {
     const m = c.mats, sp = c.sp; for (const o of [...c.head.children]) o.visible = false;   // sem cabeça
-    const stump = bx(c.head, sp.bodyW * 0.5, sp.bodyW * 0.5, 0.3, 0, 0, 0.1, m.dark), flames = [];
-    for (let i = 0; i < 9; i++) { const hot = i % 3 === 0, f = put(c.head, coneG(0.2 + (i % 3) * 0.06, 0.9 + (i % 4) * 0.25, 6), M(hot ? '#ffe26a' : i % 2 ? '#ff7a1a' : '#e0360a', { emissive: hot ? '#ffcc33' : '#ff5a10', emissiveIntensity: 1.6, transparent: true, opacity: 0.92, roughness: 0.4 }), Math.cos(i * 1.9) * 0.2, 0.25, 0.1 + Math.sin(i * 1.9) * 0.15); flames.push(f); }
-    for (const l of c.legs) bx(l.ankle, 0.46, 0.06, 0.5, 0, 0.04, 0.12, M('#9aa3ad', { metalness: 0.7, roughness: 0.35 }));   // ferraduras
-    const glow = new THREE.PointLight(0xff7a1a, 2.2, 7); c.head.add(glow);
-    c.fx.push((t) => flames.forEach((f, i) => { const s = 0.8 + 0.35 * Math.sin(t * 11 + i * 1.7); f.scale.set(0.9 + 0.2 * Math.sin(t * 9 + i), s, 0.9 + 0.2 * Math.cos(t * 8 + i)); f.rotation.x = Math.sin(t * 7 + i) * 0.25; glow.intensity = 2 + Math.sin(t * 13) * 0.6; }));
+    const ember = M('#ff5a10', { emissive: '#ff4a00', emissiveIntensity: 1.9, roughness: 0.5 }), hot = M('#ffe27a', { emissive: '#ffd23a', emissiveIntensity: 2.2, roughness: 0.4 }), red = M('#c4200a', { emissive: '#e0360a', emissiveIntensity: 1.5, transparent: true, opacity: 0.88, roughness: 0.4 }), bone = M('#d8ccb0', { roughness: 0.7 }), char = M('#120c0a', { roughness: 1 });
+    for (let i = 0; i < 16; i++) { const a = i * 2.1, k = i / 16; bx(c.body, 0.05, 0.08 + (i % 3) * 0.05, 0.5 + (i % 4) * 0.25, Math.sin(a) * sp.bodyW * 0.52, sp.bodyH * 0.12 * Math.cos(a), -sp.bodyL * 0.44 + k * sp.bodyL * 0.88, ember, 0, 0, Math.sin(a) * 0.5); }   // rachaduras de brasa na pele queimada
+    for (const sd of [-1, 1]) for (let i = 0; i < 7; i++) bx(c.body, 0.07, sp.bodyH * 0.62, 0.09, sd * (sp.bodyW * 0.5 + 0.03), -sp.bodyH * 0.02, -sp.bodyL * 0.3 + i * sp.bodyL * 0.1, bone, 0, 0, sd * 0.18);   // costelas expostas
+    for (let i = 0; i < 6; i++) bx(c.body, 0.1, 0.1, 0.1, 0, sp.bodyH * 0.52, -sp.bodyL * 0.4 + i * sp.bodyL * 0.15, bone);   // coluna aparente
+    bx(c.head, sp.bodyW * 0.55, sp.bodyW * 0.55, 0.4, 0, 0, 0.1, char); bx(c.head, 0.2, 0.2, 0.7, 0, 0.02, 0.42, bone); bx(c.head, 0.3, 0.3, 0.14, 0, 0.02, 0.8, bone);   // coto do pescoço com a vértebra de fora
+    const flames = [];   // três camadas de fogo: vermelho (grande) · laranja · núcleo amarelo
+    const mkF = (mat, r, h, n, spread, y0) => { for (let i = 0; i < n; i++) { const a = i * 2.4, f = put(c.head, coneG(r * (0.8 + (i % 3) * 0.18), h * (0.8 + (i % 4) * 0.2), 7), mat, Math.cos(a) * spread, y0, 0.85 + Math.sin(a) * spread * 0.8); f.userData.ph = i * 1.7; f.userData.h = h; flames.push(f); } };
+    mkF(red, 0.42, 2.4, 11, 0.32, 0.1); mkF(ember, 0.3, 1.9, 9, 0.22, 0.15); mkF(hot, 0.2, 1.3, 7, 0.12, 0.2);
+    const manes = []; for (const g of [c.neckA, c.neckB]) for (let i = 0; i < 5; i++) { const f = put(g, coneG(0.16, 0.7 + (i % 2) * 0.3, 6), i % 2 ? ember : red, 0, sp.bodyW * 0.3, (g === c.neckA ? 0.15 : 0.1) + i * (sp.neckL * 0.18), -0.5); f.userData.ph = i * 1.3; manes.push(f); }   // crina em chamas
+    for (const g of c.tails) { const f = put(g, coneG(0.2, 0.9, 6), red, 0, 0.1, -0.2, -Math.PI / 2); f.userData.ph = Math.random() * 6; manes.push(f); }   // cauda em chamas
+    const hooves = []; for (const l of c.legs) { bx(l.ankle, 0.5, 0.07, 0.56, 0, 0.05, 0.12, M('#ff7a2a', { emissive: '#ff5a10', emissiveIntensity: 2, metalness: 0.4, roughness: 0.4 })); const f = put(l.ankle, coneG(0.16, 0.5, 6), ember, 0, 0.3, 0.1); f.userData.ph = Math.random() * 6; hooves.push(f); }   // ferraduras em brasa e fogo nas patas
+    const glow = new THREE.PointLight(0xff6a1a, 4, 14); glow.position.set(0, 0.8, 1.0); c.head.add(glow);
+    const pool = put(c.root, new THREE.CylinderGeometry(2.8, 2.8, 0.03, 20), new THREE.MeshBasicMaterial({ color: 0xff5a10, transparent: true, opacity: 0.18, depthWrite: false }), 0, 0.03, 0);   // brilho no chão em volta
+    const sparks = []; for (let i = 0; i < 18; i++) { const s = put(c.head, boxG(0.07, 0.07, 0.07), hot, 0, 0, 0.8); s.userData.ph = i * 0.37; sparks.push(s); }
+    c.fx.push((t) => {
+      flames.forEach((f, i) => { const s = 0.75 + 0.45 * Math.sin(t * 12 + f.userData.ph) + 0.15 * Math.sin(t * 5 + i), w = 0.9 + 0.25 * Math.cos(t * 9 + f.userData.ph); f.scale.set(w, s, w); f.rotation.x = Math.sin(t * 6 + f.userData.ph) * 0.25; f.rotation.z = Math.cos(t * 5 + f.userData.ph) * 0.25; });
+      manes.forEach((f) => { const s = 0.7 + 0.5 * Math.abs(Math.sin(t * 10 + f.userData.ph)); f.scale.set(1, s, 1); });
+      hooves.forEach((f) => { const s = 0.5 + 0.9 * Math.abs(Math.sin(t * 14 + f.userData.ph)); f.scale.set(1, s, 1); });
+      sparks.forEach((s) => { const u = (t * 0.9 + s.userData.ph) % 1; s.position.set(Math.sin(s.userData.ph * 9 + t * 2) * (0.2 + u * 0.8), 0.4 + u * 3.2, 0.85 + Math.cos(s.userData.ph * 7 + t * 2) * (0.2 + u * 0.7)); s.scale.setScalar(1 - u * 0.8); });
+      glow.intensity = 3.6 + Math.sin(t * 13) * 1.1 + Math.sin(t * 31) * 0.5; pool.material.opacity = 0.14 + 0.08 * Math.sin(t * 9);
+    });
   },
   trex(c) {
     const m = c.mats, sp = c.sp, w = sp.w; for (let i = 0; i < 9; i++) cn(c.body, 0.07 + w * 0.04, 0.2 + w * 0.1, 0, sp.bodyH * 0.6, -sp.bodyL * 0.42 + i * (sp.bodyL * 0.84 / 8), m.ac, 0);

@@ -1,6 +1,7 @@
 // BESTIÁRIO: tela cheia, estilo "Pokédex" do LAST LINE (menu, fila e sala). 16 feras da Zona UMBRA em 3D, sem rolagem.
 import * as THREE from 'three';
 import { Creature } from '../creatures/creatureRig.js';
+import { SimpleZombie } from '../creatures/zombieSimple.js';
 import { FAUNA, DINOS, MAMMALS } from '../../../shared/fauna.js';
 import { BESTIARY, BESTIARY_INTRO, BESTIARY_HABITAT, INFECTADOS } from '../../../shared/bestiary.js';
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -16,14 +17,18 @@ const KIND = { dino: 'DINOSSAURO', mamifero: 'MAMÍFERO', monstro: 'MONSTRO DO F
 let kit = null;
 export async function loadZombieKit() { if (kit) return true; try { const [a, r] = await Promise.all([import('../player/avatar.js'), import('../player/remotePlayers.js')]); kit = { Avatar: a.Avatar, lookFor: r.lookFor }; return true; } catch { return false; } }
 class ZombieModel {
-  constructor(id) { const T = INFECTADOS[id]; this.id = id; this.sp = T; this.av = new kit.Avatar({ ...kit.lookFor({ username: 'bz' + id, zombie: true, id: 11 + Object.keys(INFECTADOS).indexOf(id) }, 0), noAura: true }); this.group = new THREE.Group(); this.group.add(this.av.group); this.group.scale.set(T.b, T.h, T.b); this.group.traverse((o) => { if (o.isMesh) o.castShadow = true; }); this.height = 1.8 * T.h; this.spd = 0; this.want = 0; }
+  constructor(id) { const T = INFECTADOS[id]; this.id = id; this.sp = T; this.av = new kit.Avatar({ ...kit.lookFor({ username: 'bz' + id, zombie: true, id: 11 + Object.keys(INFECTADOS).indexOf(id) }, 0), noAura: true }); this.group = new THREE.Group(); const pv = new THREE.Group(); pv.rotation.y = Math.PI; pv.add(this.av.group); this.group.add(pv);
+    /* o personagem olha para -Z e os bichos para +Z: gira meia-volta para todo mundo ficar virado para o mesmo lado */
+    this.av.group.traverse((o) => { o.visible = true; });
+    /* Bestiário: qualidade MÁXIMA (todos os detalhes, sem o LOD do jogo) */
+    this.group.scale.set(T.b, T.h, T.b); this.group.traverse((o) => { if (o.isMesh) o.castShadow = true; }); this.height = 1.8 * T.h; this.spd = 0; this.want = 0; }
   setMotion(s) { this.want = s; }
   update(dt) { this.spd += (this.want - this.spd) * Math.min(1, dt * 6); this.av.update(dt, { spd: this.spd, run: this.spd > 3.2 }); }
   attack() { try { this.av.melee('butt'); } catch { /* ok */ } }
   roar() { this.attack(); }
   dispose() {}
 }
-const mk = (id) => (INFECTADOS[id] ? (kit ? new ZombieModel(id) : null) : new Creature(id));
+const mk = (id) => (INFECTADOS[id] ? (kit ? new ZombieModel(id) : new SimpleZombie(id)) : new Creature(id));   // no jogo: o personagem zumbi completo; no site: o zumbi procedural
 const STILL = () => 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160"><rect width="220" height="160" fill="#0c141c"/><text x="110" y="108" font-size="84" text-anchor="middle">🧟</text></svg>');   // sem o kit do jogo (site): cartão com ícone
 // ---- miniaturas: cada fera é desenhada uma vez e guardada ----
 const THUMBS = {}, POSES = {};
@@ -32,6 +37,11 @@ function frame(cam, cr, ang, zoom = 1) { if (cr.sp.kind === 'infectado') zoom *=
 function thumbRig(w, h) {
   let r = null; try { r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); } catch { return null; }
   r.setSize(w, h, false); const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(36, w / h, 0.1, 100); lightRig(sc); return { r, sc, cam, free() { r.dispose(); r.forceContextLoss?.(); } };
+}
+export function thumbsFor(ids) {   // só as miniaturas pedidas (a escolha do dinossauro precisa de 8, não de todas)
+  const t = thumbRig(220, 160); if (!t) return THUMBS;
+  for (const id of ids) { if (THUMBS[id]) continue; const cr = mk(id); if (!cr) continue; t.sc.add(cr.group); cr.update(0.016); frame(t.cam, cr, 0.75); t.r.render(t.sc, t.cam); THUMBS[id] = t.r.domElement.toDataURL('image/png'); t.sc.remove(cr.group); cr.dispose?.(); }
+  t.free(); return THUMBS;
 }
 export function makeThumbs() {
   if (Object.keys(THUMBS).length === ALL.length) return;
