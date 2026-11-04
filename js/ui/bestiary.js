@@ -117,8 +117,8 @@ export function mountBestiary(box, first = 'trex') {
   };
   box.addEventListener('click', onClick);
   // arrastar para a direita gira a fera para a direita (a câmera anda no sentido contrário)
-  const down = (e) => { drag = { x: e.clientX, a: ang }; }, move = (e) => { if (drag) ang = drag.a - (e.clientX - drag.x) * 0.012; }, up = () => { drag = null; };
-  const wheel = (e) => { e.preventDefault(); zoom = Math.max(0.35, Math.min(2.5, zoom * (e.deltaY < 0 ? 0.9 : 1.1))); }; cv.addEventListener('wheel', wheel, { passive: false }); cv.addEventListener('pointerdown', down); addEventListener('pointermove', move); addEventListener('pointerup', up);
+  const down = (e) => { drag = { x: e.clientX, a: ang }; try { cv.setPointerCapture?.(e.pointerId); } catch { /* ok */ } }, move = (e) => { if (drag) ang = drag.a - (e.clientX - drag.x) * 0.012; }, up = () => { drag = null; };
+  const wheel = (e) => { e.preventDefault(); zoom = Math.max(0.35, Math.min(2.5, zoom * (e.deltaY < 0 ? 0.9 : 1.1))); }; cv.addEventListener('wheel', wheel, { passive: false }); cv.addEventListener('pointerdown', down); addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
   function loop(now) {
     // a tela pode abrir antes do layout fechar: o tamanho é conferido a cada quadro (primeira linha abaixo)
     if (!run) return; raf = requestAnimationFrame(loop); if (!cv.isConnected) return stop(); if (r && cv.clientWidth && Math.abs(cv.width / Math.min(1.5, devicePixelRatio || 1) - cv.clientWidth) > 6) size(); const dt = Math.min(0.05, (now - last) / 1000); last = now;

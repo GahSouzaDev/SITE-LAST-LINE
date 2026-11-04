@@ -165,7 +165,11 @@ const FEATURES = {
     for (let i = 0; i < 26; i++) { const a = i * 2.39, k = (i % 9) / 8; cn(c.body, 0.16, 0.7 + (i % 4) * 0.12, Math.sin(a) * sp.w * 0.52, sp.bodyH * 0.18 + Math.abs(Math.cos(a)) * sp.bodyH * 0.34, -sp.bodyL * 0.46 + k * sp.bodyL * 0.92, fur, Math.sin(a) * 0.7, 0, Math.cos(a) * 0.5); }   // pelo comprido e emaranhado
     for (const a of c.arms) for (let i = 0; i < 5; i++) cn(a.el, 0.12, 0.5, (i - 2) * 0.1, -sp.armL * 0.18, -0.1, fur, Math.PI, 0, 0);
     const big = put(c.head, new THREE.SphereGeometry(c.headW * 0.34, 8, 6), eye, 0, c.headW * 0.2, sp.headL * 0.5); big.scale.set(1, 1, 0.7);   // olho único na testa
-    const mouth = bx(c.body, sp.w * 0.7, 0.14, sp.bodyL * 0.34, 0, -sp.bodyH * 0.5 - 0.02, sp.bodyL * 0.14, m.dark); for (let i = 0; i < 6; i++) for (const sd of [-1, 1]) cn(c.body, 0.07, 0.3, sd * sp.w * 0.28, -sp.bodyH * 0.5 - 0.12, sp.bodyL * 0.02 + i * sp.bodyL * 0.055, m.tooth, Math.PI);   // boca na barriga
+    // BOCA NA BARRIGA: enorme, na frente do tronco (aparece de lado e de frente), com dentes em cima e embaixo e a língua vermelha; abre e fecha mastigando
+    const bz = sp.bodyL * 0.5 + 0.03, by = -sp.bodyH * 0.18, bw = sp.w * 0.82, bh = sp.bodyH * 0.46, gut = M('#2a0a0a'), tongue = M('#c8323c', { roughness: 0.6 });
+    bx(c.body, bw * 1.08, bh * 1.12, 0.12, 0, by, bz - 0.05, fur); bx(c.body, bw, bh, 0.1, 0, by, bz, gut); const tg = bx(c.body, bw * 0.5, 0.16, 0.5, 0, by - bh * 0.18, bz + 0.2, tongue);
+    const upper = [], lower = []; for (let i = 0; i < 9; i++) { const x = (i / 8 - 0.5) * bw * 0.9; upper.push(cn(c.body, 0.07, 0.34, x, by + bh * 0.44, bz + 0.12, m.tooth, Math.PI, 0, 0)); lower.push(cn(c.body, 0.07, 0.3, x, by - bh * 0.44, bz + 0.12, m.tooth, 0, 0, 0)); }
+    c.fx.push((t) => { const o = 0.5 + 0.5 * Math.sin(t * 2.4); tg.position.z = bz + 0.2 + o * 0.18; upper.forEach((q) => { q.position.y = by + bh * 0.44 - o * 0.05; }); lower.forEach((q) => { q.position.y = by - bh * 0.44 + o * 0.05; }); });
     const puffs = []; for (let i = 0; i < 4; i++) { const p = put(c.root, new THREE.SphereGeometry(0.5, 7, 5), M('#8fd35a', { transparent: true, opacity: 0.28, roughness: 1, depthWrite: false }), 0, 1, 0); puffs.push(p); }
     c.fx.push((t) => puffs.forEach((p, i) => { const a = t * 0.6 + i * 1.57; p.position.set(Math.cos(a) * 1.4, 0.8 + 0.5 * Math.sin(t * 1.3 + i), Math.sin(a) * 1.4); p.scale.setScalar(0.7 + 0.3 * Math.sin(t * 2 + i)); }));   // nuvem fedorenta em volta
   },
