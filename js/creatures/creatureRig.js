@@ -94,7 +94,7 @@ export class Creature {
 
   // ------------------------------------------------------------------ controle
   setMotion(speed, mood = 'calm') { this.want = Math.max(0, speed); this.mood = mood; }
-  attack(kind, big = false) { const k = kind || this.sp.atk[0]; if (!k || this.dead) return false; const dur = ({ bite: 0.9, claw: 1.0, headbutt: 1.0, gore: 1.2, pounce: 1.3, swat: 1.0 }[k] ?? 1) * (big === 'fast' ? 0.6 : big ? 1.0 : 0.6); this.atk = { k, t: 0, dur, big: !!big }; return true; }   // golpe RÁPIDO = curto e seco; golpe FORTE = o bicho recua a cabeça e ataca com o corpo todo
+  attack(kind, big = false) { const k = kind || this.sp.atk[0]; if (!k || this.dead) return false; const dur = ({ bite: 0.9, claw: 1.0, headbutt: 1.0, gore: 1.2, pounce: 1.3, swat: 1.0 }[k] ?? 1) * (big ? 1.25 : 1); this.atk = { k, t: 0, dur, big: !!big }; return true; }   // golpe RÁPIDO = curto e seco; golpe FORTE = o bicho recua a cabeça e ataca com o corpo todo
   hurt() { this.hurtT = 0; }
   roar() { if (!this.dead) this.roarT = 0; }
   die() { if (this.sp.kind !== 'mamifero' && !this.dead) { this.dead = true; this.dyingT = 0; this.atk = null; } }   // mamíferos não morrem
