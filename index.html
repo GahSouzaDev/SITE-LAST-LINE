@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LASTLINE — FPS multiplayer grátis no navegador</title>
-<meta name="description" content="LASTLINE (Last Line, LL): FPS multiplayer grátis direto no navegador. Battle Royale, Tático com Modo Bomba, Survival, campanha, mais de 100 armas, 21 mapas e ranqueado por temporadas.">
+<meta name="description" content="LASTLINE (Last Line, LL): FPS multiplayer grátis direto no navegador. Battle Royale, Tático com Modo Bomba, Survival, campanha, mais de 100 armas, 22 mapas e ranqueado por temporadas.">
 <link rel="canonical" href="https://lastline.gahsouza.com.br/">
 <meta property="og:url" content="https://lastline.gahsouza.com.br/"><meta property="og:type" content="website">
 <meta property="og:title" content="LASTLINE — jogue agora no navegador">
@@ -121,7 +121,7 @@
 <!-- ============ MAPAS ============ -->
 <section class="sec" id="mapas">
   <div class="wrap">
-    <header class="sh"><span class="tag">// 21 mapas</span><h2>Cada mapa, <em>outra guerra</em></h2><p>Do Corredor apertado à Ilha, à Serra Vermelha e à Zona Umbra, colossais, do Battle Royale.</p></header>
+    <header class="sh"><span class="tag">// 22 mapas</span><h2>Cada mapa, <em>outra guerra</em></h2><p>Do Corredor apertado à Ilha, à Serra Vermelha e à Zona Umbra, colossais, do Battle Royale.</p></header>
     <div class="mapview" id="mapview"></div>
     <div class="filters" id="map-filters"></div>
     <div class="thumbs" id="thumbs"></div>
@@ -167,13 +167,14 @@
 <!-- ============ HISTÓRIA ============ -->
 <section class="sec" id="historia">
   <div class="wrap">
-    <header class="sh"><span class="tag">// Modo história</span><h2>A campanha <em>da UMBRA</em></h2><p>Três campanhas solo e offline: nove capítulos do Brasil à Lua, cinco combates contra os Rubros e a reconstrução do mundo. Cada um tem mapa, kit, personagem e recompensa próprios.</p></header>
+    <header class="sh"><span class="tag">// Modo história</span><h2>A campanha <em>da UMBRA</em></h2><p>Quatro campanhas solo e offline: nove capítulos do Brasil à Lua, cinco combates contra os Rubros, a reconstrução do mundo e o prólogo na Zona Umbra. Clique em uma para ver a história, as etapas e a música.</p></header>
     <div class="camps" id="camps">
-      <a class="camp on" href="anexo7.html"><img src="img/story/anexo7.webp" alt="Anexo 7" loading="lazy"><div><small>Campanha 1 · jogável</small><h4>Anexo 7</h4><p>Oito operações e um final: a cura nas mãos da Unidade 7. <b>Ler a história →</b></p></div></a>
-      <a class="camp on" href="guerra-interestelar.html"><img src="img/story/interestelar.webp" alt="Guerra Interestelar" loading="lazy"><div><small>Campanha 2 · jogável</small><h4>Guerra Interestelar</h4><p>Cinco combates contra os Rubros, do corredor de simulação à pedreira. <b>Ler a história →</b></p></div></a>
-      <a class="camp on" href="reconstrucao.html"><img src="img/story/reconstrucao.webp" alt="A Reconstrução" loading="lazy"><div><small>Campanha 3 · jogável</small><h4>A Reconstrução</h4><p>Limpar a cidade e a fazenda, recolher os cristais caídos e caçar os últimos infectados. <b>Ler a história →</b></p></div></a>
+      <button type="button" class="camp on sel" data-camp="anexo7"><img src="img/story/anexo7.webp" alt="Anexo 7" loading="lazy"><div><small>Campanha 1 · jogável</small><h4>Anexo 7</h4><p>Nove operações: a cura nas mãos da Unidade 7. <b>Ver etapas e música →</b></p></div></button>
+      <button type="button" class="camp on" data-camp="interestelar"><img src="img/story/interestelar.webp" alt="Guerra Interestelar" loading="lazy"><div><small>Campanha 2 · jogável</small><h4>Guerra Interestelar</h4><p>Cinco combates contra os Rubros. <b>Ver etapas e música →</b></p></div></button>
+      <button type="button" class="camp on" data-camp="reconstrucao"><img src="img/story/reconstrucao.webp" alt="A Reconstrução" loading="lazy"><div><small>Campanha 3 · jogável</small><h4>A Reconstrução</h4><p>Limpar a cidade, a fazenda e a serra. <b>Ver etapas e música →</b></p></div></button>
+      <button type="button" class="camp on" data-camp="zonaumbra"><img src="img/story/zonaumbra.webp" alt="Zona Umbra" loading="lazy"><div><small>Campanha 4 · prólogo</small><h4>Zona Umbra</h4><p>O que aconteceu antes do Nexus 7. <b>Ver etapas →</b></p></div></button>
     </div>
-    <div class="story" id="story"></div>
+    <div id="camp-detail"></div>
   </div>
 </section>
 
@@ -198,7 +199,7 @@
       <p>É um projeto independente, criado e mantido por uma pessoa. Novidades chegam todo mês com os eventos e a cada 6 meses com uma nova temporada.</p>
       <div class="cta"><a class="btn play-link" href="#" target="_blank" rel="noopener">▶ Jogar agora</a><a class="btn btn-ghost" id="au-link" href="https://gahsouza.com.br" target="_blank" rel="noopener">gahsouza.com.br</a></div>
     </div>
-    <div class="ab-card panel"><img src="img/brand/icon-192.png" alt="" width="84" height="84"><b>LASTLINE</b><small>FPS multiplayer no navegador</small><ul><li>11 modos de jogo</li><li>21 mapas</li><li>Mais de 130 armas</li><li>Ranqueado por temporadas</li></ul></div>
+    <div class="ab-card panel"><img src="img/brand/icon-192.png" alt="" width="84" height="84"><b>LASTLINE</b><small>FPS multiplayer no navegador</small><ul><li>11 modos de jogo</li><li>22 mapas</li><li>Mais de 130 armas</li><li>Ranqueado por temporadas</li></ul></div>
   </div>
 </section>
 
