@@ -224,7 +224,8 @@ const FEATURES = {
     c.fx.push((t, s) => { shell.scale.y = sp.bodyH * 0.78 * (1 + Math.sin(t * 1.5) * 0.01); });
   },
   elasmo(c) {
-    const m = c.mats, sp = c.sp, hw = c.headW; cn(c.head, 0.2, 1.7, 0, hw * 0.55, sp.headL * 0.42, m.tooth, -1.05, 0, 0, 7);     // o chifre
+    const m = c.mats, sp = c.sp, hw = c.headW; // o chifre: um só, enorme, nascendo da TESTA (entre os olhos, em cima do crânio), base grossa e ponta para cima, inclinada um pouco para frente
+    bx(c.head, hw * 0.62, 0.3, sp.headL * 0.3, 0, hw * 0.5, sp.headL * 0.3, m.bl); cn(c.head, 0.3, 0.8, 0, hw * 0.56, sp.headL * 0.3, m.bl, 0.15, 0, 0, 8); cn(c.head, 0.2, 1.7, 0, hw * 0.56 + 0.5, sp.headL * 0.3 + 0.07, m.tooth, 0.22, 0, 0, 8);
     bx(c.body, sp.bodyW * 0.8, 0.8, sp.bodyL * 0.28, 0, sp.bodyH * 0.55, sp.bodyL * 0.26, m.sk);
     for (const sd of [-1, 1]) bx(c.head, 0.07, hw * 0.5, hw * 0.5, sd * hw * 0.5, hw * 0.55, -0.05, m.bl, 0, 0, sd * 0.3);
     for (let i = 0; i < 6; i++) bx(c.body, 0.35, 0.55, 0.45, ((i % 2) * 2 - 1) * sp.bodyW * 0.5, -sp.bodyH * 0.2, -sp.bodyL * 0.3 + Math.floor(i / 2) * 0.9, m.bl, 0, 0, ((i % 2) * 2 - 1) * 0.2);
