@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bestiário — As feras da Zona Umbra | LASTLINE</title>
+<meta name="description" content="Bestiário de LASTLINE: veja em 3D os 8 dinossauros e os 8 mamíferos pré-históricos da Zona Umbra, com o que eram, no que viraram, atributos e comportamento.">
+<link rel="canonical" href="https://lastline.gahsouza.com.br/bestiario.html"><link rel="icon" href="/img/brand/favicon.ico">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
+<style>
+:root{--gold:#f5b400}html,body{margin:0;height:100%;background:#06090d;color:#dfe8f2;font-family:'Segoe UI',Inter,Arial,sans-serif;overflow:hidden}.hidden{display:none!important}button{font-family:inherit}
+/* BESTIÁRIO: tela cheia estilo Pokédex, sem rolagem */
+.bsm{width:100%;height:100%;display:flex;flex-direction:column;background:#06090d;color:#dfe8f2;overflow:hidden}
+.bx{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%}
+.bx-top{display:flex;align-items:center;gap:18px;padding:8px 16px;background:linear-gradient(90deg,#000d,#0b1015cc);border-bottom:1px solid #2a3846}
+.bx-x{background:#2a0f12;color:#ff9a90;border:1px solid #c0392b;padding:12px 18px;font-weight:900;letter-spacing:2px;font-size:13px;cursor:pointer;clip-path:polygon(0 0,100% 0,92% 100%,0 100%)}.bx-x:hover{background:#b3261e;color:#fff}
+.bx-logo{display:flex;align-items:center;gap:12px}.bx-logo .bk{font-size:38px;filter:drop-shadow(0 0 8px #f5b40088)}.bx-logo b{display:block;font-size:30px;letter-spacing:8px;color:#fff;line-height:1}.bx-logo small{color:#aeb9c4;letter-spacing:2px;font-size:11px}.bx-logo em{font-style:normal;color:var(--gold)}
+.bx-filter{display:flex;gap:4px;margin-left:auto}.bx-filter button,.bx-tabs button{background:#0e1923cc;color:#aeb9c4;border:0;padding:12px 20px;font-weight:900;letter-spacing:2px;font-size:12px;cursor:pointer;clip-path:polygon(8% 0,100% 0,92% 100%,0 100%)}.bx-filter button.on,.bx-tabs button.on{background:var(--gold);color:#111}
+.bx-main{display:grid;grid-template-columns:minmax(230px,25%) minmax(0,1fr) minmax(330px,28%);min-height:0;background:#070b10}
+.bx-list{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(var(--rows,8),minmax(0,1fr));gap:6px;padding:8px;background:#05080c;min-height:0}
+.bx-c{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:0;padding:0;border:1px solid #243444;background:#0c141c;cursor:pointer;overflow:hidden;text-align:left;color:#dfe8f2}
+.bx-c img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .25s}.bx-c:hover img{transform:scale(1.08)}
+.bx-c::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#000d 0,#0000 55%)}.bx-c b,.bx-c i,.bx-c .n{position:relative;z-index:1}
+.bx-c .n{position:absolute;top:4px;left:6px;font-size:12px;font-weight:900;color:var(--gold);text-shadow:0 1px 3px #000}.bx-c b{padding:0 7px;font-size:13px}.bx-c i{padding:0 7px 5px;font-style:normal;color:var(--gold);font-size:10px;letter-spacing:1px}
+.bx-c.dino{border-bottom:3px solid #c0392b}.bx-c.mamifero{border-bottom:3px solid #2e86c1}.bx-c:hover{border-color:var(--gold)}.bx-c.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 18px #f5b40088;z-index:2}
+.bx-stage{position:relative;min-height:0;background:linear-gradient(#0006,#0009),url(img/bestiario-fundo.webp) center/cover;overflow:hidden}.bx-stage.nobg{background:radial-gradient(70% 60% at 50% 55%,#1c2f3a 0,#06090d 80%)}
+.bx-stage canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab}.bx-stage canvas:active{cursor:grabbing}
+.bx-name{position:absolute;top:14px;left:22px;pointer-events:none}.bx-no{font-size:24px;font-weight:900;color:#d9e1ea;letter-spacing:2px;text-shadow:0 2px 8px #000}.bx-name h2{margin:0;font-size:clamp(28px,3.6vw,52px);color:#fff;line-height:1.05;text-shadow:0 2px 12px #000}
+.bx-chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.ch{font-size:11px;font-weight:900;letter-spacing:2px;padding:5px 12px;border:1px solid #2a4258;background:#0b1015d9;color:#dfe8f2}.ch.rar{background:var(--gold);color:#111;border-color:var(--gold)}.ch.r5{background:#f5b400}.ch.r4{background:#b46bff;color:#fff;border-color:#b46bff}.ch.r3{background:#3b9cff;color:#fff;border-color:#3b9cff}.ch.r2{background:#3fb36b;color:#fff;border-color:#3fb36b}.ch.r1{background:#8794a1;color:#fff;border-color:#8794a1}
+.ch.dino{border-color:#c0392b;color:#ff9a90}.ch.mamifero{border-color:#2e86c1;color:#8cc8ff}.ch.ag{border-color:#e67e22;color:#ffb066}.ch.ar{border-color:#8e6fd8;color:#c3adff}.ch.ma{border-color:#3fb36b;color:#8ee5ae}.ch.st{background:none;border:0;color:var(--gold);padding:5px 2px;font-size:14px}
+.bx-tools{position:absolute;top:16px;right:16px;display:flex;gap:8px}.bx-tools button{width:46px;height:46px;background:#0b1015cc;border:1px solid #2a4258;color:#dfe8f2;font-size:22px;cursor:pointer}.bx-tools button.on{border-color:var(--gold);color:var(--gold);box-shadow:0 0 10px #f5b40055}.bx-tools button:hover{background:var(--gold);color:#111}
+.bx-nav{position:absolute;top:46%;transform:translateY(-50%);width:44px;height:84px;background:#0b1015aa;border:1px solid #2a4258;color:var(--gold);font-size:38px;cursor:pointer}.bx-nav:hover{background:var(--gold);color:#111}.bx-nav.prev{left:10px}.bx-nav.next{right:10px}
+.bx-anim{position:absolute;left:14px;right:14px;bottom:10px;background:#05080ccc;border:1px solid #243444;padding:6px 10px}.bx-anim>b{display:block;font-size:12px;letter-spacing:2px;color:#fff;margin-bottom:4px}.bx-poses{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.bx-poses button{background:#0e1923;border:1px solid #243444;color:#dfe8f2;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-width:0}.bx-poses img{width:100%;height:clamp(40px,9vh,96px);object-fit:cover}.bx-poses span{font-size:clamp(8px,.8vw,11px);font-weight:800;padding:3px 0;max-width:100%;overflow:hidden}.bx-poses button.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}.bx-poses button:hover{border-color:var(--gold)}
+.bx-mapbtn{position:absolute;right:14px;bottom:10px;background:#05080ccc;border:1px solid var(--gold);color:var(--gold);padding:14px 10px;font-weight:900;letter-spacing:1px;font-size:clamp(9px,.85vw,12px);cursor:pointer}.bx-mapbtn:hover{background:var(--gold);color:#111}
+.bx-mapbox{position:absolute;right:14px;bottom:62px;width:min(420px,46%);background:#05080cf0;border:1px solid var(--gold);padding:10px;z-index:5}.bx-map .mh{display:flex;align-items:center;gap:10px}.bx-map .mh b{letter-spacing:2px;font-size:13px;color:var(--gold)}.bx-map .mh small{color:#aeb9c4}.bx-map .mh button{margin-left:auto;background:none;border:1px solid #2a4258;color:#fff;cursor:pointer;padding:2px 8px}
+.bx-map svg{width:100%;height:auto;max-height:46vh;display:block;margin:8px 0;background:#04070a}.bx-map .z{fill:#12201a;stroke:#2a4258;stroke-width:4}.bx-map .z.on{fill:#f5b40066;stroke:#f5b400;stroke-width:6}.bx-map .z.cid{fill:#1b222b}.bx-map .z.cid.on{fill:#f5b40066}.bx-map .t{fill:#dfe8f2;font-size:46px;font-weight:800;text-anchor:middle;pointer-events:none;letter-spacing:4px}.bx-map p{margin:0;font-size:12px;color:#7e8d9b}
+.bx-info{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;background:#070b10;border-left:1px solid #1d2a36}.bx-sec{padding:10px 16px 4px;min-height:0}.bx-sec h3{margin:0 0 4px;font-size:14px;letter-spacing:3px;color:var(--gold);border-left:4px solid var(--gold);padding-left:10px}
+.bx-radar{width:100%;height:clamp(110px,22vh,230px)}.bx-radar .g{fill:none;stroke:#2a4258;stroke-width:.8}.bx-radar .p{fill:#f5b40044;stroke:var(--gold);stroke-width:2}.bx-radar .d{fill:#ffd24a}.bx-radar text{fill:#aeb9c4;font-size:9px;font-weight:800;letter-spacing:1px}
+.bx-rows{display:grid;gap:3px}.bx-rows .r{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;background:#0e1923;padding:4px 10px;font-size:13px}.bx-rows .r i{font-style:normal;text-align:center}.bx-rows .r span{color:#9fb0c2;letter-spacing:2px;font-size:11px;font-weight:800}.bx-rows .r b{color:#fff;text-align:right}
+.bx-sec2{border-top:1px solid #1d2a36;display:flex;flex-direction:column;padding:0}.bx-tabs{display:flex}.bx-tabs button{flex:1;background:#0b1015;clip-path:none;padding:10px 4px;font-size:11px}.bx-tab{flex:1;min-height:0;overflow:hidden;padding:8px 16px;font-size:clamp(12px,1.05vw,14px);line-height:1.45;color:#c9d3e2;display:flex;flex-direction:column;gap:6px}.bx-tab p{margin:0}.bx-tab h4{margin:6px 0 0;color:var(--gold);letter-spacing:3px;font-size:11px}
+.bx-kv{display:grid;gap:5px}.bx-kv div,.bx-thr{display:grid;grid-template-columns:24px 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center}.bx-kv i,.bx-thr i{grid-row:1/3;font-style:normal;color:var(--gold);text-align:center;font-size:18px}.bx-kv small,.bx-thr small{color:var(--gold);font-weight:800;letter-spacing:2px;font-size:10px}.bx-kv b{color:#fff;font-weight:600}
+.bx-thr{grid-template-columns:24px auto 1fr auto;grid-template-rows:auto}.bx-thr i{grid-row:1}.bx-thr u{height:8px;background:#1a2530;display:block;margin:0 10px}.bx-thr s{display:block;height:100%;background:linear-gradient(90deg,#f5b400,#e74c3c)}.bx-thr b{color:#ff8f86;font-size:12px;letter-spacing:1px}
+@media(max-width:900px){.bx-main{grid-template-columns:1fr;grid-template-rows:55vh auto auto;overflow:auto}.bx-list{display:none}.bx-anim{right:14px;bottom:56px}.bx-mapbtn{bottom:10px}}
+</style></head><body>
+<div class="bsm" id="app"></div>
+<noscript><p style="padding:30px">O Bestiário precisa de JavaScript para mostrar os animais em 3D. Volte ao <a href="index.html">site</a>.</p></noscript>
+<script type="module">
+import { bestiaryHtml, mountBestiary, makeThumbs } from './js/ui/bestiary.js';
+const app = document.getElementById('app');
+try { makeThumbs(); } catch (e) { console.warn(e); }
+app.innerHTML = bestiaryHtml();
+const back = app.querySelector('[data-x]'); if (back) { back.textContent = '← VOLTAR AO SITE'; back.addEventListener('click', () => { location.href = 'index.html#historia'; }); }
+mountBestiary(app, new URLSearchParams(location.search).get('f') || 'trex');
+</script></body></html>
