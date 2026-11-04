@@ -18,15 +18,14 @@ const SOON = [];   // os 12 eventos se repetem todo ano (o ciclo base é out/202
 const ymLabel = (ym) => { const [y, m] = ym.split('-'); return `${MS[m - 1]}/${y.slice(2)}`; };
 const MODES = [
   ['royale', 'Battle Royale', 'ATÉ 16 JOGADORES', 'Salte do avião, escolha onde pousar, saqueie, dirija carros e fique dentro da zona. Só um sobrevive.', 1],
-  ['tatico', 'Tático', 'ECONOMIA · 1 A 5 POR TIME', 'Rodadas com economia: ganhe créditos, compre armas e equipamentos a cada rodada. Cada vida conta.', 0],
-  ['bomba', 'Modo Bomba', 'ATACA × DEFENDE', 'Plante a bomba no ponto A ou B, ou impeça. Disponível nos mapas táticos.', 1],
-  ['x1', 'X1', 'DUELO 1 CONTRA 1', 'Você contra um adversário. Mira, reflexo e mais nada.', 0],
-  ['team', 'PvP em times', '1 A 5 POR TIME', 'Times A e B disputando o placar. Combine com os amigos e domine o mapa.', 0],
+  ['tatico', 'Tático', 'ECONOMIA · MATA-MATA OU BOMBA', 'Rodadas com economia: ganhe créditos, compre armas e equipamentos a cada rodada. Cada vida conta. Toque para ver os dois tipos.', 0, [['bomba', 'Modo Bomba', 'ATACA × DEFENDE', 'Plante a bomba no ponto A ou B, ou impeça. Disponível nos mapas táticos.'], ['tatico', 'Mata-mata', 'ELIMINE O TIME INIMIGO', 'Elimine o time inimigo em cada round, com economia e loja.']]],
+  ['team', 'PVP', 'PVP EM TIMES OU X1', 'Time contra time ou duelo 1 contra 1. Toque para ver os dois.', 0, [['team', 'PVP', '1 A 5 POR TIME', 'Times A e B disputando o placar. Combine com os amigos e domine o mapa.'], ['x1', 'X1', 'DUELO 1 CONTRA 1', 'Você contra um adversário. Mira, reflexo e mais nada.']]],
   ['ffa', 'Todos contra todos', '2 A 10 JOGADORES', 'Cada um por si. Quem tiver mais abates ao fim do tempo vence.', 0],
   ['arms', 'Corrida Armamentista', 'ESCADA DE ARMAS', 'Cada abate troca sua arma pela próxima da escada. Quem matar com a faca vence.', 0],
-  ['apoc', 'Dinossauro × Dinossauro', 'PVP DE DINOSSAUROS', 'Você é um dinossauro: botão esquerdo morde rápido, direito morde forte. O dano só vale quando a boca encosta. Todos contra todos ou em times.', 0],
+  ['dino', 'Dinossauro × Dinossauro', 'PVP DE DINOSSAUROS', 'Você é um dinossauro: botão esquerdo morde rápido, direito morde forte. O dano só vale quando a boca encosta. Todos contra todos ou em times.', 0],
   ['surv', 'Survival', 'CO-OP · ATÉ 10', 'Cooperem contra ondas cada vez maiores de infectados. Quanto tempo vocês aguentam?', 0],
-  ['monstro', 'Monstro', 'HUMANOS × SUPER ZUMBIS', 'O zumbi pula mais alto, corre mais e dá o dobro de dano. Morreu para ele? Você vira zumbi.', 0],
+  ['survival_dino', 'Survival com dinossauro', 'SOLO · DUPLA · QUARTETO', 'O Survival com dinossauros no lugar dos zumbis. Quem morre assume um bicho vivo e caça os outros. Nos mapas da Zona Umbra.', 0],
+  ['hunt', 'Caçada', '1 CAÇADOR × PRESAS', 'Um caçador, presas disfarçadas de bicho e dezenas de bichos iguais. Quando a sanidade do caçador acaba, as presas viram o Mapinguari ou a Mula sem Cabeça.', 1],
   ['off', 'Campanha solo', 'OFFLINE · 8 CAPÍTULOS', 'A história da UMBRA, do Brasil à Lua. Sem internet e sem pressa.', 0]
 ];
 const SH = [['torneios', 'Torneios: contagem regressiva, prêmios e classificação'], ['chave', 'Chave do torneio com janelas de horário'], ['campanha', 'Modo História: escolha a campanha'], ['arsenal', 'Arsenal: kits, acessórios e skins'], ['aviao', 'Battle Royale: o novo avião de salto'], ['modo-bomba', 'Modo Bomba'], ['tatico', 'Tático: loja da rodada'], ['elo', 'Elos e temporada'], ['menu', 'Menu principal']];

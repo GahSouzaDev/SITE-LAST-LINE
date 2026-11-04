@@ -101,7 +101,8 @@ function renderSeason() {
 renderSeason();
 
 /* ============ MODOS / GALERIA ============ */
-$('#modes').innerHTML = MODES.map(([id, n, s, d, hot]) => `<article class="mode ${hot ? 'hot' : ''}"><div class="im">${img('img/modes/' + id + '.jpg', n, 'loading="lazy"')}</div><div class="mi"><small>${s}</small><h4>${n}</h4><p>${d}</p></div></article>`).join('');
+$('#modes').innerHTML = MODES.map(([id, n, s, d, hot, subs]) => `<article class="mode ${hot ? 'hot' : ''} ${subs ? 'has-sub' : ''}"${subs ? ' tabindex="0" role="button"' : ''}><div class="im">${img('img/modes/' + id + '.jpg', n, 'loading="lazy"')}</div><div class="mi"><small>${s}</small><h4>${n}</h4><p>${d}</p>${subs ? `<div class="msub">${subs.map(([sid, sn, ss, sd]) => `<div class="ms">${img('img/modes/' + sid + '.jpg', sn, 'loading="lazy"')}<div><small>${ss}</small><b>${sn}</b><p>${sd}</p></div></div>`).join('')}</div>` : ''}</div></article>`).join('');
+$('#modes').addEventListener('click', (e) => { const a = e.target.closest('.mode.has-sub'); if (a) a.classList.toggle('open'); });
 $('#gallery').innerHTML = SH.map(([f, t]) => `<figure class="shot" data-lb="img/shots/${f}.jpg">${img('img/shots/' + f + '.jpg', t, 'loading="lazy"')}<span>${t}</span></figure>`).join('');
 
 /* ============ MAPAS ============ */
