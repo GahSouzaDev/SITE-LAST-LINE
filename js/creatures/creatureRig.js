@@ -97,8 +97,9 @@ export class Creature {
   attack(kind) { const k = kind || this.sp.atk[0]; if (!k || this.dead) return false; const dur = { bite: 0.9, claw: 1.0, headbutt: 1.0, gore: 1.2, pounce: 1.3, swat: 1.0 }[k] ?? 1; this.atk = { k, t: 0, dur }; return true; }
   hurt() { this.hurtT = 0; }
   roar() { if (!this.dead) this.roarT = 0; }
-  die() { if (this.sp.kind === 'dino' && !this.dead) { this.dead = true; this.dyingT = 0; this.atk = null; } }   // mamíferos não morrem
+  die() { if (this.sp.kind !== 'mamifero' && !this.dead) { this.dead = true; this.dyingT = 0; this.atk = null; } }   // mamíferos não morrem
   revive() { this.dead = false; this.dyingT = -1; }
+  graze(sec) { this.grazeLeft = sec; }   // PASTAR: baixa a cabeça e mastiga (herbívoros tranquilos)
 
   update(dt) {
     const sp = this.sp, legL = sp.legL; dt = Math.min(0.1, Math.max(0, dt)); this.t += dt;
@@ -120,6 +121,7 @@ export class Creature {
     else if (A === 'gore') { const dn = env(atkP, 0, 0.3, 0.38, 0.45), tossE = env(atkP, 0.4, 0.5, 0.56, 0.9); neckAdd = 0.75 * dn - 1.0 * tossE; lunge = (dn * 0.5 + tossE) * sp.legL * 0.22; bodyPitch = dn * 0.08 - tossE * 0.1; }
     else if (A === 'pounce') { const cr = env(atkP, 0, 0.25, 0.32, 0.4), lp = env(atkP, 0.32, 0.5, 0.62, 0.92); crouch = cr * 0.35; lunge = lp * sp.legL * 2.2; hop = Math.sin(clamp((atkP - 0.32) / 0.45) * Math.PI) * sp.legL * 0.7; jawOpen = env(atkP, 0.4, 0.55, 0.68, 0.8); bodyPitch = -lp * 0.12; frontSwat = -1.2 * env(atkP, 0.4, 0.55, 0.65, 0.85); }
     else if (A === 'swat') { const up = env(atkP, 0, 0.3, 0.34, 0.46), dn = env(atkP, 0.34, 0.46, 0.54, 0.9); frontSwat = -1.7 * up + 1.9 * dn; neckAdd = -0.2 * up + 0.2 * dn; lunge = dn * sp.legL * 0.12; }
+    this.grazeLeft = (this.grazeLeft || 0) - dt; this.grazeK = (this.grazeK || 0) + (((this.grazeLeft > 0 && this.spd < 0.3 && !A ? 1 : 0)) - (this.grazeK || 0)) * Math.min(1, dt * 2.5); if (this.grazeK > 0.01) { neckAdd += this.grazeK * (0.95 + Math.sin(t * 5) * 0.07); jawOpen = Math.max(jawOpen, this.grazeK * (0.12 + 0.1 * Math.max(0, Math.sin(t * 5)))); }
     jawOpen = Math.max(jawOpen, roarE * 0.9, dieE * 0.5);
     const alertUp = this.alertK * 0.22 + roarE * 0.5 + this.fleeK * 0.2;
     // ---- corpo ----
@@ -157,6 +159,25 @@ export class Creature {
 
 // ======================================================================== detalhes de cada espécie
 const FEATURES = {
+  // MAPINGUARI: gigante peludo de um olho só e uma boca enorme na barriga (a lenda amazônica); solta um fedor verde
+  mapinguari(c) {
+    const m = c.mats, sp = c.sp, fur = M(sp.colors.ac), eye = M('#ff3b1a', { emissive: '#ff2200', emissiveIntensity: 1.3 });
+    for (let i = 0; i < 26; i++) { const a = i * 2.39, k = (i % 9) / 8; cn(c.body, 0.16, 0.7 + (i % 4) * 0.12, Math.sin(a) * sp.w * 0.52, sp.bodyH * 0.18 + Math.abs(Math.cos(a)) * sp.bodyH * 0.34, -sp.bodyL * 0.46 + k * sp.bodyL * 0.92, fur, Math.sin(a) * 0.7, 0, Math.cos(a) * 0.5); }   // pelo comprido e emaranhado
+    for (const a of c.arms) for (let i = 0; i < 5; i++) cn(a.el, 0.12, 0.5, (i - 2) * 0.1, -sp.armL * 0.18, -0.1, fur, Math.PI, 0, 0);
+    const big = put(c.head, new THREE.SphereGeometry(c.headW * 0.34, 8, 6), eye, 0, c.headW * 0.2, sp.headL * 0.5); big.scale.set(1, 1, 0.7);   // olho único na testa
+    const mouth = bx(c.body, sp.w * 0.7, 0.14, sp.bodyL * 0.34, 0, -sp.bodyH * 0.5 - 0.02, sp.bodyL * 0.14, m.dark); for (let i = 0; i < 6; i++) for (const sd of [-1, 1]) cn(c.body, 0.07, 0.3, sd * sp.w * 0.28, -sp.bodyH * 0.5 - 0.12, sp.bodyL * 0.02 + i * sp.bodyL * 0.055, m.tooth, Math.PI);   // boca na barriga
+    const puffs = []; for (let i = 0; i < 4; i++) { const p = put(c.root, new THREE.SphereGeometry(0.5, 7, 5), M('#8fd35a', { transparent: true, opacity: 0.28, roughness: 1, depthWrite: false }), 0, 1, 0); puffs.push(p); }
+    c.fx.push((t) => puffs.forEach((p, i) => { const a = t * 0.6 + i * 1.57; p.position.set(Math.cos(a) * 1.4, 0.8 + 0.5 * Math.sin(t * 1.3 + i), Math.sin(a) * 1.4); p.scale.setScalar(0.7 + 0.3 * Math.sin(t * 2 + i)); }));   // nuvem fedorenta em volta
+  },
+  // MULA SEM CABEÇA: égua negra sem cabeça, com chamas saindo do pescoço e ferraduras de metal
+  mula(c) {
+    const m = c.mats, sp = c.sp; for (const o of [...c.head.children]) o.visible = false;   // sem cabeça
+    const stump = bx(c.head, sp.bodyW * 0.5, sp.bodyW * 0.5, 0.3, 0, 0, 0.1, m.dark), flames = [];
+    for (let i = 0; i < 9; i++) { const hot = i % 3 === 0, f = put(c.head, coneG(0.2 + (i % 3) * 0.06, 0.9 + (i % 4) * 0.25, 6), M(hot ? '#ffe26a' : i % 2 ? '#ff7a1a' : '#e0360a', { emissive: hot ? '#ffcc33' : '#ff5a10', emissiveIntensity: 1.6, transparent: true, opacity: 0.92, roughness: 0.4 }), Math.cos(i * 1.9) * 0.2, 0.25, 0.1 + Math.sin(i * 1.9) * 0.15); flames.push(f); }
+    for (const l of c.legs) bx(l.ankle, 0.46, 0.06, 0.5, 0, 0.04, 0.12, M('#9aa3ad', { metalness: 0.7, roughness: 0.35 }));   // ferraduras
+    const glow = new THREE.PointLight(0xff7a1a, 2.2, 7); c.head.add(glow);
+    c.fx.push((t) => flames.forEach((f, i) => { const s = 0.8 + 0.35 * Math.sin(t * 11 + i * 1.7); f.scale.set(0.9 + 0.2 * Math.sin(t * 9 + i), s, 0.9 + 0.2 * Math.cos(t * 8 + i)); f.rotation.x = Math.sin(t * 7 + i) * 0.25; glow.intensity = 2 + Math.sin(t * 13) * 0.6; }));
+  },
   trex(c) {
     const m = c.mats, sp = c.sp, w = sp.w; for (let i = 0; i < 9; i++) cn(c.body, 0.07 + w * 0.04, 0.2 + w * 0.1, 0, sp.bodyH * 0.6, -sp.bodyL * 0.42 + i * (sp.bodyL * 0.84 / 8), m.ac, 0);
     bx(c.head, c.headW * 1.04, c.headW * 0.3, c.sp.headL * 0.5, 0, c.headW * 0.5, c.sp.headL * 0.4, m.ac);

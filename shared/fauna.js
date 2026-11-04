@@ -2,7 +2,7 @@
 // Medidas em metros (o jogador tem 1,8 m). Z+ = frente do animal. Os números de jogo (vida, dano, audição, visão) já seguem as regras combinadas:
 //  · DINOSSAUROS: vida mínima 2× a do jogador (100), dano baixo (a partir de ~um soco) para dar chance de correr e atirar, OUVEM tiros como os zumbis e enxergam mais longe.
 //  · MAMÍFEROS: NÃO MORREM; têm mais medo de você do que você deles. "agressivo" ataca quem chega perto, mas foge quando levam tiro; "arisco" ouve tiros e foge para o lado OPOSTO; "manso" só se afasta.
-export const FAUNA_KINDS = { dino: 'Dinossauro', mamifero: 'Mamífero pré-histórico' };
+export const FAUNA_KINDS = { dino: 'Dinossauro', mamifero: 'Mamífero pré-histórico', monstro: 'Monstro do folclore' };
 // rig 'biped' = duas pernas, cauda de equilíbrio e braços; rig 'quad' = quatro patas.
 // biped: legL = altura do quadril, bodyL/bodyH = tronco, neckL/headL, tailL, armL (braço), w = largura do corpo
 // quad:  legL = comprimento da pata, bodyL/bodyH/bodyW = tronco, neckL/headL, tailL
@@ -42,7 +42,15 @@ export const MAMMALS = {
   macro:  { id: 'macro',  name: 'Macrauquênia', kind: 'mamifero', rig: 'quad', temper: 'arisco', colors: { sk: '#b08a5a', bl: '#e8d8b0', ac: '#5a4028' }, legL: 1.3, bodyL: 2.0, bodyH: 0.9, bodyW: 0.75, neckL: 1.3, headL: 0.6, tailL: 0.5,
     walk: 2.8, run: 10.5, dmg: 0, reach: 0, cd: 3, hear: 85, sight: 90, flee: 48, atk: [], hit: { r: 0.7, h: 2.8 } }
 };
-export const FAUNA = { ...DINOS, ...MAMMALS };
+// MONSTROS DO FOLCLORE (terror): lendas brasileiras que a floresta da Zona UMBRA despertou. Morrem como os dinossauros e cada um tem um PODER (server/rooms/fauna.js › poderes).
+export const MONSTROS = {
+  mapinguari: { id: 'mapinguari', name: 'Mapinguari', kind: 'monstro', rig: 'biped', temper: 'agressivo', colors: { sk: '#7b3a24', bl: '#b9805a', ac: '#2e140c' }, legL: 1.7, bodyL: 2.4, bodyH: 2.4, w: 1.7, neckL: 0.5, headL: 0.8, tailL: 0.5, armL: 2.3, armK: 1.2,
+    hp: 900, walk: 2.4, run: 6.6, dmg: 22, reach: 3.6, cd: 2.3, hear: 100, sight: 95, atk: ['claw', 'bite'], hit: { r: 1.5, h: 3.6 }, power: 'fedor' },
+  mula: { id: 'mula', name: 'Mula sem Cabeça', kind: 'monstro', rig: 'quad', temper: 'agressivo', colors: { sk: '#2e2420', bl: '#5a4639', ac: '#ff7a1a' }, legL: 1.55, bodyL: 2.4, bodyH: 1.05, bodyW: 0.9, neckL: 1.0, headL: 0.2, tailL: 1.7,
+    hp: 620, walk: 3.4, run: 12.5, dmg: 19, reach: 2.6, cd: 1.7, hear: 90, sight: 85, atk: ['pounce', 'swat'], hit: { r: 0.9, h: 2.7 }, power: 'fogo' }
+};
+export const FAUNA = { ...DINOS, ...MAMMALS, ...MONSTROS };
+export const hunts = (sp) => sp?.kind === 'dino' || sp?.kind === 'monstro';   // quem caça (dinossauros e monstros) × quem foge (mamíferos)
 export const FAUNA_IDS = Object.keys(FAUNA);
 export const isDino = (id) => FAUNA[id]?.kind === 'dino';
 export const isMammal = (id) => FAUNA[id]?.kind === 'mamifero';
@@ -54,6 +62,7 @@ export const FAUNA_MOODS = ['calm', 'alert', 'flee'];
 // kind: 'mam' ou 'dino' · ids: espécies sorteadas · n: quantos · zone: onde (forest | pens | village | city | strip)
 import { WORLD, CITY, ZONES } from './zonaumbraData.js';
 export const FAUNA_ZONES = {
+  any: () => true,   // Survival com dinossauro em qualquer mapa: em todo lugar (longe de quem joga)
   forest: (x, z) => x > WORLD.x0 + 140 && x < WORLD.x1 - 140 && z > WORLD.z0 + 140 && z < WORLD.z1 - 140 && !(x > CITY.x0 - 30 && x < CITY.x1 + 30 && z > CITY.z0 - 30 && z < CITY.z1 + 30) && !(x > ZONES.pens.x0 - 20 && x < ZONES.pens.x1 + 20 && z > ZONES.pens.z0 - 20 && z < ZONES.pens.z1 + 20),
   pens: (x, z) => x > ZONES.pens.x0 + 10 && x < ZONES.pens.x1 - 10 && z > ZONES.pens.z0 + 10 && z < ZONES.pens.z1 - 10,
   village: (x, z) => Math.hypot(x - ZONES.village.cx, z - ZONES.village.cz) < ZONES.village.r + 110 && Math.hypot(x - ZONES.village.cx, z - ZONES.village.cz) > 22,
@@ -62,10 +71,11 @@ export const FAUNA_ZONES = {
 };
 const MAM_F = ['macro', 'mega', 'pregui', 'glipto'], MAM_R = ['mamute', 'pregui', 'glipto', 'elasmo', 'smilo', 'gigan'], DIN_S = ['raptor', 'dilo', 'ovi'], DIN_M = ['raptor', 'ovi', 'pachy', 'teri', 'dilo'], DIN_B = ['carno', 'spino', 'trex', 'raptor'];
 export const FAUNA_PLANS = {
-  default: [{ kind: 'mam', ids: [...MAM_F, 'mamute', 'gigan'], n: 8, zone: 'forest' }, { kind: 'dino', ids: DIN_M, n: 4, zone: 'forest' }],
-  z1: [{ kind: 'mam', ids: MAM_F, n: 7, zone: 'forest' }, { kind: 'dino', ids: DIN_S, n: 3, zone: 'forest' }],
-  z2: [{ kind: 'mam', ids: MAM_R, n: 9, zone: 'pens' }],
-  z3: [{ kind: 'mam', ids: ['mega', 'macro', 'gigan'], n: 4, zone: 'village' }, { kind: 'dino', ids: DIN_M, n: 5, zone: 'village' }],
-  z4: [{ kind: 'dino', ids: ['raptor', 'dilo', 'carno', 'teri'], n: 4, zone: 'city' }],
-  z5: [{ kind: 'mam', ids: [...MAM_F, 'mamute'], n: 8, zone: 'strip' }, { kind: 'dino', ids: DIN_B, n: 3, zone: 'strip' }]
+  // quantidades ~60% maiores que a primeira versão (o mapa parecia vazio); ainda ajustável no admin (Jogo › Fauna › quantidade)
+  default: [{ kind: 'mam', ids: [...MAM_F, 'mamute', 'gigan'], n: 14, zone: 'forest' }, { kind: 'dino', ids: DIN_M, n: 8, zone: 'forest' }],
+  z1: [{ kind: 'mam', ids: MAM_F, n: 12, zone: 'forest' }, { kind: 'dino', ids: DIN_S, n: 6, zone: 'forest' }],
+  z2: [{ kind: 'mam', ids: MAM_R, n: 14, zone: 'pens' }],
+  z3: [{ kind: 'mam', ids: ['mega', 'macro', 'gigan'], n: 7, zone: 'village' }, { kind: 'dino', ids: DIN_M, n: 9, zone: 'village' }],
+  z4: [{ kind: 'dino', ids: ['raptor', 'dilo', 'carno', 'teri'], n: 8, zone: 'city' }],
+  z5: [{ kind: 'mam', ids: [...MAM_F, 'mamute'], n: 13, zone: 'strip' }, { kind: 'dino', ids: DIN_B, n: 6, zone: 'strip' }]
 };

@@ -2,19 +2,33 @@
 import * as THREE from 'three';
 import { Creature } from '../creatures/creatureRig.js';
 import { FAUNA, DINOS, MAMMALS } from '../../../shared/fauna.js';
-import { BESTIARY, BESTIARY_INTRO, BESTIARY_HABITAT } from '../../../shared/bestiary.js';
+import { BESTIARY, BESTIARY_INTRO, BESTIARY_HABITAT, INFECTADOS } from '../../../shared/bestiary.js';
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
-const ALL = Object.values(FAUNA), NUM = Object.fromEntries(ALL.map((s, i) => [s.id, String(i + 1).padStart(2, '0')]));
+const ALL = [...Object.values(FAUNA), ...Object.values(INFECTADOS)], SP = { ...FAUNA, ...INFECTADOS }, NUM = Object.fromEntries(ALL.map((s, i) => [s.id, String(i + 1).padStart(2, '0')]));
 const MX = (k) => Math.max(...ALL.map((s) => s[k] || 0));
 const MAX = { hp: MX('hp'), run: MX('run'), hear: MX('hear'), sight: MX('sight'), dmg: MX('dmg') };
 const TEMPER = { agressivo: ['AGRESSIVO', 'ag'], arisco: ['ARISCO', 'ar'], manso: ['MANSO', 'ma'] };
 const RARITY = ['', 'COMUM', 'INCOMUM', 'RARA', 'ÉPICA', 'LENDÁRIA'], THREAT = ['', 'BAIXA', 'MODERADA', 'ALTA', 'MUITO ALTA', 'EXTREMA'];
 const ATK = { bite: 'mordida', claw: 'garra', headbutt: 'cabeçada', gore: 'chifrada', pounce: 'bote', swat: 'tapa' };
+const KIND = { dino: 'DINOSSAURO', mamifero: 'MAMÍFERO', monstro: 'MONSTRO DO FOLCLORE', infectado: 'INFECTADO' }, FILT = { all: null, dino: 'dino', mam: 'mamifero', mon: 'monstro', inf: 'infectado' };
+// INFECTADOS usam o personagem zumbi do jogo (só existe no jogo; no site o Bestiário mostra uma imagem). O kit é carregado sob demanda.
+let kit = null;
+export async function loadZombieKit() { if (kit) return true; try { const [a, r] = await Promise.all([import('../player/avatar.js'), import('../player/remotePlayers.js')]); kit = { Avatar: a.Avatar, lookFor: r.lookFor }; return true; } catch { return false; } }
+class ZombieModel {
+  constructor(id) { const T = INFECTADOS[id]; this.id = id; this.sp = T; this.av = new kit.Avatar({ ...kit.lookFor({ username: 'bz' + id, zombie: true, id: 11 + Object.keys(INFECTADOS).indexOf(id) }, 0), noAura: true }); this.group = new THREE.Group(); this.group.add(this.av.group); this.group.scale.set(T.b, T.h, T.b); this.group.traverse((o) => { if (o.isMesh) o.castShadow = true; }); this.height = 1.8 * T.h; this.spd = 0; this.want = 0; }
+  setMotion(s) { this.want = s; }
+  update(dt) { this.spd += (this.want - this.spd) * Math.min(1, dt * 6); this.av.update(dt, { spd: this.spd, run: this.spd > 3.2 }); }
+  attack() { try { this.av.melee('butt'); } catch { /* ok */ } }
+  roar() { this.attack(); }
+  dispose() {}
+}
+const mk = (id) => (INFECTADOS[id] ? (kit ? new ZombieModel(id) : null) : new Creature(id));
+const STILL = () => 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160"><rect width="220" height="160" fill="#0c141c"/><text x="110" y="108" font-size="84" text-anchor="middle">🧟</text></svg>');   // sem o kit do jogo (site): cartão com ícone
 // ---- miniaturas: cada fera é desenhada uma vez e guardada ----
 const THUMBS = {}, POSES = {};
 function lightRig(sc) { sc.add(new THREE.HemisphereLight(0xdfe8ff, 0x445060, 1.7)); const sun = new THREE.DirectionalLight(0xfff0d8, 2.4); sun.position.set(6, 10, 7); sc.add(sun); }
-function frame(cam, cr, ang, zoom = 1) { const d = (Math.max(cr.height * 1.9, (cr.sp.bodyL + (cr.sp.tailL || 0) * 0.6) * 0.95) + cr.sp.legL * 0.5 + 3) * Math.max(1, 1.45 / (cam.aspect || 1.4)) * zoom; cam.position.set(Math.sin(ang) * d, cr.height * 0.55 + 1.2, Math.cos(ang) * d); cam.lookAt(0, cr.height * 0.45, 0); }
+function frame(cam, cr, ang, zoom = 1) { if (cr.sp.kind === 'infectado') zoom *= 0.6; const d = (Math.max(cr.height * 1.9, (cr.sp.bodyL + (cr.sp.tailL || 0) * 0.6) * 0.95) + cr.sp.legL * 0.5 + 3) * Math.max(1, 1.45 / (cam.aspect || 1.4)) * zoom; cam.position.set(Math.sin(ang) * d, cr.height * 0.55 + 1.2, Math.cos(ang) * d); cam.lookAt(0, cr.height * 0.45, 0); }
 function thumbRig(w, h) {
   let r = null; try { r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); } catch { return null; }
   r.setSize(w, h, false); const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(36, w / h, 0.1, 100); lightRig(sc); return { r, sc, cam, free() { r.dispose(); r.forceContextLoss?.(); } };
@@ -22,14 +36,14 @@ function thumbRig(w, h) {
 export function makeThumbs() {
   if (Object.keys(THUMBS).length === ALL.length) return;
   const t = thumbRig(220, 160); if (!t) return;
-  for (const s of ALL) { const cr = new Creature(s.id); t.sc.add(cr.group); cr.update(0.016); frame(t.cam, cr, 0.75); t.r.render(t.sc, t.cam); THUMBS[s.id] = t.r.domElement.toDataURL('image/png'); t.sc.remove(cr.group); cr.dispose?.(); }
+  for (const s of ALL) { const cr = mk(s.id); if (!cr) { THUMBS[s.id] = STILL(s.id); continue; } t.sc.add(cr.group); cr.update(0.016); frame(t.cam, cr, 0.75); t.r.render(t.sc, t.cam); THUMBS[s.id] = t.r.domElement.toDataURL('image/png'); t.sc.remove(cr.group); cr.dispose?.(); }
   t.free();
 }
 // as 5 poses da fileira ANIMAÇÕES (parado, andar, correr, atacar, rugir) desenhadas da própria fera
 function makePoses(id) {
-  if (POSES[id]) return POSES[id]; const t = thumbRig(180, 120); if (!t) return null; const sp = FAUNA[id], out = {};
+  if (POSES[id]) return POSES[id]; const t = thumbRig(180, 120); if (!t) return null; const sp = SP[id], out = {}; if (!mk(id)) { for (const k of ['idle', 'walk', 'run', 'attack', 'roar']) out[k] = STILL(id); t.free(); return (POSES[id] = out); }
   for (const k of ['idle', 'walk', 'run', 'attack', 'roar']) {
-    const cr = new Creature(id); t.sc.add(cr.group); cr.setMotion(k === 'walk' ? sp.walk : k === 'run' ? sp.run : 0, k === 'run' ? 'flee' : 'calm');
+    const cr = mk(id); t.sc.add(cr.group); cr.setMotion(k === 'walk' ? sp.walk : k === 'run' ? sp.run : 0, k === 'run' ? 'flee' : 'calm');
     if (k === 'attack') { if (sp.atk.length) cr.attack(sp.atk[0]); else cr.roar(); } else if (k === 'roar') cr.roar();
     const steps = k === 'attack' ? 22 : k === 'roar' ? 28 : 90; for (let i = 0; i < steps; i++) cr.update(0.016);
     frame(t.cam, cr, 0.75); t.r.render(t.sc, t.cam); out[k] = t.r.domElement.toDataURL('image/png'); t.sc.remove(cr.group); cr.dispose?.();
@@ -45,18 +59,18 @@ function radar(sp) {
 }
 const row = (ic, l, v) => `<div class="r"><i>${ic}</i><span>${l}</span><b>${v}</b></div>`;
 function attrHtml(sp) {
-  return `${radar(sp)}<div class="bx-rows">${row('❤', 'VIDA', sp.hp || '∞ não morre')}${row('⚡', 'CORRE', sp.run + ' m/s')}${row('💥', 'DANO', sp.dmg ? sp.dmg + ' por golpe' : '—')}${row('👂', 'OUVE A', sp.hear + ' m')}${row('👁', 'ENXERGA A', (sp.sight || 0) + ' m')}${row('🦶', 'POSTURA', sp.rig === 'biped' ? 'Bípede' : 'Quadrúpede')}${row('⚔', 'ATAQUES', sp.atk.length ? sp.atk.map((a) => ATK[a] || a).join(' · ') : 'nenhum')}</div>`;
+  return `${radar(sp)}<div class="bx-rows">${row('❤', 'VIDA', sp.hp || '∞ não morre')}${row('⚡', 'CORRE', sp.run + ' m/s')}${row('💥', 'DANO', sp.dmg ? sp.dmg + ' por golpe' : '—')}${row('👂', 'OUVE A', sp.hear + ' m')}${row('👁', 'ENXERGA A', (sp.sight || 0) + ' m')}${row('🦶', 'POSTURA', sp.rig === 'biped' ? 'Bípede' : sp.rig === 'quad' ? 'Quadrúpede' : 'Humanoide')}${row('⚔', 'ATAQUES', sp.atk.length ? sp.atk.map((a) => ATK[a] || a).join(' · ') : 'nenhum')}</div>`;
 }
 function infoHtml(id, tab) {
-  const sp = FAUNA[id], b = BESTIARY[id] || {}, h = BESTIARY_HABITAT[id] || {};
+  const sp = SP[id], b = BESTIARY[id] || {}, h = BESTIARY_HABITAT[id] || {};
   if (tab === 'hist') return `<h4>NO QUE VIROU</h4><p>${esc(b.virou || '')}</p><h4>HISTÓRIA</h4><p>${esc(b.historia || '')}</p>`;
   return `<p>${esc(b.era || '')}</p><div class="bx-kv"><div><i>⛰</i><small>HABITAT</small><b>${esc(h.habitat || '')}</b></div><div><i>🍃</i><small>ALIMENTAÇÃO</small><b>${esc(h.dieta || '')}</b></div><div><i>🐾</i><small>COMPORTAMENTO</small><b>${esc(b.comportamento || '')}</b></div></div><div class="bx-thr"><i>⚠</i><small>AMEAÇA</small><u><s style="width:${(b.perigo || 1) * 20}%"></s></u><b>${THREAT[b.perigo || 1]}</b></div>`;
 }
 export function bestiaryHtml() {
-  return `<div class="bx"><header class="bx-top"><button type="button" class="bx-x" data-x>← FECHAR</button><div class="bx-logo"><svg class="bk" viewBox="0 0 48 40" width="46" height="38" aria-hidden="true"><path d="M24 8C18 3 9 3 2 6v30c7-3 16-3 22 2 6-5 15-5 22-2V6c-7-3-16-3-22 2z" fill="#f5b400"/><path d="M24 8v30M7 11c5-1 11 0 15 3M7 19c5-1 11 0 15 3M41 11c-5-1-11 0-15 3M41 19c-5-1-11 0-15 3" stroke="#111" stroke-width="2" fill="none"/></svg><div><b>BESTIÁRIO</b><small>FAUNA DA ZONA UMBRA · <em class="bx-cnt"></em></small></div></div>
-    <div class="bx-filter"><button type="button" class="on" data-f="all">🐾 TODOS</button><button type="button" data-f="dino">🦖 DINOSSAUROS</button><button type="button" data-f="mam">🦣 MAMÍFEROS</button></div></header>
+  return `<div class="bx"><header class="bx-top"><button type="button" class="bx-x" data-x>← FECHAR</button><div class="bx-logo"><svg class="bk" viewBox="0 0 48 40" width="46" height="38" aria-hidden="true"><path d="M24 8C18 3 9 3 2 6v30c7-3 16-3 22 2 6-5 15-5 22-2V6c-7-3-16-3-22 2z" fill="#f5b400"/><path d="M24 8v30M7 11c5-1 11 0 15 3M7 19c5-1 11 0 15 3M41 11c-5-1-11 0-15 3M41 19c-5-1-11 0-15 3" stroke="#111" stroke-width="2" fill="none"/></svg><div><b>BESTIÁRIO</b><small>FAUNA, MONSTROS E INFECTADOS DA ZONA UMBRA · <em class="bx-cnt"></em></small></div></div>
+    <div class="bx-filter"><button type="button" class="on" data-f="all">🐾 TODOS</button><button type="button" data-f="dino">🦖 DINOSSAUROS</button><button type="button" data-f="mam">🦣 MAMÍFEROS</button><button type="button" data-f="mon">☠ MONSTROS</button><button type="button" data-f="inf">🧟 INFECTADOS</button></div></header>
     <div class="bx-main"><aside class="bx-list">${ALL.map((s) => `<button type="button" class="bx-c ${s.kind}" data-bs="${s.id}"><img alt="" src="${THUMBS[s.id] || ''}"><span class="n">${NUM[s.id]}</span><b>${esc(s.name)}</b><i>${stars((BESTIARY[s.id] || {}).perigo || 1)}</i></button>`).join('')}</aside>
-    <section class="bx-stage"><canvas></canvas><div class="bx-name"><div class="bx-no"></div><h2></h2><div class="bx-chips"></div></div>
+    <section class="bx-stage"><canvas></canvas><img class="bx-still hidden" alt=""><div class="bx-name"><div class="bx-no"></div><h2></h2><div class="bx-chips"></div></div>
       <div class="bx-tools"><button type="button" data-tool="zin" title="Aproximar (ou use a rodinha do mouse)">＋</button><button type="button" data-tool="zout" title="Afastar (ou use a rodinha do mouse)">－</button><button type="button" data-tool="reset" title="Voltar a câmera">⬢</button><button type="button" data-tool="spin" class="on" title="Girar sozinho: ligar/desligar">⟳</button></div>
       <button type="button" class="bx-nav prev" data-step="-1" aria-label="Anterior">‹</button><button type="button" class="bx-nav next" data-step="1" aria-label="Próxima">›</button>
       <div class="bx-anim"><b>▶ ANIMAÇÕES</b><div class="bx-poses"></div></div></section>
@@ -72,15 +86,15 @@ export function mountBestiary(box, first = 'trex') {
   let cr = null, id = null, run = true, spd = 0, ang = 0.6, raf = 0, last = performance.now(), drag = null, filt = 'all', tab = 'info', spin = true, zoom = 1;
   const stage = box.querySelector('.bx-stage');
   const size = () => { if (!r) return; const w = cv.clientWidth || 600, h = cv.clientHeight || 400; r.setPixelRatio(Math.min(1.5, devicePixelRatio || 1)); r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); };
-  const visible = () => ALL.filter((s) => filt === 'all' || (filt === 'dino' ? s.kind === 'dino' : s.kind !== 'dino')).map((s) => s.id);
+  const visible = () => ALL.filter((s) => !FILT[filt] || s.kind === FILT[filt]).map((s) => s.id);
   const paintTab = () => { tabEl.innerHTML = infoHtml(id, tab); box.querySelectorAll('[data-t]').forEach((x) => x.classList.toggle('on', x.dataset.t === tab)); };
   const LB = { idle: 'PARADO', walk: 'ANDAR', run: 'CORRER', attack: 'ATACAR', roar: 'RUGIR' };
   function paintPoses() { const p = makePoses(id) || {}; box.querySelector('.bx-poses').innerHTML = Object.entries(LB).map(([k, n]) => `<button type="button" data-ac="${k}"><img alt="" src="${p[k] || ''}"><span>${n}</span></button>`).join(''); setAct('idle'); }
   function setAct(k) { box.querySelectorAll('[data-ac]').forEach((x) => x.classList.toggle('on', x.dataset.ac === k)); }
   function show(k) {
-    if (cr) { sc.remove(cr.group); cr.dispose?.(); } id = k; cr = new Creature(k); sc.add(cr.group); spd = 0; const sp = FAUNA[k], b = BESTIARY[k] || {}, t = TEMPER[sp.temper] || ['', ''];
+    if (cr) { sc.remove(cr.group); cr.dispose?.(); } id = k; cr = mk(k); if (cr) sc.add(cr.group); spd = 0; const sp = SP[k], b = BESTIARY[k] || {}, t = TEMPER[sp.temper] || ['', ''], still = box.querySelector('.bx-still'); still.classList.toggle('hidden', !!cr); cv.classList.toggle('hidden', !cr); const stg = box.querySelector('.bx-stage'); stg.classList.remove('noimg'); if (!cr) { still.classList.add('hidden'); stg.dataset.ic = '🧟'; stg.classList.add('noimg'); }
     box.querySelector('.bx-no').textContent = 'Nº ' + NUM[k]; box.querySelector('.bx-name h2').textContent = sp.name;
-    box.querySelector('.bx-chips').innerHTML = `<span class="ch rar r${b.perigo || 1}">ESPÉCIE ${RARITY[b.perigo || 1]}</span><span class="ch st">${stars(b.perigo || 1)}</span><span class="ch ${t[1]}">${t[0]}</span><span class="ch ${sp.kind}">${sp.kind === 'dino' ? 'DINOSSAURO' : 'MAMÍFERO'}</span>`;
+    box.querySelector('.bx-chips').innerHTML = `<span class="ch rar r${b.perigo || 1}">ESPÉCIE ${RARITY[b.perigo || 1]}</span><span class="ch st">${stars(b.perigo || 1)}</span><span class="ch ${t[1]}">${t[0]}</span><span class="ch ${sp.kind}">${KIND[sp.kind]}</span>`;
     box.querySelector('.bx-attr').innerHTML = attrHtml(sp);
     box.querySelectorAll('.bx-c').forEach((x) => x.classList.toggle('on', x.dataset.bs === k)); paintTab(); paintPoses();
   }
@@ -111,7 +125,7 @@ export function mountBestiary(box, first = 'trex') {
     if (cr && r) { if (!drag && spin) ang -= dt * 0.25; cr.setMotion(spd, spd > cr.sp.walk * 1.2 ? 'flee' : 'calm'); cr.update(dt); frame(cam, cr, ang, zoom); r.render(sc, cam); }
   }
   function stop() { run = false; cancelAnimationFrame(raf); box.removeEventListener('click', onClick); cv.removeEventListener('wheel', wheel); cv.removeEventListener('pointerdown', down); removeEventListener('pointermove', move); removeEventListener('pointerup', up); if (r) { r.dispose(); r.forceContextLoss?.(); r = null; } }
-  size(); show(FAUNA[first] ? first : 'trex'); applyFilter(); raf = requestAnimationFrame(loop); return stop;
+  size(); show(SP[first] ? first : 'trex'); applyFilter(); raf = requestAnimationFrame(loop); return stop;
 }
 // janela do Bestiário: abre pelo menu, pela fila e pela sala (já não fica dentro do SOBRE)
 export function createBestiaryUI() {
@@ -123,5 +137,5 @@ export function createBestiaryUI() {
     if (root.classList.contains('hidden')) return;
     if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'ArrowRight') body.querySelector('[data-step="1"]')?.click(); else if (e.key === 'ArrowLeft') body.querySelector('[data-step="-1"]')?.click();
   }, true);
-  return { open(id) { stop?.(); makeThumbs(); body.innerHTML = bestiaryHtml(); root.classList.remove('hidden'); stop = mountBestiary(body, id || lastId); }, close, get isOpen() { return !root.classList.contains('hidden'); } };
+  return { async open(id) { stop?.(); await loadZombieKit(); makeThumbs(); body.innerHTML = bestiaryHtml(); root.classList.remove('hidden'); stop = mountBestiary(body, id || lastId); }, close, get isOpen() { return !root.classList.contains('hidden'); } };
 }
