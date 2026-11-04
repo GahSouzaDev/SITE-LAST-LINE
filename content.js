@@ -24,7 +24,7 @@ const MODES = [
   ['team', 'PvP em times', '1 A 5 POR TIME', 'Times A e B disputando o placar. Combine com os amigos e domine o mapa.', 0],
   ['ffa', 'Todos contra todos', '2 A 10 JOGADORES', 'Cada um por si. Quem tiver mais abates ao fim do tempo vence.', 0],
   ['arms', 'Corrida Armamentista', 'ESCADA DE ARMAS', 'Cada abate troca sua arma pela próxima da escada. Quem matar com a faca vence.', 0],
-  ['apoc', 'Apocalipse', 'MATA-MATA + ZUMBIS', 'Mata-mata (ou em times) com hordas de zumbis no meio da briga. Ninguém está seguro.', 0],
+  ['apoc', 'Dinossauro × Dinossauro', 'PVP DE DINOSSAUROS', 'Você é um dinossauro: botão esquerdo morde rápido, direito morde forte. O dano só vale quando a boca encosta. Todos contra todos ou em times.', 0],
   ['surv', 'Survival', 'CO-OP · ATÉ 10', 'Cooperem contra ondas cada vez maiores de infectados. Quanto tempo vocês aguentam?', 0],
   ['monstro', 'Monstro', 'HUMANOS × SUPER ZUMBIS', 'O zumbi pula mais alto, corre mais e dá o dobro de dano. Morreu para ele? Você vira zumbi.', 0],
   ['off', 'Campanha solo', 'OFFLINE · 8 CAPÍTULOS', 'A história da UMBRA, do Brasil à Lua. Sem internet e sem pressa.', 0]
