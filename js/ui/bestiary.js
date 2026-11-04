@@ -1,7 +1,6 @@
 // BESTIÁRIO: tela cheia, estilo "Pokédex" do LAST LINE (menu, fila e sala). 16 feras da Zona UMBRA em 3D, sem rolagem.
 import * as THREE from 'three';
 import { Creature } from '../creatures/creatureRig.js';
-import { SimpleZombie } from '../creatures/zombieSimple.js';
 import { FAUNA, DINOS, MAMMALS } from '../../../shared/fauna.js';
 import { BESTIARY, BESTIARY_INTRO, BESTIARY_HABITAT, INFECTADOS } from '../../../shared/bestiary.js';
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -28,7 +27,7 @@ class ZombieModel {
   roar() { this.attack(); }
   dispose() {}
 }
-const mk = (id) => (INFECTADOS[id] ? (kit ? new ZombieModel(id) : new SimpleZombie(id)) : new Creature(id));   // no jogo: o personagem zumbi completo; no site: o zumbi procedural
+const mk = (id) => (INFECTADOS[id] ? (kit ? new ZombieModel(id) : null) : new Creature(id));   /* o zumbi é SEMPRE o personagem zumbi do jogo (o mesmo Avatar, no jogo e no site) */
 const STILL = () => 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160"><rect width="220" height="160" fill="#0c141c"/><text x="110" y="108" font-size="84" text-anchor="middle">🧟</text></svg>');   // sem o kit do jogo (site): cartão com ícone
 // ---- miniaturas: cada fera é desenhada uma vez e guardada ----
 const THUMBS = {}, POSES = {};
