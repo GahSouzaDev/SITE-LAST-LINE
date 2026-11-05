@@ -124,6 +124,7 @@ export class Creature {
     else if (A === 'pounce') { const cr = env(atkP, 0, 0.25, 0.32, 0.4), lp = env(atkP, 0.32, 0.5, 0.62, 0.92); crouch = cr * 0.35; lunge = lp * sp.legL * 2.2; hop = Math.sin(clamp((atkP - 0.32) / 0.45) * Math.PI) * sp.legL * 0.7; jawOpen = env(atkP, 0.4, 0.55, 0.68, 0.8); bodyPitch = -lp * 0.12; frontSwat = -1.2 * env(atkP, 0.4, 0.55, 0.65, 0.85); }
     else if (A === 'swat') { const up = env(atkP, 0, 0.3, 0.34, 0.46), dn = env(atkP, 0.34, 0.46, 0.54, 0.9); frontSwat = -1.7 * up + 1.9 * dn; neckAdd = -0.2 * up + 0.2 * dn; lunge = dn * sp.legL * 0.12; }
     this.leapLeft = (this.leapLeft || 0) - dt; this.leapK = (this.leapK || 0) + ((this.leapLeft > 0 ? 1 : 0) - (this.leapK || 0)) * Math.min(1, dt * 12);
+    { const stT = !biped && !this.dead && this.spd > 4.8 ? 1 : 0; this.standK = (this.standK || 0) + (stT - (this.standK || 0)) * Math.min(1, dt * 6); bodyPitch -= this.standK * 0.55; }   /* CORRIDA: o bicho levanta o peito e corre meio de pé (cômico), igual ao jogo de referência */
     this.lookLeft = (this.lookLeft || 0) - dt; const lookY = this.lookLeft > 0 ? Math.sin(t * 2.6) * 0.9 * Math.min(1, this.lookLeft) : 0;
     this.grazeLeft = (this.grazeLeft || 0) - dt; this.grazeK = (this.grazeK || 0) + (((this.grazeLeft > 0 && this.spd < 0.3 && !A ? 1 : 0)) - (this.grazeK || 0)) * Math.min(1, dt * 2.5); if (this.grazeK > 0.01) { neckAdd += this.grazeK * (0.95 + Math.sin(t * 5) * 0.07); jawOpen = Math.max(jawOpen, this.grazeK * (0.12 + 0.1 * Math.max(0, Math.sin(t * 5)))); }
     jawOpen = Math.max(jawOpen, roarE * 0.9, dieE * 0.5);
@@ -144,7 +145,7 @@ export class Creature {
         if (L.front && i === 0) swing += frontSwat * 0.5; if (L.front && i === 1) swing += frontSwat * 0.15;
         L.hip.rotation.x = swing + (L.front ? 0 : 0.12) - dieE * 0.5; L.knee.rotation.x = bend * (L.front ? 0.9 : -0.6) + (L.front ? 0 : 0.3 * (crouch + 0.0)); L.ankle.rotation.x = -(L.hip.rotation.x + L.knee.rotation.x) * 0.9;
         L.hip.position.y = L.baseY;
-        if (this.leapK > 0.01) { const tg = L.front ? 0.95 : -0.95; L.hip.rotation.x += (tg - L.hip.rotation.x) * this.leapK; L.knee.rotation.x *= 1 - this.leapK * 0.7; L.ankle.rotation.x = -(L.hip.rotation.x + L.knee.rotation.x) * 0.9; }   /* no pulão: frente pra frente, trás pra trás */
+        if (this.leapK > 0.01 || (this.standK || 0) > 0.01) { const lk = Math.max(this.leapK, (this.standK || 0) * 0.5), tg = L.front ? -0.95 : 0.95; L.hip.rotation.x += (tg - L.hip.rotation.x) * lk; L.knee.rotation.x *= 1 - lk * 0.7; L.ankle.rotation.x = -(L.hip.rotation.x + L.knee.rotation.x) * 0.9; }   /* no pulão: frente pra frente, trás pra trás */
       }
     });
     // ---- pescoço e cabeça ----

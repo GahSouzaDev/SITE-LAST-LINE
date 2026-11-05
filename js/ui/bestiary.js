@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { Creature } from '../creatures/creatureRig.js';
 import { FAUNA, DINOS, MAMMALS } from '../../../shared/fauna.js';
 import { BESTIARY, BESTIARY_INTRO, BESTIARY_HABITAT, INFECTADOS } from '../../../shared/bestiary.js';
+import { DINO_IDS, dinoStats } from '../../../shared/dinoStats.js';
+import { playVoice, ATTACK_SOUND } from '../audio/creatureVoice.js';
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
 const ALL = [...Object.values(FAUNA), ...Object.values(INFECTADOS)], SP = { ...FAUNA, ...INFECTADOS }, NUM = Object.fromEntries(ALL.map((s, i) => [s.id, String(i + 1).padStart(2, '0')]));
@@ -67,8 +69,17 @@ function radar(sp) {
   return `<svg class="bx-radar" viewBox="-115 -100 230 205" aria-hidden="true">${[0.33, 0.66, 1].map((k) => `<polygon points="${ring(k)}" class="g"/>`).join('')}${v.map((_, i) => `<line x1="0" y1="0" x2="${pt(i, 1)[0]}" y2="${pt(i, 1)[1]}" class="g"/>`).join('')}<polygon points="${poly}" class="p"/>${v.map(([, k], i) => { const [x, y] = pt(i, Math.max(0.08, k)); return `<circle cx="${x}" cy="${y}" r="3.2" class="d"/>`; }).join('')}${v.map(([n], i) => { const [x, y] = pt(i, 1.22); return `<text x="${x}" y="${y + 3}" text-anchor="middle">${n}</text>`; }).join('')}</svg>`;
 }
 const row = (ic, l, v) => `<div class="r"><i>${ic}</i><span>${l}</span><b>${v}</b></div>`;
+/* SONS E ATAQUES: cada botão toca a voz/o golpe da fera e dispara a animação. Dinossauro: ataque RÁPIDO (fraco) e FORTE (lento) com dano e recarga do Dinossauro × Dinossauro; os outros: o golpe da espécie. */
+function sndHtml(sp) {
+  const d = DINO_IDS.includes(sp.id) ? dinoStats(sp.id) : null, a0 = sp.atk?.[0], nm = (a) => (ATK[a] || a || 'golpe');
+  const btn = (k, ic, t, sub) => `<button type="button" class="bs-b" data-snd="${k}"><i>${ic}</i><b>${t}</b><small>${sub}</small></button>`;
+  const L = [btn('call', '🔊', 'CHAMADO', 'a voz do dia a dia'), btn('roar', '📢', sp.kind === 'infectado' ? 'GRITO' : 'RUGIDO', 'aviso e ameaça'), btn('hurt', '💢', 'DOR', 'quando apanha')];
+  if (d && a0) L.push(btn('fast', '⚡', 'ATAQUE RÁPIDO', `${nm(a0)} · fraco · ${d.fast} de dano · recarga ${(d.fastCd / 1000).toFixed(2)} s`), btn('strong', '💥', 'ATAQUE FORTE', `${nm(a0)} · lento · ${d.strong} de dano · recarga ${(d.strongCd / 1000).toFixed(2)} s`));
+  else for (const a of sp.atk || []) L.push(btn('atk:' + a, '⚔', nm(a).toUpperCase(), `${sp.dmg} de dano · recarga ${sp.cd} s`));
+  return `<div class="bx-snd"><h4>SONS E ATAQUES <small>clique para ouvir</small></h4>${L.join('')}</div>`;
+}
 function attrHtml(sp) {
-  return `${radar(sp)}<div class="bx-rows">${row('❤', 'VIDA', sp.hp || '∞ não morre')}${row('⚡', 'CORRE', sp.run + ' m/s')}${row('💥', 'DANO', sp.dmg ? sp.dmg + ' por golpe' : '—')}${row('👂', 'OUVE A', sp.hear + ' m')}${row('👁', 'ENXERGA A', (sp.sight || 0) + ' m')}${row('🦶', 'POSTURA', sp.rig === 'biped' ? 'Bípede' : sp.rig === 'quad' ? 'Quadrúpede' : 'Humanoide')}${row('⚔', 'ATAQUES', sp.atk.length ? sp.atk.map((a) => ATK[a] || a).join(' · ') : 'nenhum')}</div>`;
+  return `${radar(sp)}<div class="bx-rows">${row('❤', 'VIDA', sp.hp || '∞ não morre')}${row('⚡', 'CORRE', sp.run + ' m/s')}${row('💥', 'DANO', sp.dmg ? sp.dmg + ' por golpe' : '—')}${row('👂', 'OUVE A', sp.hear + ' m')}${row('👁', 'ENXERGA A', (sp.sight || 0) + ' m')}${row('🦶', 'POSTURA', sp.rig === 'biped' ? 'Bípede' : sp.rig === 'quad' ? 'Quadrúpede' : 'Humanoide')}${row('⚔', 'ATAQUES', sp.atk.length ? sp.atk.map((a) => ATK[a] || a).join(' · ') : 'nenhum')}</div>${sndHtml(sp)}`;
 }
 function infoHtml(id, tab) {
   const sp = SP[id], b = BESTIARY[id] || {}, h = BESTIARY_HABITAT[id] || {};
@@ -120,11 +131,21 @@ export function mountBestiary(box, first = 'trex') {
       if (k === 'reset') { ang = 0.6; zoom = 1; } else if (k === 'zin') zoom = Math.max(0.35, zoom * 0.8); else if (k === 'zout') zoom = Math.min(2.5, zoom * 1.25); else if (k === 'spin') { spin = !spin; tl.classList.toggle('on', spin); }
       return;
     }
+    const sn = e.target.closest('[data-snd]'); if (sn) {
+      const k = sn.dataset.snd, sp = SP[id], a0 = sp.atk?.[0]; try {
+        if (k === 'call') playVoice(id, 'call'); else if (k === 'roar') { cr?.roar?.(); playVoice(id, 'roar'); } else if (k === 'hurt') { cr?.hurt?.(); playVoice(id, 'hurt'); }
+        else if (k === 'fast' || k === 'strong') { const big = k === 'strong'; spd = 0; cr?.attack?.(a0, big); playVoice(id, ATTACK_SOUND(a0, big)); }
+        else if (k.startsWith('atk:')) { const a = k.slice(4); spd = 0; if (sp.kind === 'infectado') cr?.attack?.(); else cr?.attack?.(a); playVoice(id, ATTACK_SOUND(a)); }
+      } catch { /* sem áudio ou sem animação */ }
+      return;
+    }
     const b = e.target.closest('[data-bs]'); if (b) return show(b.dataset.bs);
     const a = e.target.closest('[data-ac]'); if (!a || !cr) return; const k = a.dataset.ac; setAct(k);
     if (k === 'idle') spd = 0; else if (k === 'walk') spd = cr.sp.walk; else if (k === 'run') spd = cr.sp.run; else if (k === 'attack') { spd = 0; if (cr.sp.atk.length) cr.attack(cr.sp.atk[Math.floor(Math.random() * cr.sp.atk.length)]); else cr.roar(); } else if (k === 'roar') { spd = 0; cr.roar(); }
   };
   box.addEventListener('click', onClick);
+  const onActSound = (e) => { const a = e.target.closest('[data-ac]'); if (!a || !cr) return; const k = a.dataset.ac; try { if (k === 'attack') playVoice(id, ATTACK_SOUND(cr.atk?.k || cr.sp.atk?.[0] || 'claw', !!cr.atk?.big)); else if (k === 'roar') playVoice(id, 'roar'); } catch { /* sem áudio */ } };   // ATACAR e RUGIR da fileira de animações também fazem barulho
+  box.addEventListener('click', onActSound);
   // arrastar para a direita gira a fera para a direita (a câmera anda no sentido contrário)
   const down = (e) => { drag = { x: e.clientX, a: ang }; try { cv.setPointerCapture?.(e.pointerId); } catch { /* ok */ } }, move = (e) => { if (drag) ang = drag.a - (e.clientX - drag.x) * 0.012; }, up = () => { drag = null; };
   const wheel = (e) => { e.preventDefault(); zoom = Math.max(0.35, Math.min(2.5, zoom * (e.deltaY < 0 ? 0.9 : 1.1))); }; cv.addEventListener('wheel', wheel, { passive: false }); cv.addEventListener('pointerdown', down); addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
@@ -133,7 +154,7 @@ export function mountBestiary(box, first = 'trex') {
     if (!run) return; raf = requestAnimationFrame(loop); if (!cv.isConnected) return stop(); if (r && cv.clientWidth && cv.clientHeight && (Math.abs(cv.width / Math.min(1.5, devicePixelRatio || 1) - cv.clientWidth) > 2 || Math.abs(cv.height / Math.min(1.5, devicePixelRatio || 1) - cv.clientHeight) > 2)) size();   /* F11 muda só a ALTURA: sem checar a altura o desenho esticava */ const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (cr && r) { if (!drag && spin) ang -= dt * 0.25; cr.setMotion(spd, spd > cr.sp.walk * 1.2 ? 'flee' : 'calm'); cr.update(dt); frame(cam, cr, ang, zoom); r.render(sc, cam); }
   }
-  function stop() { run = false; cancelAnimationFrame(raf); box.removeEventListener('click', onClick); cv.removeEventListener('wheel', wheel); cv.removeEventListener('pointerdown', down); removeEventListener('pointermove', move); removeEventListener('pointerup', up); if (r) { r.dispose(); r.forceContextLoss?.(); r = null; } }
+  function stop() { run = false; cancelAnimationFrame(raf); box.removeEventListener('click', onClick); box.removeEventListener('click', onActSound); cv.removeEventListener('wheel', wheel); cv.removeEventListener('pointerdown', down); removeEventListener('pointermove', move); removeEventListener('pointerup', up); if (r) { r.dispose(); r.forceContextLoss?.(); r = null; } }
   size(); show(SP[first] ? first : 'trex'); applyFilter(); raf = requestAnimationFrame(loop); return stop;
 }
 // janela do Bestiário: abre pelo menu, pela fila e pela sala (já não fica dentro do SOBRE)
