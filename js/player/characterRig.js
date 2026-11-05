@@ -254,7 +254,6 @@ function build(){
   if(SPK==='rock')cyl(fr,.046*B,.03,[0,-.25,0],M('#c9c9c9',.8,.3));
   if(SPK==='anjo')cyl(fr,.046*B,.03,[0,-.25,0],gd);
   if(SPK==='onca'||SPK==='lobo')for(let i=0;i<3;i++)mesh(fr,new THREE.ConeGeometry(.012,SPK==='lobo'?.14:.1,6),M('#f4f1ea',0,.5),[(i-1)*.025,-.4,.02],[T,0,0]);
-  if(SPK==='tupa'&&sd===-1){const o=ball(fr,.06,[0,-.42,.05],glow('#9fe8ff',2.2));rig.fx.push(t=>o.scale.setScalar(1+Math.sin(t*9)*.25))}
   if(SPK==='bateria')cyl(fr,.048*B,.05,[0,-.22,0],M('#e8b53a',.9,.2));
   if(SPK==='uira')cyl(fr,.05*B,.05,[0,-.2,0],M('#f1c40f',0,.6));
   if(SPK==='boiuna')cyl(fr,.048*B,.06,[0,-.2,0],M('#d9a441',.5,.4));

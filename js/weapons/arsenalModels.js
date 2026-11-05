@@ -222,7 +222,7 @@ Object.assign(BUILD,{
 
 // ===== ARMAS PRÓPRIAS DO LASTLINE (mesmo kit de peças): pistolas, duplas, precisão e especiais =====
 function berettaB(){return pist({L:1.08,c:CS(MT.black,MT.steel,MT.black,MT.gold)})}
-function machpistB(){const g=pist({L:1.12,c:CS(MT.poly,MT.blued,MT.poly,MT.red),});B(g,[.34,.05,.14],[.12,.16,0],MT.steel);return g}
+function machpistB(){const g=pist({L:1.12,c:CS(MT.poly,MT.blued,MT.poly,MT.red),});return g}   /* sem a peça em cima do ferrolho: ela tapava a mira */
 function hunterB(){return rifle({c:CS(MT.tan,MT.blued,MT.wood,MT.gold),L:1.1,hg:.9,bl:.55,tip:'none',mag:'straight',s:'wood',op:'s6'})}
 function extinguisherB(){const g=new THREE.Group();C(g,.22,.22,.78,[0,0,0],MT.red,18);C(g,.23,.23,.06,[.34,0,0],MT.black,18);C(g,.23,.23,.06,[-.34,0,0],MT.black,18);B(g,[.16,.1,.12],[-.02,.27,0],MT.black);B(g,[.34,.05,.06],[-.08,.34,0],MT.steel);B(g,[.06,.2,.06],[.2,-.28,0],MT.black);rod(g,[.1,.27,0],[.5,.05,0],.035,MT.rubber);C(g,.05,.035,.22,[.62,.03,0],MT.steel,10);C(g,.03,.03,.2,[-.55,.03,0],MT.black,8);return stub(g,.74)}
 function crossbowB(){const g=new THREE.Group();
