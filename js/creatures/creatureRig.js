@@ -173,6 +173,7 @@ const FEATURES = {
     const upper = [], lower = []; for (let i = 0; i < 9; i++) { const x = (i / 8 - 0.5) * bw * 0.9; upper.push(cn(c.body, 0.07, 0.34, x, by + bh * 0.44, bz + 0.12, m.tooth, Math.PI, 0, 0)); lower.push(cn(c.body, 0.07, 0.3, x, by - bh * 0.44, bz + 0.12, m.tooth, 0, 0, 0)); }
     c.fx.push((t) => { const o = 0.5 + 0.5 * Math.sin(t * 2.4); tg.position.z = bz + 0.2 + o * 0.18; upper.forEach((q) => { q.position.y = by + bh * 0.44 - o * 0.05; }); lower.forEach((q) => { q.position.y = by - bh * 0.44 + o * 0.05; }); });
     const puffs = []; for (let i = 0; i < 4; i++) { const p = put(c.root, new THREE.SphereGeometry(0.5, 7, 5), M('#8fd35a', { transparent: true, opacity: 0.28, roughness: 1, depthWrite: false }), 0, 1, 0); puffs.push(p); }
+    { const red = new THREE.PointLight(0xff1a1a, 7, 24, 1.5); red.position.set(0, sp.bodyH * 0.9, 0.3); c.body.add(red); c.fx.push((t) => { red.intensity = 6 + Math.sin(t * 3.1) * 1.4 + Math.sin(t * 11) * 0.6; }); }   /* luz VERMELHA de terror: o Mapinguari clareia o chão em volta */
     c.fx.push((t) => puffs.forEach((p, i) => { const a = t * 0.6 + i * 1.57; p.position.set(Math.cos(a) * 1.4, 0.8 + 0.5 * Math.sin(t * 1.3 + i), Math.sin(a) * 1.4); p.scale.setScalar(0.7 + 0.3 * Math.sin(t * 2 + i)); }));   // nuvem fedorenta em volta
   },
   // MULA SEM CABEÇA (versão assustadora): égua carbonizada e enorme, costelas à mostra, rachaduras de brasa no corpo, coto de pescoço com osso e uma FOGUEIRA no lugar da cabeça,
@@ -190,15 +191,15 @@ const FEATURES = {
     const manes = []; for (const g of [c.neckA, c.neckB]) for (let i = 0; i < 5; i++) { const f = put(g, coneG(0.16, 0.7 + (i % 2) * 0.3, 6), i % 2 ? ember : red, 0, sp.bodyW * 0.3, (g === c.neckA ? 0.15 : 0.1) + i * (sp.neckL * 0.18), -0.5); f.userData.ph = i * 1.3; manes.push(f); }   // crina em chamas
     for (const g of c.tails) { const f = put(g, coneG(0.2, 0.9, 6), red, 0, 0.1, -0.2, -Math.PI / 2); f.userData.ph = Math.random() * 6; manes.push(f); }   // cauda em chamas
     const hooves = []; for (const l of c.legs) { bx(l.ankle, 0.5, 0.07, 0.56, 0, 0.05, 0.12, M('#ff7a2a', { emissive: '#ff5a10', emissiveIntensity: 2, metalness: 0.4, roughness: 0.4 })); const f = put(l.ankle, coneG(0.16, 0.5, 6), ember, 0, 0.3, 0.1); f.userData.ph = Math.random() * 6; hooves.push(f); }   // ferraduras em brasa e fogo nas patas
-    const glow = new THREE.PointLight(0xff6a1a, 4, 14); glow.position.set(0, 0.8, 1.0); c.head.add(glow);
-    const pool = put(c.root, new THREE.CylinderGeometry(2.8, 2.8, 0.03, 20), new THREE.MeshBasicMaterial({ color: 0xff5a10, transparent: true, opacity: 0.18, depthWrite: false }), 0, 0.03, 0);   // brilho no chão em volta
+    const glow = new THREE.PointLight(0xff1a1a, 7, 24, 1.5);   /* luz VERMELHA de terror: clareia em volta da Mula */ glow.position.set(0, 0.8, 1.0); c.head.add(glow);
+    const pool = put(c.root, new THREE.CylinderGeometry(2.8, 2.8, 0.03, 20), new THREE.MeshBasicMaterial({ color: 0xff2410, transparent: true, opacity: 0.2, depthWrite: false }), 0, 0.03, 0);   // brilho no chão em volta
     const sparks = []; for (let i = 0; i < 18; i++) { const s = put(c.head, boxG(0.07, 0.07, 0.07), hot, 0, 0, 0.8); s.userData.ph = i * 0.37; sparks.push(s); }
     c.fx.push((t) => {
       flames.forEach((f, i) => { const s = 0.75 + 0.45 * Math.sin(t * 12 + f.userData.ph) + 0.15 * Math.sin(t * 5 + i), w = 0.9 + 0.25 * Math.cos(t * 9 + f.userData.ph); f.scale.set(w, s, w); f.rotation.x = Math.sin(t * 6 + f.userData.ph) * 0.25; f.rotation.z = Math.cos(t * 5 + f.userData.ph) * 0.25; });
       manes.forEach((f) => { const s = 0.7 + 0.5 * Math.abs(Math.sin(t * 10 + f.userData.ph)); f.scale.set(1, s, 1); });
       hooves.forEach((f) => { const s = 0.5 + 0.9 * Math.abs(Math.sin(t * 14 + f.userData.ph)); f.scale.set(1, s, 1); });
       sparks.forEach((s) => { const u = (t * 0.9 + s.userData.ph) % 1; s.position.set(Math.sin(s.userData.ph * 9 + t * 2) * (0.2 + u * 0.8), 0.4 + u * 3.2, 0.85 + Math.cos(s.userData.ph * 7 + t * 2) * (0.2 + u * 0.7)); s.scale.setScalar(1 - u * 0.8); });
-      glow.intensity = 3.6 + Math.sin(t * 13) * 1.1 + Math.sin(t * 31) * 0.5; pool.material.opacity = 0.14 + 0.08 * Math.sin(t * 9);
+      glow.intensity = 6 + Math.sin(t * 13) * 1.3 + Math.sin(t * 31) * 0.6; pool.material.opacity = 0.14 + 0.08 * Math.sin(t * 9);
     });
   },
   trex(c) {
