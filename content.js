@@ -22,7 +22,7 @@ const MODES = [
   ['team', 'PVP', 'PVP EM TIMES OU X1', 'Time contra time ou duelo 1 contra 1. Toque para ver os dois.', 0, [['team', 'PVP', '1 A 5 POR TIME', 'Times A e B disputando o placar. Combine com os amigos e domine o mapa.'], ['x1', 'X1', 'DUELO 1 CONTRA 1', 'Você contra um adversário. Mira, reflexo e mais nada.']]],
   ['ffa', 'Todos contra todos', '2 A 10 JOGADORES', 'Cada um por si. Quem tiver mais abates ao fim do tempo vence.', 0],
   ['arms', 'Corrida Armamentista', 'ESCADA DE ARMAS', 'Cada abate troca sua arma pela próxima da escada. Quem matar com a faca vence.', 0],
-  ['dino', 'Dinossauro × Dinossauro', 'PVP DE DINOSSAUROS', 'Você é um dinossauro: botão esquerdo morde rápido, direito morde forte. O dano só vale quando a boca encosta. Todos contra todos ou em times.', 0],
+  ['dino', 'Dinossauro × Dinossauro', 'PVP DE DINOSSAUROS', 'Você é um dinossauro: botão esquerdo morde rápido, direito morde forte. O dano só vale quando a boca encosta. Todos contra todos ou em times. Mapas abertos: Sertãozinho, Litoral, Deserto, Parque, Porto de Santos e a Zona Umbra (com Pista, Reserva, Aldeia e Floresta).', 0],
   ['surv', 'Survival', 'CO-OP · ATÉ 10', 'Cooperem contra ondas cada vez maiores de infectados. Quanto tempo vocês aguentam?', 0],
   ['survival_dino', 'Survival com dinossauro', 'SOLO · DUPLA · QUARTETO', 'O Survival com dinossauros no lugar dos zumbis. Quem morre assume um bicho vivo e caça os outros. Nos mapas da Zona Umbra.', 0],
   ['hunt', 'Caçada', '1 CAÇADOR × PRESAS', 'Um caçador, presas disfarçadas de bicho e dezenas de bichos iguais. Quando a sanidade do caçador acaba, as presas viram o Mapinguari ou a Mula sem Cabeça.', 1],
