@@ -189,16 +189,21 @@ const FEATURES = {
     for (const sd of [-1, 1]) for (let i = 0; i < 7; i++) bx(c.body, 0.07, sp.bodyH * 0.62, 0.09, sd * (sp.bodyW * 0.5 + 0.03), -sp.bodyH * 0.02, -sp.bodyL * 0.3 + i * sp.bodyL * 0.1, bone, 0, 0, sd * 0.18);   // costelas expostas
     for (let i = 0; i < 6; i++) bx(c.body, 0.1, 0.1, 0.1, 0, sp.bodyH * 0.52, -sp.bodyL * 0.4 + i * sp.bodyL * 0.15, bone);   // coluna aparente
     bx(c.head, sp.bodyW * 0.55, sp.bodyW * 0.55, 0.4, 0, 0, 0.1, char); bx(c.head, 0.2, 0.2, 0.7, 0, 0.02, 0.42, bone); bx(c.head, 0.3, 0.3, 0.14, 0, 0.02, 0.8, bone);   // coto do pescoço com a vértebra de fora
-    const flames = [];   // três camadas de fogo: vermelho (grande) · laranja · núcleo amarelo
+    const flames = [];   // (a fogueira da cabeça agora é de bolinhas de fogo + fumaça, igual ao capô do carro pegando fogo: ver 'fogoCabeca' abaixo)
     const mkF = (mat, r, h, n, spread, y0) => { for (let i = 0; i < n; i++) { const a = i * 2.4, f = put(c.head, coneG(r * (0.8 + (i % 3) * 0.18), h * (0.8 + (i % 4) * 0.2), 7), mat, Math.cos(a) * spread, y0, 0.85 + Math.sin(a) * spread * 0.8); f.userData.ph = i * 1.7; f.userData.h = h; flames.push(f); } };
-    mkF(red, 0.42, 2.4, 11, 0.32, 0.1); mkF(ember, 0.3, 1.9, 9, 0.22, 0.15); mkF(hot, 0.2, 1.3, 7, 0.12, 0.2);
     const manes = []; for (const g of [c.neckA, c.neckB]) for (let i = 0; i < 5; i++) { const f = put(g, coneG(0.16, 0.7 + (i % 2) * 0.3, 6), i % 2 ? ember : red, 0, sp.bodyW * 0.3, (g === c.neckA ? 0.15 : 0.1) + i * (sp.neckL * 0.18), -0.5); f.userData.ph = i * 1.3; manes.push(f); }   // crina em chamas
     for (const g of c.tails) { const f = put(g, coneG(0.2, 0.9, 6), red, 0, 0.1, -0.2, -Math.PI / 2); f.userData.ph = Math.random() * 6; manes.push(f); }   // cauda em chamas
     const hooves = []; for (const l of c.legs) { bx(l.ankle, 0.5, 0.07, 0.56, 0, 0.05, 0.12, M('#ff7a2a', { emissive: '#ff5a10', emissiveIntensity: 2, metalness: 0.4, roughness: 0.4 })); const f = put(l.ankle, coneG(0.16, 0.5, 6), ember, 0, 0.3, 0.1); f.userData.ph = Math.random() * 6; hooves.push(f); }   // ferraduras em brasa e fogo nas patas
     const glow = new THREE.PointLight(0xff1a1a, 7, 24, 1.5);   /* luz VERMELHA de terror: clareia em volta da Mula */ glow.position.set(0, 0.8, 1.0); c.head.add(glow);
     const pool = put(c.root, new THREE.CylinderGeometry(2.8, 2.8, 0.03, 20), new THREE.MeshBasicMaterial({ color: 0xff2410, transparent: true, opacity: 0.2, depthWrite: false }), 0, 0.03, 0);   // brilho no chão em volta
-    const sparks = []; for (let i = 0; i < 18; i++) { const s = put(c.head, boxG(0.07, 0.07, 0.07), hot, 0, 0, 0.8); s.userData.ph = i * 0.37; sparks.push(s); }
+    // FOGO DA CABEÇA = o do CAPÔ DO CARRO PEGANDO FOGO (client/js/effects/vehFx.js › _puff): bolinhas que sobem e somem — fogo laranja/amarelo (aditivo, 0,7 s) misturado com fumaça preta e cinza (1,6–2,4 s)
+    const fogoCabeca = []; for (let i = 0; i < 44; i++) { const fire = i < 26, m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })); m.userData = { fire, ph: (i * 0.6180339) % 1, u0: 9, ox: 0, oz: 0, c: 0 }; c.head.add(m); fogoCabeca.push(m); }
+    const sparks = [];
     c.fx.push((t) => {
+      fogoCabeca.forEach((m) => { const u = m.userData, life = u.fire ? 0.7 : 1.6 + u.c * 0.8, k = ((t / life + u.ph) % 1);   // k = idade 0..1 (volta ao zero = nasce de novo)
+        if (k < u.u0) { u.ox = (Math.random() - 0.5) * 0.9; u.oz = (Math.random() - 0.5) * 0.8; u.c = Math.random() < 0.25 ? 1 : 0; m.material.color.setHex(u.fire ? (Math.random() < 0.5 ? 0xff6a10 : 0xffc030) : (u.c ? 0x1c1c1c : 0x666a70)); m.material.blending = u.fire ? THREE.AdditiveBlending : THREE.NormalBlending; }
+        u.u0 = k; const K = 1.6, vy = u.fire ? 1.6 : 1.2 + u.c * 0.4, s0 = u.fire ? 0.6 : 0.8, s1 = u.fire ? 1.3 : 2.4 + u.c, a0 = u.fire ? 0.9 : 0.55;
+        m.position.set(u.ox * K * 0.6 + 0.25 * k * life, 0.1 + vy * k * life * K, 0.85 + u.oz * K * 0.6); m.scale.setScalar((s0 + (s1 - s0) * k) * K * 0.75); m.material.opacity = a0 * (1 - k); });
       flames.forEach((f, i) => { const s = 0.75 + 0.45 * Math.sin(t * 3.2 + f.userData.ph) + 0.15 * Math.sin(t * 1.6 + i), w = 0.9 + 0.25 * Math.cos(t * 2.4 + f.userData.ph); f.scale.set(w, s, w); f.rotation.x = Math.sin(t * 1.8 + f.userData.ph) * 0.25; f.rotation.z = Math.cos(t * 1.6 + f.userData.ph) * 0.25; });
       manes.forEach((f) => { const s = 0.7 + 0.5 * Math.abs(Math.sin(t * 2.6 + f.userData.ph)); f.scale.set(1, s, 1); });
       hooves.forEach((f) => { const s = 0.5 + 0.9 * Math.abs(Math.sin(t * 3.4 + f.userData.ph)); f.scale.set(1, s, 1); });
