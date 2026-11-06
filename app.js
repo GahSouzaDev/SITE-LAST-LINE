@@ -102,7 +102,16 @@ renderSeason();
 
 /* ============ MODOS / GALERIA ============ */
 $('#modes').innerHTML = MODES.map(([id, n, s, d, hot, subs]) => `<article class="mode ${hot ? 'hot' : ''} ${subs ? 'has-sub' : ''}"${subs ? ' tabindex="0" role="button"' : ''}><div class="im">${img('img/modes/' + id + '.jpg', n, 'loading="lazy"')}</div><div class="mi"><small>${s}</small><h4>${n}</h4><p>${d}</p>${subs ? `<div class="msub">${subs.map(([sid, sn, ss, sd]) => `<div class="ms">${img('img/modes/' + sid + '.jpg', sn, 'loading="lazy"')}<div><small>${ss}</small><b>${sn}</b><p>${sd}</p></div></div>`).join('')}</div>` : ''}</div></article>`).join('');
-$('#modes').addEventListener('click', (e) => { const a = e.target.closest('.mode.has-sub'); if (a) a.classList.toggle('open'); });
+/* SUBMODOS: ao tocar num modo com variações, elas abrem LADO A LADO num painel logo ABAIXO da fileira de cartões (não mais espremidas dentro do cartão) */
+function closeSub() { $$('#modes .mode.open').forEach((m) => m.classList.remove('open')); $('#modes .subpanel')?.remove(); }
+$('#modes').addEventListener('click', (e) => {
+  if (e.target.closest('.subpanel')) return; const a = e.target.closest('.mode.has-sub'); if (!a) return;
+  const was = a.classList.contains('open'); closeSub(); if (was) return;
+  const cards = [...$('#modes').children].filter((c) => c.classList.contains('mode')), row = cards.filter((c) => Math.abs(c.offsetTop - a.offsetTop) < 8), last = row[row.length - 1] || a;
+  const panel = document.createElement('div'); panel.className = 'subpanel'; panel.innerHTML = '<h5>' + a.querySelector('h4').textContent.trim() + ' · escolha o tipo</h5><div class="subgrid">' + [...a.querySelectorAll('.ms')].map((m) => '<div class="subcard">' + m.querySelector('img').outerHTML + '<div class="st"><small>' + m.querySelector('small').textContent + '</small><b>' + m.querySelector('b').textContent + '</b><p>' + m.querySelector('p').textContent + '</p></div></div>').join('') + '</div>';
+  last.after(panel); a.classList.add('open'); panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+});
+addEventListener('resize', closeSub);
 $('#gallery').innerHTML = SH.map(([f, t]) => `<figure class="shot" data-lb="img/shots/${f}.jpg">${img('img/shots/' + f + '.jpg', t, 'loading="lazy"')}<span>${t}</span></figure>`).join('');
 
 /* ============ MAPAS ============ */
