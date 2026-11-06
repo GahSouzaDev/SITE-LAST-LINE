@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Veículos — carros, tanques e aviões | LASTLINE</title>
+<meta name="description" content="Catálogo de veículos de LASTLINE: veja em 3D os 8 carros, os 8 tanques da Batalha de Tanques e os aviões, com vida, velocidade e armas de cada um.">
+<link rel="canonical" href="https://lastline.gahsouza.com.br/veiculos.html"><link rel="icon" href="/img/brand/favicon.ico">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<style>
+:root{--gold:#f5b400}html,body{margin:0;height:100%;background:#06090d;color:#dfe8f2;font-family:'Segoe UI',Inter,Arial,sans-serif;overflow:hidden}.hidden{display:none!important}button{font-family:inherit}
+/* BESTIÁRIO: tela cheia estilo Pokédex, sem rolagem */
+.bsm{width:100%;height:100%;display:flex;flex-direction:column;background:#06090d;color:#dfe8f2;overflow:hidden}
+.bx{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%}
+.bx-top{display:flex;align-items:center;gap:18px;padding:8px 16px;background:linear-gradient(90deg,#000d,#0b1015cc);border-bottom:1px solid #2a3846}
+.bx-x{background:#2a0f12;color:#ff9a90;border:1px solid #c0392b;padding:12px 18px;font-weight:900;letter-spacing:2px;font-size:13px;cursor:pointer;clip-path:polygon(0 0,100% 0,92% 100%,0 100%)}.bx-x:hover{background:#b3261e;color:#fff}
+.bx-logo{display:flex;align-items:center;gap:12px}.bx-logo .bk{font-size:38px;filter:drop-shadow(0 0 8px #f5b40088)}.bx-logo b{display:block;font-size:30px;letter-spacing:8px;color:#fff;line-height:1}.bx-logo small{color:#aeb9c4;letter-spacing:2px;font-size:11px}.bx-logo em{font-style:normal;color:var(--gold)}
+.bx-filter{display:flex;gap:4px;margin-left:auto}.bx-filter button,.bx-tabs button{background:#0e1923cc;color:#aeb9c4;border:0;padding:12px 20px;font-weight:900;letter-spacing:2px;font-size:12px;cursor:pointer;clip-path:polygon(8% 0,100% 0,92% 100%,0 100%)}.bx-filter button.on,.bx-tabs button.on{background:var(--gold);color:#111}
+.bx-main{display:grid;grid-template-columns:minmax(200px,20%) minmax(0,1fr) minmax(330px,28%);min-height:0;background:#070b10}
+.bx-list{display:flex;flex-direction:column;gap:8px;padding:8px;background:#05080c;min-height:0;overflow-y:auto;overflow-x:hidden}.bx-list .bx-c{flex:0 0 auto;width:100%;aspect-ratio:11/4.6}.bx-list .bx-c img{object-position:center 40%}.bx-list::-webkit-scrollbar,.bx-info::-webkit-scrollbar{width:8px}.bx-list::-webkit-scrollbar-thumb,.bx-info::-webkit-scrollbar-thumb{background:#f5b40088;border-radius:4px}
+.bx-c{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:0;padding:0;border:1px solid #243444;background:#0c141c;cursor:pointer;overflow:hidden;text-align:left;color:#dfe8f2}
+.bx-c img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .25s}.bx-c:hover img{transform:scale(1.08)}
+.bx-c::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#000d 0,#0000 55%)}.bx-c b,.bx-c i,.bx-c .n{position:relative;z-index:1}
+.bx-c .n{position:absolute;top:4px;left:6px;font-size:12px;font-weight:900;color:var(--gold);text-shadow:0 1px 3px #000}.bx-c b{padding:0 7px;font-size:13px}.bx-c i{padding:0 7px 5px;font-style:normal;color:var(--gold);font-size:10px;letter-spacing:1px}
+.bx-c.dino{border-bottom:3px solid #c0392b}.bx-c.mamifero{border-bottom:3px solid #2e86c1}.bx-c:hover{border-color:var(--gold)}.bx-c.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 18px #f5b40088;z-index:2}
+.bx-stage{position:relative;min-height:0;background:linear-gradient(#0006,#0009),url(img/bestiario-fundo.webp) center/cover;overflow:hidden}.bx-stage.nobg{background:radial-gradient(70% 60% at 50% 55%,#1c2f3a 0,#06090d 80%)}
+.bx-stage canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab}.bx-stage canvas:active{cursor:grabbing}
+.bx-name{position:absolute;top:14px;left:22px;pointer-events:none}.bx-no{font-size:24px;font-weight:900;color:#d9e1ea;letter-spacing:2px;text-shadow:0 2px 8px #000}.bx-name h2{margin:0;font-size:clamp(28px,3.6vw,52px);color:#fff;line-height:1.05;text-shadow:0 2px 12px #000}
+.bx-chips{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}.ch{font-size:11px;font-weight:900;letter-spacing:2px;padding:5px 12px;border:1px solid #2a4258;background:#0b1015d9;color:#dfe8f2}.ch.rar{background:var(--gold);color:#111;border-color:var(--gold)}.ch.r5{background:#f5b400}.ch.r4{background:#b46bff;color:#fff;border-color:#b46bff}.ch.r3{background:#3b9cff;color:#fff;border-color:#3b9cff}.ch.r2{background:#3fb36b;color:#fff;border-color:#3fb36b}.ch.r1{background:#8794a1;color:#fff;border-color:#8794a1}
+.ch.dino{border-color:#c0392b;color:#ff9a90}.ch.mamifero{border-color:#2e86c1;color:#8cc8ff}.ch.ag{border-color:#e67e22;color:#ffb066}.ch.ar{border-color:#8e6fd8;color:#c3adff}.ch.ma{border-color:#3fb36b;color:#8ee5ae}.ch.st{background:none;border:0;color:var(--gold);padding:5px 2px;font-size:14px}
+.bx-tools{position:absolute;top:16px;right:16px;display:flex;gap:8px}.bx-tools button{width:46px;height:46px;background:#0b1015cc;border:1px solid #2a4258;color:#dfe8f2;font-size:22px;cursor:pointer}.bx-tools button.on{border-color:var(--gold);color:var(--gold);box-shadow:0 0 10px #f5b40055}.bx-tools button:hover{background:var(--gold);color:#111}
+.bx-nav{position:absolute;top:46%;transform:translateY(-50%);width:44px;height:84px;background:#0b1015aa;border:1px solid #2a4258;color:var(--gold);font-size:38px;cursor:pointer}.bx-nav:hover{background:var(--gold);color:#111}.bx-nav.prev{left:10px}.bx-nav.next{right:10px}
+.bx-anim{position:absolute;left:14px;right:14px;bottom:10px;background:#05080ccc;border:1px solid #243444;padding:6px 10px}.bx-anim>b{display:block;font-size:12px;letter-spacing:2px;color:#fff;margin-bottom:4px}.bx-poses{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.bx-poses button{background:#0e1923;border:1px solid #243444;color:#dfe8f2;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-width:0}.bx-poses img{width:100%;height:clamp(40px,9vh,96px);object-fit:cover}.bx-poses span{font-size:clamp(8px,.8vw,11px);font-weight:800;padding:3px 0;max-width:100%;overflow:hidden}.bx-poses button.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}.bx-poses button:hover{border-color:var(--gold)}
+.bx-mapbtn{position:absolute;right:14px;bottom:10px;background:#05080ccc;border:1px solid var(--gold);color:var(--gold);padding:14px 10px;font-weight:900;letter-spacing:1px;font-size:clamp(9px,.85vw,12px);cursor:pointer}.bx-mapbtn:hover{background:var(--gold);color:#111}
+.bx-mapbox{position:absolute;right:14px;bottom:62px;width:min(420px,46%);background:#05080cf0;border:1px solid var(--gold);padding:10px;z-index:5}.bx-map .mh{display:flex;align-items:center;gap:10px}.bx-map .mh b{letter-spacing:2px;font-size:13px;color:var(--gold)}.bx-map .mh small{color:#aeb9c4}.bx-map .mh button{margin-left:auto;background:none;border:1px solid #2a4258;color:#fff;cursor:pointer;padding:2px 8px}
+.bx-map svg{width:100%;height:auto;max-height:46vh;display:block;margin:8px 0;background:#04070a}.bx-map .z{fill:#12201a;stroke:#2a4258;stroke-width:4}.bx-map .z.on{fill:#f5b40066;stroke:#f5b400;stroke-width:6}.bx-map .z.cid{fill:#1b222b}.bx-map .z.cid.on{fill:#f5b40066}.bx-map .t{fill:#dfe8f2;font-size:46px;font-weight:800;text-anchor:middle;pointer-events:none;letter-spacing:4px}.bx-map p{margin:0;font-size:12px;color:#7e8d9b}
+.bx-info{display:grid;grid-template-rows:auto auto;align-content:start;min-height:0;overflow-y:auto;background:#070b10;border-left:1px solid #1d2a36}.bx-tab{overflow:visible!important}.bx-sec{padding:10px 16px 4px;min-height:0}.bx-sec h3{margin:0 0 4px;font-size:14px;letter-spacing:3px;color:var(--gold);border-left:4px solid var(--gold);padding-left:10px}
+.bx-radar{width:100%;height:clamp(110px,22vh,230px)}.bx-radar .g{fill:none;stroke:#2a4258;stroke-width:.8}.bx-radar .p{fill:#f5b40044;stroke:var(--gold);stroke-width:2}.bx-radar .d{fill:#ffd24a}.bx-radar text{fill:#aeb9c4;font-size:9px;font-weight:800;letter-spacing:1px}
+.bx-rows{display:grid;gap:3px}.bx-rows .r{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;background:#0e1923;padding:4px 10px;font-size:13px}.bx-rows .r i{font-style:normal;text-align:center}.bx-rows .r span{color:#9fb0c2;letter-spacing:2px;font-size:11px;font-weight:800}.bx-rows .r b{color:#fff;text-align:right}
+.bx-sec2{border-top:1px solid #1d2a36;display:flex;flex-direction:column;padding:0}.bx-tabs{display:flex}.bx-tabs button{flex:1;background:#0b1015;clip-path:none;padding:10px 4px;font-size:11px}.bx-tab{flex:1;min-height:0;overflow:hidden;padding:8px 16px;font-size:clamp(12px,1.05vw,14px);line-height:1.45;color:#c9d3e2;display:flex;flex-direction:column;gap:6px}.bx-tab p{margin:0}.bx-tab h4{margin:6px 0 0;color:var(--gold);letter-spacing:3px;font-size:11px}
+.bx-kv{display:grid;gap:5px}.bx-kv div,.bx-thr{display:grid;grid-template-columns:24px 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center}.bx-kv i,.bx-thr i{grid-row:1/3;font-style:normal;color:var(--gold);text-align:center;font-size:18px}.bx-kv small,.bx-thr small{color:var(--gold);font-weight:800;letter-spacing:2px;font-size:10px}.bx-kv b{color:#fff;font-weight:600}
+.bx-thr{grid-template-columns:24px auto 1fr auto;grid-template-rows:auto}.bx-thr i{grid-row:1}.bx-thr u{height:8px;background:#1a2530;display:block;margin:0 10px}.bx-thr s{display:block;height:100%;background:linear-gradient(90deg,#f5b400,#e74c3c)}.bx-thr b{color:#ff8f86;font-size:12px;letter-spacing:1px}
+/* BESTIÁRIO NO CELULAR: palco em cima, fileira de espécies que rola de lado, depois ficha e abas empilhadas (a tela inteira rola) */
+@media(max-width:900px),(max-height:520px) and (orientation:landscape){
+  .bx{grid-template-rows:auto minmax(0,1fr);height:100%}
+  .bx-top{flex-wrap:wrap;gap:6px 10px;padding:6px 10px}
+  .bx-logo .bk{font-size:24px}.bx-logo b{font-size:20px;letter-spacing:4px}.bx-logo small{display:none}
+  .bx-x{order:2;margin-left:auto;padding:9px 14px;font-size:12px}
+  .bx-filter{order:3;width:100%;margin-left:0}.bx-filter button{flex:1;padding:10px 4px;font-size:11px;letter-spacing:1px;clip-path:none}
+  .bx-main{display:flex;flex-direction:column;grid-template-columns:none;grid-template-rows:none;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;height:100%}
+  .bx-list{display:flex;flex-direction:row;grid-template-rows:none;flex:0 0 138px;height:138px;overflow-x:auto;overflow-y:hidden;gap:5px;padding:6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  .bx-c{flex:0 0 168px;height:100%;width:auto;aspect-ratio:auto;scroll-snap-align:start}.bx-c b{font-size:11px;padding:0 5px}.bx-c i{font-size:9px;padding:0 5px 4px}
+  .bx-stage{flex:0 0 auto;height:min(58vh,520px);min-height:300px}
+  .bx-name{top:8px;left:12px;right:70px}.bx-no{font-size:16px}.bx-name h2{font-size:clamp(22px,7vw,32px)}
+  .ch{font-size:9px;padding:4px 8px;letter-spacing:1px}
+  .bx-tools{top:8px;right:8px;flex-direction:column;gap:6px}.bx-tools button{width:42px;height:42px;font-size:20px}
+  .bx-nav{width:34px;height:64px;font-size:28px;top:42%}
+  .bx-anim{left:8px;right:8px;bottom:6px;padding:5px 6px}.bx-anim>b{font-size:10px;margin-bottom:3px}.bx-poses{gap:4px}.bx-poses img{height:38px}.bx-poses span{font-size:8px}
+  .bx-mapbtn{right:8px;bottom:auto;top:66px;padding:8px 8px;font-size:10px}.bx-mapbox{right:8px;left:8px;bottom:auto;top:110px;width:auto}
+  .bx-info{display:block;flex:0 0 auto;border-left:0;border-top:1px solid #1d2a36;overflow:visible}
+  .bx-radar{height:200px}
+  .bx-sec2{overflow:visible}.bx-tab{overflow:visible;font-size:14px;padding:10px 14px;flex:0 0 auto}
+  .bx-tabs{position:sticky;top:0;z-index:3}.bx-tabs button{padding:12px 2px;font-size:10px;letter-spacing:1px}
+}
+
+/* BESTIÁRIO: monstros do folclore e infectados */
+.bx-c.monstro{border-bottom:3px solid #ff7a1a}.bx-c.infectado{border-bottom:3px solid #7cc24a}
+.ch.monstro{border-color:#ff7a1a;color:#ffb066}.ch.infectado{border-color:#7cc24a;color:#b6ec8a}
+.bx-still{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}.bx-still.hidden{display:none}.bx-stage canvas.hidden{display:none}
+.bx-filter{flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:900px),(max-height:520px) and (orientation:landscape){.bx-filter button{flex:1 1 30%;padding:9px 2px;font-size:10px}}
+.bx-stage.noimg::after{content:attr(data-ic);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(90px,22vw,200px);filter:drop-shadow(0 8px 18px #000);pointer-events:none}
+/* girar o bicho com o dedo: arrastar de lado gira; arrastar na vertical rola a tela */
+.bx-stage canvas{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+/* painel da direita do Bestiário: rola inteiro (nada fica por cima de nada) */
+.bx-info{grid-template-rows:max-content max-content!important}.bx-info>.bx-sec{min-height:auto!important;overflow:visible}
+.bx-snd{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px}.bx-snd h4{grid-column:1/-1;margin:0 0 2px;font-size:11px;letter-spacing:2px;color:#e6b422}.bx-snd h4 small{font-weight:400;letter-spacing:0;color:#7f8da0;margin-left:6px}.bx-snd .bs-b{display:grid;grid-template-columns:24px 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center;text-align:left;background:#0e1923;border:1px solid #1d2a36;color:#dfe8f2;padding:5px 10px;cursor:pointer}.bx-snd .bs-b i{grid-row:1/3;font-style:normal;font-size:16px}.bx-snd .bs-b b{font-size:12px;letter-spacing:1px}.bx-snd .bs-b small{font-size:11px;color:#8fa0b3}.bx-snd .bs-b:hover{border-color:#e6b422;background:#132230}
+#vehicles{padding:0}.bx-bar{display:grid;grid-template-columns:70px 1fr 34px;align-items:center;gap:8px;margin:6px 0;font-size:11px;letter-spacing:.08em;color:#aab8c6}.bx-bar i{display:block;height:8px;background:#0b1118;border:1px solid #243444}.bx-bar u{display:block;height:100%;background:linear-gradient(90deg,#f5b400,#ffd23d)}.bx-bar em{font-style:normal;color:#fff;text-align:right}#vehicles .bx-c img{background:linear-gradient(180deg,#16212c,#0a1017)}
+</style><meta property="og:type" content="website"><meta property="og:site_name" content="LASTLINE"><meta property="og:locale" content="pt_BR"><meta property="og:title" content="Veículos — carros, tanques e aviões | LASTLINE"><meta property="og:description" content="Catálogo de veículos de LASTLINE: veja em 3D os 8 carros, os 8 tanques da Batalha de Tanques e os aviões, com vida, velocidade e armas de cada um."><meta property="og:url" content="https://lastline.gahsouza.com.br/veiculos.html"><meta property="og:image" content="https://lastline.gahsouza.com.br/img/shots/bestiario.jpg"><meta property="og:image:width" content="800"><meta property="og:image:height" content="420"><meta property="og:image:alt" content="Catálogo de veículos: carros, tanques e aviões em 3D"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Veículos — carros, tanques e aviões | LASTLINE"><meta name="twitter:description" content="Catálogo de veículos de LASTLINE: veja em 3D os 8 carros, os 8 tanques da Batalha de Tanques e os aviões, com vida, velocidade e armas de cada um."><meta name="twitter:image" content="https://lastline.gahsouza.com.br/img/shots/bestiario.jpg"></head><body>
+<div class="bsm" id="app"></div>
+<noscript><p style="padding:30px">O Bestiário precisa de JavaScript para mostrar os animais em 3D. Volte ao <a href="index.html">site</a>.</p></noscript>
+<script type="module">
+import { createVehicleCatalog } from './js/ui/vehicleCatalog.js';
+const app = document.getElementById('app'), cat = createVehicleCatalog(); cat.open(new URLSearchParams(location.search).get('v') || undefined);
+const root = document.getElementById('vehicles'); root.classList.remove('hidden'); root.style.cssText = 'position:fixed;inset:0;display:block;background:#06090d';
+root.addEventListener('click', (e) => { if (e.target.closest('[data-x]')) location.href = 'index.html#modos'; }, true);
+</script></body></html>
