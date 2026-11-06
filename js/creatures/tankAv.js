@@ -72,6 +72,8 @@ export class TankAv {
     this.hullYaw = 0; this.spin = 0; this.rcoil = 0; this.flashT = 0; this.hurtT = 0;
     g.traverse((o) => { if (o.isMesh) { o.castShadow = true; } });
   }
+  // INCLINAÇÃO: o tanque acompanha o terreno como os carros (pitch = subida à frente, roll = lado mais alto); suave
+  setTilt(pitch, roll, dt = 0.016) { const k = Math.min(1, dt * 7); this.tp = (this.tp || 0) + (pitch - (this.tp || 0)) * k; this.tr = (this.tr || 0) + (roll - (this.tr || 0)) * k; this.root.rotation.set(this.tp, 0, this.tr); }
   // a torre fica na direção ABSOLUTA ay (mira); o grupo gira com o casco
   setTurret(ay, ap, hullYaw) { this.turret.rotation.y = ay - hullYaw; this.gun.rotation.x = ap; }
   update(dt, st = {}) {
