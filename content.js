@@ -9,7 +9,7 @@ const EV = [
   ['2027-03', 'Dia do Circo', 'Grande Circo', 'Respeitável público: listras vermelhas e brancas.', 'Parque de Diversões', 8],
   ['2027-04', 'Páscoa', 'Ovo de Páscoa', 'Chocolate, laços e cores de Páscoa, com o Coelhinho.', 'Floresta', 8],
   ['2027-05', 'Florista', 'Pele de Flores', 'A beleza também é força: flores, coroa e mochila floral.', 'Arquipélago', 8],
-  ['2027-06', 'Festa Junina', 'Arraiá', 'Xadrez junino, fogueira e bandeirinhas.', 'Sertãozinho', 8],
+  ['2027-06', 'Festa Junina', 'Arraiá', 'Xadrez junino, fogueira e bandeirinhas.', 'Piscina', 8],
   ['2027-07', 'Férias de Julho', 'Verão no Litoral', 'Sol, mar e areia dourada.', 'Arquipélago', 8],
   ['2027-08', 'Folclore Brasileiro', 'Lenda da Mata', 'Curupira, Iara e Saci: o Brasil das lendas.', 'Floresta', 8],
   ['2027-09', 'Independência do Brasil', 'Fuzil da Independência', 'Orgulho nas cores do Brasil.', 'Montanha de Gelo', 8]
@@ -21,7 +21,7 @@ const MODES = [
   ['tatico', 'Tático', 'ECONOMIA · MATA-MATA OU BOMBA', 'Rodadas com economia: ganhe créditos, compre armas e equipamentos a cada rodada. Cada vida conta. Toque para ver os dois tipos.', 0, [['bomba', 'Modo Bomba', 'ATACA × DEFENDE', 'Plante a bomba no ponto A ou B, ou impeça. Disponível nos mapas táticos.'], ['tatico', 'Mata-mata', 'ELIMINE O TIME INIMIGO', 'Elimine o time inimigo em cada round, com economia e loja.']]],
   ['team', 'PVP', 'TIMES, X1 OU TODOS CONTRA TODOS', 'Três jeitos de brigar entre jogadores. Toque para ver os três.', 0, [['team', 'PVP em times', '1 A 5 POR TIME', 'Times A e B disputando o placar. Combine com os amigos e domine o mapa.'], ['x1', 'X1', 'DUELO 1 CONTRA 1', 'Você contra um adversário. Mira, reflexo e mais nada.'], ['ffa', 'Todos contra todos', '2 A 10 JOGADORES', 'Cada um por si. Quem tiver mais abates ao fim do tempo vence.']]],
   ['arms', 'Corrida Armamentista', 'ESCADA DE ARMAS', 'Cada abate troca sua arma pela próxima da escada. Quem matar com a faca vence.', 0],
-  ['dino', 'Dinossauro × Dinossauro', 'PVP DE DINOSSAUROS', 'Você é um dinossauro: botão esquerdo morde rápido, direito morde forte. O dano só vale quando a boca encosta. Todos contra todos ou em times. Mapas abertos: Sertãozinho, Arquipélago, Deserto, Parque, Porto de Santos e a Zona Umbra (com Pista, Reserva, Aldeia e Floresta).', 0],
+  ['dino', 'Dinossauro × Dinossauro', 'PVP DE DINOSSAUROS', 'Você é um dinossauro: botão esquerdo morde rápido, direito morde forte. O dano só vale quando a boca encosta. Todos contra todos ou em times. Mapas abertos: Arquipélago, Deserto, Parque, Porto de Santos e a Zona Umbra (com Pista, Reserva, Aldeia e Floresta).', 0],
   ['tank', 'Batalha de Tanques', 'PVP DE TANQUES · TODOS CONTRA TODOS OU TIMES', 'Você é um tanque, entre 8 modelos com pontos diferentes de casco, motor e canhão. W/S andam e A/D giram o casco; o mouse gira a torre, que demora a acompanhar. Esquerdo atira o canhão em parábola (dano em área), segurar o direito mostra a linha de mira e F é a metralhadora. Mapas: Arquipélago, Lua, Fazenda, Aeroporto, Cidade, Porto de Santos, Pista de Resgate, Reserva Umbra e Ilhota.', 1],
   ['surv', 'Survival de Zumbi', 'SOLO · DUPLA · QUARTETO · ATÉ 10', 'Sozinho, em dupla ou em quarteto (até 10 no total), enfrente ondas cada vez maiores de infectados. Quanto tempo vocês aguentam?', 0],
   ['survival_dino', 'Survival de Dinossauro', 'SOLO · DUPLA · QUARTETO', 'O Survival de Zumbi com dinossauros no lugar dos zumbis. Quem morre assume um bicho vivo e caça os outros. Nos mapas da Zona Umbra.', 0],

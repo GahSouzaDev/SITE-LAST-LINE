@@ -10,7 +10,7 @@ export const EVENTS = [
   { m: 3, id: 'evt03', n: 'Dia do Circo', skin: 'Grande Circo', sw: '#ff4a3a', c1: 0xd62828, c2: 0xfff1d0, map: 'parque', goal: 8, char: 'palhaco', desc: 'Respeitável público: listras vermelhas e brancas.' },
   { m: 4, id: 'evt04', n: 'Páscoa', skin: 'Ovo de Páscoa', sw: '#c98a4a', c1: 0x5a3a1e, c2: 0xff9fd0, map: 'floresta', goal: 8, char: 'coelho', desc: 'Chocolate, laços e cores de Páscoa — e o Coelhinho da Páscoa!' },
   { m: 5, id: 'evt05', n: 'Florista', skin: 'Pele de Flores', sw: '#ff7aa8', c1: 0xffd1e0, c2: 0xe0457b, map: 'arquipelago', goal: 8, char: 'florista', desc: 'Flores e rosa para homenagear quem manda em casa.' },
-  { m: 6, id: 'evt06', n: 'Festa Junina', skin: 'Arraiá', sw: '#ff9a2e', c1: 0xc0392b, c2: 0xf1c40f, map: 'sertaozinho', goal: 8, char: 'sanfoneiro', desc: 'Xadrez junino, fogueira e bandeirinhas.' },
+  { m: 6, id: 'evt06', n: 'Festa Junina', skin: 'Arraiá', sw: '#ff9a2e', c1: 0xc0392b, c2: 0xf1c40f, map: 'piscina', goal: 8, char: 'sanfoneiro', desc: 'Xadrez junino, fogueira e bandeirinhas.' },
   { m: 7, id: 'evt07', n: 'Férias de Julho', skin: 'Verão no Litoral', sw: '#2ec4ff', c1: 0x0a7ea4, c2: 0xffe08a, map: 'arquipelago', goal: 8, char: 'surfista', desc: 'Sol, mar e areia dourada.' },
   { m: 8, id: 'evt08', n: 'Folclore Brasileiro', skin: 'Lenda da Mata', sw: '#3ddc6a', c1: 0x1d4d2a, c2: 0xff7a1a, map: 'floresta', goal: 8, char: 'iara', desc: 'Curupira, Iara e Saci: o Brasil das lendas.' },
   { m: 9, id: 'evt09', n: 'Independência', skin: 'Verde e Amarelo', sw: '#2ecc40', c1: 0x0c8f3c, c2: 0xffdf00, map: 'montanha-de-gelo', goal: 8, char: 'patriota', chars: ['patriota', 'petista'], desc: 'Orgulho nas cores do Brasil.' },
