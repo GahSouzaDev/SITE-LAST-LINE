@@ -55,9 +55,9 @@ export class Avatar {
     this.mN = (this.mN || 0) + 1;
     // MESMA sequência de golpes da 1ª pessoa (POSE em viewmodel.js): cada arma tem o seu jeito (lança só estoca, machado/martelo descem de cima, motosserra serra…)
     const seq = POSE[id]?.seq || ['slash', 'slashD', 'stab'];
-    const k = kind === 'heavy' && knife ? 'heavy' : knife ? (kind === 'butt' ? 'butt' : seq[(this.mN - 1) % seq.length]) : this.weapon ? 'butt' : 'punch';
+    const k = kind === 'heavy' && !knife && !this.weapon ? 'punchH' : kind === 'heavy' && knife ? 'heavy' : knife ? (kind === 'butt' ? 'butt' : seq[(this.mN - 1) % seq.length]) : this.weapon ? 'butt' : 'punch';
     const wt = knife ? Math.min(1.9, Math.max(0.7, (MELEE[id]?.cd || 0.55) / 0.55)) : 1;   // arma pesada = golpe mais lento
-    const dur = { heavy: 0.82, butt: 0.52, punch: 0.28, slash: 0.34, slashD: 0.37, stab: 0.32, slashU: 0.36, chop: 0.42, saw: 0.5 }[k] * (k === 'heavy' ? Math.max(0.9, wt) : wt);
+    const dur = { heavy: 0.82, punchH: 0.7, butt: 0.52, punch: 0.28, slash: 0.34, slashD: 0.37, stab: 0.32, slashU: 0.36, chop: 0.42, saw: 0.5 }[k] * (k === 'heavy' ? Math.max(0.9, wt) : wt);
     this._mUntil = performance.now() + dur * 1000; this.char.swing(k, dur);
   }
   // INSPECIONAR: a animaçãozinha da categoria da arma (só com a arma cheia, parado). Qualquer ação corta na hora (cancelInspect). onInspectSfx(nome, tipo) toca os sons.

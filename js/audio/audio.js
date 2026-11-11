@@ -37,9 +37,10 @@ class AudioEngine {
     try { this._hsSrc?.stop(); } catch { /* já terminou */ }
     const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); s.buffer = this.hsBuf; g.gain.value = 1; s.connect(g); g.connect(this.uiGain); s.start(); this._hsSrc = s;
   }
+  setLoadMute(on) { this.loadMute = !!on; if (this.ctx) this.applyVolumes(); }   // tela de carregamento: o jogo fica MUDO até a partida de fato começar
   applyVolumes() {
     if (!this.ctx) return;
-    this.master.gain.value = settings.volMaster; this.sfx.gain.value = settings.volSfx; this.voice.gain.value = settings.volVoice; this.uiGain.gain.value = settings.volSfx;
+    this.master.gain.value = this.loadMute ? 0 : settings.volMaster; this.sfx.gain.value = settings.volSfx; this.voice.gain.value = settings.volVoice; this.uiGain.gain.value = settings.volSfx;
     if (this.music) this.music.volume = this._horror ? 0 : this.musicShouldPlay() ? Math.min(1, settings.volMusic * settings.volMaster * 0.55) : 0;
     if (this.horror && this._horror) this.horror.volume = Math.min(1, 0.33 * settings.volMaster);
   }
