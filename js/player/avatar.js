@@ -150,7 +150,7 @@ export class Avatar {
       const I = this._in; I.t += dt / I.dur; const w = this.char.rig.weps[0];
       if (I.t >= 1) this.cancelInspect(); else if (w) { const s = inspectSample(I.kind, I.t), sg = this.side === 'L' ? -1 : 1;
         if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
-        for (const [t, nm] of INSP_EV[I.kind] || []) if (I.last < t && I.t >= t) this.onInspectSfx?.(nm, I.kind); I.last = I.t; } }
+        I.last = I.t;   /* inspecionar fica SEM som (o som da troca de arma continua) */ } }
     if (this._dr && !this._in) { const D = this._dr; D.t += dt / D.dur; const w = this.char.rig.weps[0]; if (D.t >= 1) { this._dr = null; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } } else if (w) { const s = drawSample(D.kind, D.t), sg = this.side === 'L' ? -1 : 1;
         if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
         for (const [t, nm] of DRAW_EVENTS[D.kind] || []) if (D.last < t && D.t >= t) this.onInspectSfx?.(nm, D.kind); D.last = D.t; } }

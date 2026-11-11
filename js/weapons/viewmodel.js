@@ -197,7 +197,7 @@ export class ViewModel {
           const s = inspectSample(this.iK, p), sd = this.side, K = 1 / this.VM_SCALE;
           if (s.melee) { py += 0.06 * s.arm; px += -0.04 * sd * s.out; rx += s.twirl; rz += s.tilt * sd; ry += -0.2 * s.fore * sd; if (s.shake) { px += (Math.random() - 0.5) * 0.008 * s.shake; py += (Math.random() - 0.5) * 0.008 * s.shake; } }
           else { py += s.lift * K; pz -= s.fwd * K; rx += s.pitch; rz += s.roll * sd; ry += s.yaw * sd; sup = Math.max(sup, s.sup); supZ = Math.min(supZ, -s.supF * 2.5); px += -0.02 * sd * s.sup; }
-          for (const [t, nm] of INSP_EV[this.iK] || []) if (this.iLast < t && p >= t) this.onInspectSfx?.(nm, this.iK); this.iLast = p; } } }
+          this.iLast = p;   /* inspecionar fica SEM som (o som da troca de arma continua) */ } } }
     // SACAR (trocou de arma): a animação fixa da categoria (draw.js), com os barulhos dela; ficar parado não é exigido, mas disparar/recarregar/golpear a encerra
     if (this.dT >= 0) {
       if (this.rT >= 0 || this.mT >= 0 || this.tT >= 0) this.dT = -1; else {
