@@ -100,15 +100,15 @@ function build(ci, ty = 0) {
     const c2 = document.createElement('canvas'); c2.width = 512; c2.height = 160; const x2 = c2.getContext('2d'); x2.clearRect(0, 0, 512, 160); x2.font = '900 120px Arial Black, Impact, sans-serif'; x2.textAlign = 'center'; x2.textBaseline = 'middle'; x2.lineWidth = 9; x2.strokeStyle = '#e8b53a'; x2.strokeText('OGBB', 256, 84); x2.fillStyle = '#15171b'; x2.fillText('OGBB', 256, 84);
     const tx = new THREE.CanvasTexture(c2); tx.colorSpace = THREE.SRGBColorSpace; const om = new THREE.MeshStandardMaterial({ map: tx, transparent: true, roughness: 0.5, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
     for (const sd of [-1, 1]) { const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.4), om); pl.rotation.y = sd * Math.PI / 2; pl.position.set(sd * (W / 2 + 0.02), 0.66, 0.1); g.add(pl); }
-    const pb = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.28), om); pb.rotation.y = Math.PI; pb.position.set(0, 0.95, zR + 0.018); g.add(pb);
+    const pb = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.28), om); pb.rotation.y = 0; pb.position.set(0, 0.95, zR + 0.018); g.add(pb);
     const gold = lam(0xe8b53a, { roughness: 0.4, metalness: 0.1 }); for (const sd of [-1, 1]) g.add(bx(0.02, 0.05, 3.3, gold, sd * (W / 2 + 0.015), 0.5, 0.05));
   }
   if (T.umbra) {   // texto UMBRA em verde nas duas laterais (e atrás), letras de verdade (textura)
     const c2 = document.createElement('canvas'); c2.width = 512; c2.height = 128; const x2 = c2.getContext('2d'); x2.fillStyle = 'rgba(0,0,0,0)'; x2.clearRect(0, 0, 512, 128); x2.font = '900 104px Arial Black, Impact, sans-serif'; x2.textAlign = 'center'; x2.textBaseline = 'middle'; x2.shadowColor = '#16ff6a'; x2.shadowBlur = 18; x2.fillStyle = '#1fdc62'; x2.fillText('UMBRA', 256, 68);
     const tx = new THREE.CanvasTexture(c2); tx.colorSpace = THREE.SRGBColorSpace; const um = new THREE.MeshStandardMaterial({ map: tx, transparent: true, roughness: 0.5, emissive: 0x0e9a3e, emissiveMap: tx, emissiveIntensity: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
-    for (const sd of [-1, 1]) { const pl = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5), um); pl.rotation.y = sd * Math.PI / 2; pl.position.set(sd * (T.cw / 2 + 0.014), 1.0, 0.2); g.add(pl); }
-    const pb = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.375), um); pb.rotation.y = Math.PI; pb.position.set(0, 1.7, zR + 0.018); g.add(pb);
-    for (const sd of [-1, 1]) g.add(bx(0.04, 0.5, 2.0, dark, sd * (T.cw / 2 + 0.004), 0.98, 0.2));   // faixa escura atrás do texto
+    for (const sd of [-1, 1]) { const pl = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5), um); pl.rotation.y = sd * Math.PI / 2; pl.position.set(sd * (W / 2 + 0.036), 0.9, 0.2); g.add(pl); }   /* na lateral do CORPO (W/2): antes ficava em cw/2, DENTRO da lataria, e o texto sumia */
+    const pb = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.325), um); pb.rotation.y = 0; pb.position.set(0, 1.12, zR + 0.03); g.add(pb);   /* atrás: na lataria abaixo do vidro (antes ficava na altura do vidro e sumia) */
+    for (const sd of [-1, 1]) g.add(bx(0.04, 0.5, 2.0, dark, sd * (W / 2 + 0.008), 0.9, 0.2));   // faixa escura atrás do texto
   }
   if (T.lux) {   // sedã de luxo: grade cromada larga, frisos cromados, faróis finos
     g.add(bx(1.5, 0.3, 0.06, chrome, 0, T.tub[1][1] - 0.2, zF - 0.05)); for (const sd of [-1, 1]) { g.add(bx(0.03, 0.04, 4.2, chrome, sd * (W / 2 + 0.012), 0.72, 0.1)); g.add(bx(0.03, 0.03, 3.0, chrome, sd * (T.cw / 2 + 0.01), T.cab[1][1] - 0.05, 0.4)); } g.add(bx(1.2, 0.04, 0.04, chrome, 0, 0.68, zR + 0.02));

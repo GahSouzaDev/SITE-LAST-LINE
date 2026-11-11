@@ -1319,7 +1319,7 @@ function mergeStatic(){
   for(const o of arr){o.parent.remove(o);o.geometry.dispose()}}}
 
 // ---------- animação (esqueleto fixo, sem reconstruir) ----------
-const _o=new THREE.Vector3(),AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
+const _o=new THREE.Vector3(),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3(),_v4=new THREE.Vector3(),_v5=new THREE.Vector3(),_g2=new THREE.Quaternion(),_g=new THREE.Quaternion(),_eu=new THREE.Euler(),AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
 const WP={rifle:WR,lmg:[[-.1,.32,.2],[-.07,.56,.16]],shotgun:WR,sniper:WR,melee:[[-.17,.5,.3],[-.15,.56,.34]],pistol:[[-.12,.36,.38],[-.06,.585,.38]],smg:[[-.12,.35,.36],[-.06,.575,.36]]};
 let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
 function ik(arm,fore,sd,T3){ // braço de 2 ossos: leva a mão até o ponto de empunhadura
@@ -1365,7 +1365,7 @@ function animate(dt,spd,sgn,pitch,air){
   if(w.hand){const sd=w.side==='L'?'L':'R',sg=sd==='R'?1:-1,ar=rig['a'+sd],fo=rig['f'+sd],oa=rig[sd==='R'?'aL':'aR'],of=rig[sd==='R'?'fL':'fR'],sm=(t)=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
    oa.rotation.set(rad(6)+wsw*aw*.5,0,sg*rad(8));of.rotation.set(rad(-14),0,0);                       // a outra mão fica solta, relaxada
    {const pa=w.pa||[-48,-78,-8];ar.rotation.set(rad(pa[0])-wsw*aw*.4,0,sg*rad(pa[2]));fo.rotation.set(rad(pa[1]),0,0)}w.g.rotation.set(w.bx!=null?w.bx:(w.elev!=null?.9+(1.5708-w.elev)/.76:.67),0,0);   /* elev = inclinação da lâmina acima da horizontal (a mesma da 1ª pessoa); 0,9 = lâmina na vertical */
-   if(w.two){oa.rotation.set(rad(-64),0,-sg*rad(16));of.rotation.set(rad(-58),0,0);ar.rotation.x-=rad(8)}   // arma longa/pesada (lança, machado, martelo, motosserra): a outra mão segura o cabo   // mão da arma à frente do peito, lâmina para cima e levemente à frente
+   if(w.ikT){oa.rotation.set(rad(-78),0,-sg*rad(10));of.rotation.set(rad(-6),0,0)}else if(w.two){oa.rotation.set(rad(-64),0,-sg*rad(16));of.rotation.set(rad(-58),0,0);ar.rotation.x-=rad(8)}   // arma longa/pesada (lança, machado, martelo, motosserra): a outra mão segura o cabo   // mão da arma à frente do peito, lâmina para cima e levemente à frente
    if(swp>=0){const q=swp,k=swk;let d=0,t=0,tw=0,wr=0;   // d = quanto o braço sobe(-)/desce(+); t = giro do tronco; wr = inclinação da lâmina
     if(k==='stab'){const a=sm(q/.3),b=sm((q-.3)/.22),c=sm((q-.55)/.45);const ext=b*(1-c);ar.rotation.x+=.35*a*(1-b)-.75*ext;fo.rotation.x+=-.5*a*(1-b)+1.15*ext;ar.rotation.z-=sg*.1*ext;t=-.25*a*(1-c)+.3*ext;wr=-.8*ext;}
     else if(k==='heavy'||k==='chop'){const hv=k==='heavy',w0=hv?.42:.34,s0=hv?.62:.56,cv=(wv,sv)=>q<w0?wv*sm(q/w0):q<s0?wv+(sv-wv)*sm((q-w0)/(s0-w0)):sv*(1-sm((q-s0)/(1-s0)));   // ergue (windup), desce com tudo, recupera — volta a zero no fim
@@ -1376,6 +1376,9 @@ function animate(dt,spd,sgn,pitch,air){
     else{const dg=k==='slashD'?1:0,a=sm(q/.3),b=sm((q-.3)/.3),c=sm((q-.62)/.38);d=-.75*a+1.55*b*(1-c);ar.rotation.x+=d;fo.rotation.x+=-.3*a*(1-b)+.25*b*(1-c);ar.rotation.z+=sg*(-.55*a+1.1*b*(1-c))*(dg?1.4:.6);t=(-.4*a+.9*b*(1-c))*sg;wr=-.25*b*(1-c);}
     rig.spine.rotation.y+=t;w.g.rotation.x+=wr;}
    if(w.ix){const q=w.ix;ar.rotation.x-=q.arm;ar.rotation.z+=sg*q.out;fo.rotation.x-=q.fore;w.g.rotation.x+=q.twirl;w.g.rotation.z+=sg*q.tilt;if(q.shake){ar.rotation.x+=Math.sin(performance.now()*.09)*.03*q.shake;ar.rotation.z+=Math.cos(performance.now()*.11)*.03*q.shake}}   // INSPECIONAR (arma branca): braço sobe, a arma gira/inclina
+   if(w.ikT){const e=swp>=0?Math.sin(Math.PI*swp):0,q=w.ix||{arm:0,twirl:0},sx=sd==='R'?-1:1;_o.set(sx*w.ikT[0],w.ikT[1]-.1*e+.18*(q.arm||0),w.ikT[2]+.45*e);ik(ar,fo,sd==='R'?-1:1,_o);_g.setFromEuler(_eu.set((w.ikP||0)-.35*e+.5*(q.twirl||0),0,0));_v2.set(0,0,-1).applyQuaternion(_g);_q.copy(ar.quaternion).multiply(fo.quaternion);_v3.set(0,-1,0).applyQuaternion(_q);_v1.set(0,0,1).applyQuaternion(_q);_v1.addScaledVector(_v3,-_v1.dot(_v3));_v4.copy(_v2).addScaledVector(_v3,-_v2.dot(_v3));
+    if(_v1.lengthSq()>1e-4&&_v4.lengthSq()>1e-4){_v1.normalize();_v4.normalize();const an=Math.atan2(_v3.dot(_v5.crossVectors(_v1,_v4)),_v1.dot(_v4));_g2.setFromAxisAngle(_v3,an);_q.premultiply(_g2);fo.quaternion.copy(_g2.copy(ar.quaternion).invert().multiply(_q))}   // gira o antebraço em torno do próprio eixo: o FURO do punho fechado fica na direção da haste e o POLEGAR aponta para TRÁS (para o pomo), como na pegada de lança por cima
+    w.g.quaternion.copy(_g2.copy(_q).invert().multiply(_g))}   // MÃO POSTA POR IK (lança: acima da cabeça, haste na horizontal, ponta um pouco abaixada; estocada empurra a mão à frente)
    if(w.two&&w.twoAt!=null){rig.spine.updateMatrixWorld(true);_o.set(0,0,w.twoAt);w.g.localToWorld(_o);rig.spine.worldToLocal(_o);ik(oa,of,sd==='R'?1:-1,_o)}   // OUTRA MÃO NO CABO de verdade (IK até um ponto do cabo, certo para cada arma), não num ângulo fixo
    continue;}
   const pz=WP[w.type],m=(w.side==='L'?-1:1)*(rig.weps.length>1?1.45:1),Hh=S.height;
