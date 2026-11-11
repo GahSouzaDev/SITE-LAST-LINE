@@ -309,3 +309,12 @@ for (const id of ['petala', 'boto', 'dragao', 'sucuri', 'berimbau', 'saci', 'iar
 export { BUILD, MT, OP };
 export function setOV(o){ OV = o || {}; }
 export function getOV(){ return OV; }
+// FERROLHO: todo sniper de FERROLHO (os de tiro lento e dano alto) puxa o ferrolho e ejeta o cartucho depois do tiro; os semiautomáticos não (por isso dão menos dano e atiram mais rápido). Quem ainda não tinha a peça ganha aqui.
+for (const id of ['hunter', 'mosquete', 'dragao', 'cangaco']) {
+  const f = BUILD[id]; if (!f) continue;
+  BUILD[id] = () => { const g = f(); let has = false; g.traverse((o) => { if (o.userData?.role === 'bolt') has = true; }); if (has) return g;
+    const b = new THREE.Box3().setFromObject(g), cx = b.min.x + (b.max.x - b.min.x) * 0.3, cy = b.min.y + (b.max.y - b.min.y) * 0.62, bg = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: 0x23262b, metalness: 0.8, roughness: 0.4 });
+    bg.position.set(cx, cy, 0.1); bg.userData.role = 'bolt'; bg.userData.bx = cx;
+    const h = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.2, 8), m); h.rotation.x = Math.PI / 2; h.position.set(0, 0, 0.02); bg.add(h);
+    const k = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), m); k.position.set(0, 0, 0.14); bg.add(k); g.add(bg); return g; };
+}
