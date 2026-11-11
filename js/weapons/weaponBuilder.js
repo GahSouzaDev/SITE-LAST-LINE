@@ -31,6 +31,18 @@ function cylZ(r, len, material, x, y, z, seg = 14) { const g = new THREE.Cylinde
 function cylX(r, len, material, x, y, z, seg = 18) { const g = new THREE.CylinderGeometry(r, r, len, seg); g.rotateZ(Math.PI / 2); return put(new THREE.Mesh(g, material), x, y, z); }
 function cylY(r, len, material, x, y, z, seg = 14) { return put(new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, seg), material), x, y, z); }
 
+// CORRENTE da motosserra: N dentes correm em volta da barra (trecho de cima → nariz → trecho de baixo → fundo); t = fase (0..1)
+const _cm = new THREE.Matrix4(), _cq = new THREE.Quaternion(), _cp = new THREE.Vector3(), _cs = new THREE.Vector3(1, 1, 1), _ce = new THREE.Euler();
+export const chainOf = (root) => { let r = null; root?.traverse((o) => { if (!r && o.isInstancedMesh && o.userData.chain) r = o; }); return r; };
+export function chainAnim(ch, t) {
+  const { N, Lb, Rn, zb } = ch.userData.chain, st = Lb - Rn, arc = Math.PI * Rn, back = Math.PI * Rn * 0.6, P = 2 * st + arc + back;
+  for (let i = 0; i < N; i++) {
+    let d = ((i / N + t) % 1) * P, y, z, rx;
+    if (d < st) { z = zb - d; y = Rn; rx = 0; } else if ((d -= st) < arc) { const a = d / Rn; z = zb - st - Math.sin(a) * Rn; y = Math.cos(a) * Rn; rx = -a; } else if ((d -= arc) < st) { z = zb - st + d; y = -Rn; rx = Math.PI; } else { d -= st; const a = d / (Rn * 0.6); z = zb + Math.sin(a) * Rn * 0.6; y = -Math.cos(a) * Rn * 0.6; rx = Math.PI - a; }
+    _cp.set(0, y, z); _cq.setFromEuler(_ce.set(rx, 0, 0)); ch.setMatrixAt(i, _cm.compose(_cp, _cq, _cs));
+  }
+  ch.instanceMatrix.needsUpdate = true;
+}
 export function buildWeapon(id, opts = {}) {
   const it = ITEMS[id];
   const g = new THREE.Group();
@@ -162,7 +174,7 @@ function style(s, metal, poly) { return s === 'slim' || s === 'vent' ? poly : s 
 
 function buildKnife(info) {
   const g = info.group, steel = bladeMat(); g.scale.setScalar(1.3);   // lâmina clara e maior: enxerga-se bem na mão
-  const sh = new THREE.Shape(); sh.moveTo(0, 0.012); sh.lineTo(-0.2, 0.014); sh.lineTo(-0.235, 0.0); sh.lineTo(-0.2, -0.008); sh.lineTo(0, -0.012); sh.closePath();
+  const sh = new THREE.Shape(); sh.moveTo(0, 0.012); sh.lineTo(0.2, 0.014); sh.lineTo(0.235, 0.0); sh.lineTo(0.2, -0.008); sh.lineTo(0, -0.012); sh.closePath();   /* x positivo → depois da rotação a lâmina vai para -Z (antes ia para +Z, em cima do cabo, e sumia dentro do braço) */
   const blade = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.003, bevelEnabled: false }), steel);
   blade.rotation.set(0, Math.PI / 2, 0); blade.position.set(-0.0015, 0.0, 0);
   const b2 = blade; b2.rotation.y = Math.PI / 2; // lâmina aponta para -Z
@@ -241,8 +253,23 @@ function buildMelee(info, id) {
     for (let i = 0; i < 3; i++) g.add(rb(0.004, 0.012, 0.014, rn, 0.0, 0.0, -0.08 - i * 0.06));
     g.add(cylZ(0.013, 0.12, mat('pjcd', 0xa8442a, 0.05, 0.8), 0, 0, 0.07, 8)); for (const [i, c] of [0xff3030, 0x30c0ff, 0xffd21a].entries()) g.add(cylZ(0.0035, 0.07, mat('pjf' + i, c, 0.05, 0.7), 0.016 + i * 0.006, -0.03, 0.16, 5));
     len = 0.34;
-  } else if (id === 'chainsaw') {
-    const mt2 = mat('csaw', 0xd9731a, 0.2, 0.5); g.add(rb(0.12, 0.14, 0.26, mt2, 0, 0, 0.05)); g.add(rb(0.05, 0.1, 0.08, dark, 0, -0.1, 0.1)); g.add(bladeShape([[0, 0.03], [0.45, 0.034], [0.5, 0.0], [0.45, -0.034], [0, -0.03]], 0.012, 0, -0.1)); g.add(rb(0.014, 0.016, 0.5, mat('chn', 0x9aa2aa, 0.9, 0.3), 0, 0.0, -0.36)); len = 0.62;
+  } else if (id === 'chainsaw') {   // MOTOSSERRA: carcaça laranja, tampa preta, empunhadura de trás e arco da frente, protetor de mão, barra com CORRENTE de dentes (InstancedMesh animado por chainAnim) e cordinha de partida
+    const or = mat('csor', 0xe0701a, 0.15, 0.45), or2 = mat('csor2', 0xb4520e, 0.2, 0.5), bk = mat('csbk', 0x15171a, 0.25, 0.55), bar = mat('csbar', 0x8d969f, 0.9, 0.28), tooth = mat('cstooth', 0xcfd5db, 0.95, 0.22), rubber = mat('csrb', 0x0e0f11, 0.05, 0.9), chrome = mat('cscr', 0xb8bec6, 0.95, 0.2), cord = mat('cscd', 0xd8261a, 0.1, 0.5), logo = mat('cslg', 0xf2f2f2, 0.1, 0.5);
+    g.add(rb(0.13, 0.17, 0.3, or, 0, 0.0, 0.1, 0, 0, 0, 0.02));                                   // carcaça do motor
+    g.add(rb(0.134, 0.075, 0.2, bk, 0, 0.055, 0.1, 0, 0, 0, 0.012)); g.add(rb(0.136, 0.012, 0.18, logo, 0, 0.0, 0.1)); g.add(rb(0.1, 0.05, 0.1, or2, 0, -0.095, 0.09, 0, 0, 0, 0.015));   // tampa, faixa branca e tanque
+    g.add(cylY(0.022, 0.03, bk, 0, 0.115, 0.04, 12));                                               // tampa do tanque
+    g.add(rb(0.05, 0.018, 0.1, chrome, 0.07, -0.02, 0.2));                                          // escapamento
+    g.add(rb(0.046, 0.15, 0.052, rubber, 0, -0.12, 0.27, 0.35, 0, 0, 0.012));                       // EMPUNHADURA DE TRÁS (gatilho)
+    g.add(rb(0.02, 0.022, 0.07, bk, 0, -0.07, 0.2, 0, 0, 0)); g.add(rb(0.012, 0.03, 0.026, cord, 0, -0.085, 0.215));   // gatilho
+    g.add(cylX(0.0075, 0.2, bk, 0, 0.1, -0.06, 8)); g.add(cylY(0.0075, 0.16, bk, 0.062, 0.02, -0.06, 8)); g.add(cylY(0.0075, 0.16, bk, -0.062, 0.02, -0.06, 8)); g.add(rb(0.134, 0.012, 0.02, bk, 0, 0.1, -0.06));   // ARCO DA FRENTE (mão de apoio)
+    g.add(rb(0.12, 0.08, 0.012, or2, 0, 0.0, -0.075, 0, 0, 0, 0.004));                              // protetor de mão
+    const cs = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), cord); cs.position.set(0, 0.0, 0.26); g.add(cs);   // cordinha de partida
+    const Lb = 0.5, Rn = 0.045, zb = -0.08;                                                          // barra: placa + nariz redondo
+    g.add(rb(0.014, Rn * 2, Lb - Rn, bar, 0, 0, zb - (Lb - Rn) / 2, 0, 0, 0, 0.004));
+    const nose = new THREE.Mesh(new THREE.CylinderGeometry(Rn, Rn, 0.014, 18), bar); nose.rotation.z = Math.PI / 2; nose.position.set(0, 0, zb - Lb + Rn); g.add(nose);
+    g.add(rb(0.022, 0.03, 0.05, chrome, 0, 0.0, zb + 0.005));                                         // parafuso/prendedor da barra
+    const N = 38, ch = new THREE.InstancedMesh(new THREE.BoxGeometry(0.02, 0.012, 0.014), tooth, N); ch.frustumCulled = false; ch.castShadow = false; ch.userData.chain = { N, Lb, Rn, zb }; g.add(ch); chainAnim(ch, 0);
+    len = 0.62;
   }
   info.kind = 'knife'; info.grip.set(0, 0, 0.06); info.support.set(0, -0.1, 0.1); info.adsY = -0.05; info.length = len;
   info.muzzle.position.set(0, 0, -len * 0.8); g.add(info.muzzle);

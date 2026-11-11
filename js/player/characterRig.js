@@ -1319,7 +1319,7 @@ function mergeStatic(){
   for(const o of arr){o.parent.remove(o);o.geometry.dispose()}}}
 
 // ---------- animação (esqueleto fixo, sem reconstruir) ----------
-const AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
+const _o=new THREE.Vector3(),AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
 const WP={rifle:WR,lmg:[[-.1,.32,.2],[-.07,.56,.16]],shotgun:WR,sniper:WR,melee:[[-.17,.5,.3],[-.15,.56,.34]],pistol:[[-.12,.36,.38],[-.06,.585,.38]],smg:[[-.12,.35,.36],[-.06,.575,.36]]};
 let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
 function ik(arm,fore,sd,T3){ // braço de 2 ossos: leva a mão até o ponto de empunhadura
@@ -1364,7 +1364,7 @@ function animate(dt,spd,sgn,pitch,air){
  const wsw=w;for(const w of rig.weps){w.g.visible=act;if(!act)continue;
   if(w.hand){const sd=w.side==='L'?'L':'R',sg=sd==='R'?1:-1,ar=rig['a'+sd],fo=rig['f'+sd],oa=rig[sd==='R'?'aL':'aR'],of=rig[sd==='R'?'fL':'fR'],sm=(t)=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
    oa.rotation.set(rad(6)+wsw*aw*.5,0,sg*rad(8));of.rotation.set(rad(-14),0,0);                       // a outra mão fica solta, relaxada
-   ar.rotation.set(rad(-48)-wsw*aw*.4,0,sg*rad(-8));fo.rotation.set(rad(-78),0,0);w.g.rotation.set(w.elev!=null?.9+(1.5708-w.elev)/.76:.67,0,0);   /* elev = inclinação da lâmina acima da horizontal (a mesma da 1ª pessoa); 0,9 = lâmina na vertical */
+   {const pa=w.pa||[-48,-78,-8];ar.rotation.set(rad(pa[0])-wsw*aw*.4,0,sg*rad(pa[2]));fo.rotation.set(rad(pa[1]),0,0)}w.g.rotation.set(w.bx!=null?w.bx:(w.elev!=null?.9+(1.5708-w.elev)/.76:.67),0,0);   /* elev = inclinação da lâmina acima da horizontal (a mesma da 1ª pessoa); 0,9 = lâmina na vertical */
    if(w.two){oa.rotation.set(rad(-64),0,-sg*rad(16));of.rotation.set(rad(-58),0,0);ar.rotation.x-=rad(8)}   // arma longa/pesada (lança, machado, martelo, motosserra): a outra mão segura o cabo   // mão da arma à frente do peito, lâmina para cima e levemente à frente
    if(swp>=0){const q=swp,k=swk;let d=0,t=0,tw=0,wr=0;   // d = quanto o braço sobe(-)/desce(+); t = giro do tronco; wr = inclinação da lâmina
     if(k==='stab'){const a=sm(q/.3),b=sm((q-.3)/.22),c=sm((q-.55)/.45);const ext=b*(1-c);ar.rotation.x+=.35*a*(1-b)-.75*ext;fo.rotation.x+=-.5*a*(1-b)+1.15*ext;ar.rotation.z-=sg*.1*ext;t=-.25*a*(1-c)+.3*ext;wr=-.8*ext;}
@@ -1375,6 +1375,8 @@ function animate(dt,spd,sgn,pitch,air){
     else if(k==='saw'){const e=Math.sin(Math.PI*Math.min(1,q*1.2)),v=Math.sin(q*Math.PI*14)*e;ar.rotation.x+=-.45*e;fo.rotation.x+=-.25*e+.05*v;ar.rotation.z+=sg*.05*v;t=sg*.35*Math.sin(q*Math.PI*3)*e;rig.spine.rotation.x+=.1*e;}   // motosserra: empurra à frente e serra de lado a lado, vibrando
     else{const dg=k==='slashD'?1:0,a=sm(q/.3),b=sm((q-.3)/.3),c=sm((q-.62)/.38);d=-.75*a+1.55*b*(1-c);ar.rotation.x+=d;fo.rotation.x+=-.3*a*(1-b)+.25*b*(1-c);ar.rotation.z+=sg*(-.55*a+1.1*b*(1-c))*(dg?1.4:.6);t=(-.4*a+.9*b*(1-c))*sg;wr=-.25*b*(1-c);}
     rig.spine.rotation.y+=t;w.g.rotation.x+=wr;}
+   if(w.ix){const q=w.ix;ar.rotation.x-=q.arm;ar.rotation.z+=sg*q.out;fo.rotation.x-=q.fore;w.g.rotation.x+=q.twirl;w.g.rotation.z+=sg*q.tilt;if(q.shake){ar.rotation.x+=Math.sin(performance.now()*.09)*.03*q.shake;ar.rotation.z+=Math.cos(performance.now()*.11)*.03*q.shake}}   // INSPECIONAR (arma branca): braço sobe, a arma gira/inclina
+   if(w.two&&w.twoAt!=null){rig.spine.updateMatrixWorld(true);_o.set(0,0,w.twoAt);w.g.localToWorld(_o);rig.spine.worldToLocal(_o);ik(oa,of,sd==='R'?1:-1,_o)}   // OUTRA MÃO NO CABO de verdade (IK até um ponto do cabo, certo para cada arma), não num ângulo fixo
    continue;}
   const pz=WP[w.type],m=(w.side==='L'?-1:1)*(rig.weps.length>1?1.45:1),Hh=S.height;
   w.g.position.set(m*(pz[0][0]+(pz[1][0]-pz[0][0])*aimT),Hh*(pz[0][1]+(pz[1][1]-pz[0][1])*aimT)+(mv?Math.sin(ph*2)*A*.012:br),pz[0][2]+(pz[1][2]-pz[0][2])*aimT);
@@ -1387,6 +1389,7 @@ function animate(dt,spd,sgn,pitch,air){
    else if(k==='heavy'){oy=(q<.45?q/.45:1-(q-.45)/.55*1.5)*.3*z;oz=(q<.45?0:.35*sws)*z;rx=q<.45?-.9*q/.45:-.9+1.7*(q-.45)/.55}
    else{oz=.3*sws*z;oy=.1*sws*z;rx=-.5*sws}
    w.g.position.x+=ox;w.g.position.y+=oy;w.g.position.z+=oz;w.g.rotation.x+=rx;w.g.rotation.z+=rz}
+  if(w.ix){const q=w.ix;w.g.position.y+=q[0];w.g.position.z+=q[1];w.g.rotation.x+=q[2];w.g.rotation.y+=q[3];w.g.rotation.z+=q[4]}   // INSPECIONAR (arma de fogo): a arma inteira (e as mãos junto) sobe, gira e vai para perto do rosto
   for(const [sd,gp] of w.grips)ik(rig['a'+sd],rig['f'+sd],sd==='L'?1:-1,_t.set(gp[0],gp[1],gp[2]).applyQuaternion(w.g.quaternion).add(w.g.position).clone());
  }
 }

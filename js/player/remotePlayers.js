@@ -7,6 +7,7 @@ import { FAUNA } from '/shared/fauna.js';
 import { PLAYER_HEIGHT } from '/shared/constants.js';
 import { ITEM_IDS } from '/shared/items.js';
 import { Avatar } from './avatar.js';
+import { audio } from '../audio/audio.js';
 import { Ragdoll, Slide, canRag } from '../effects/ragdoll.js';
 
 // Jogadores no mundo: personagem do criador (rig + IK) com a arma de verdade nas mãos. Interpolação ~100 ms.
@@ -146,6 +147,7 @@ export class RemotePlayers {
     const info = this.roster.get(e.id);
     try { e.av.hold(id, info?.att?.[id] || {}, this.handSide, info?.skin?.[id]); } catch (err) { console.error('[arma remota]', err.message); }
     e.weapon = e.av.weapon;
+    if (e.drawn) { if (!e.av.onInspectSfx) e.av.onInspectSfx = (nm) => { try { audio.inspect(nm, e.group.position); } catch { /* sem som */ } }; try { e.av.draw?.(); } catch { /* sem animação */ } } e.drawn = true;   // SACAR: troca de arma de outro jogador (a 1ª arma, ao entrar, não anima)
     e.outlineDirty = true;   // só os contornos da arma nova serão criados (os do corpo são reaproveitados)
   }
   shot(id) { const e = this.entities.get(id); if (e) e.lastShot = performance.now(); }

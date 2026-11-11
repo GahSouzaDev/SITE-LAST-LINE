@@ -4,13 +4,15 @@ import { createCharacter } from './characterRig.js';
 import { BUILD, setOV } from '../weapons/arsenalModels.js';
 import { rawWeapon, cloneArs } from '../weapons/weaponProto.js';
 import { applySkin } from '../weapons/skins.js';
-import { buildWeapon } from '../weapons/weaponBuilder.js';
+import { buildWeapon, chainAnim, chainOf } from '../weapons/weaponBuilder.js';
 import { addLaser } from '../weapons/laserSight.js';
 import { ARSENAL_BY_ID } from '/shared/arsenalData.js';
 import { PLAYER_HEIGHT } from '/shared/constants.js';
 import { ITEMS } from '/shared/items.js';
 import { MELEE } from '/shared/melee.js';
 import { POSE } from '../weapons/viewmodel.js';
+import { inspectKind, inspectSample, DUR as INSP_DUR, EVENTS as INSP_EV } from '../weapons/inspect.js';
+import { drawSample, DRAW_DUR, DRAW_EVENTS } from '../weapons/draw.js';
 
 // Avatar = personagem (rig do criador) + arma de verdade nas mãos, com IK dos braços.
 // Escala: o rig tem 1,8 m com height=1; o jogo usa 1,6 m (PLAYER_HEIGHT).
@@ -20,6 +22,14 @@ const BOLTS = new Set(['scout', 'amr', 'hunter', 'santa', 'mosquete', 'dragao', 
 function reloadKind(id) { const c = ARSENAL_BY_ID[id]?.cls; if (REVS.has(id)) return 'revolver'; if (PUMPS.has(id) || PER_SHELL.has(id)) return 'pump'; if (BOLTS.has(id)) return 'bolt'; if (c === 'pistol') return 'pistol'; if (c === 'lmg') return 'lmg'; if (c === 'launcher') return 'launcher'; if (c === 'energy' || c === 'special') return 'cell'; return 'mag'; }
 const wkey = (k) => { const c = ARSENAL_BY_ID[k]?.cls; return /^(pistol|deagle|revolver)$/.test(k) || (c === 'pistol' && !k.startsWith('dual')) ? 'pistol' : /^(smg|pdw|px90|dualsmg|dualpistol|dualrev)$/.test(k) || c === 'smg' ? 'smg' : /^(lmg|m60)$/.test(k) || c === 'lmg' ? 'lmg' : 'rifle'; };   // pela CLASSE da arma: toda pistola/SMG/metralhadora é segurada do jeito certo
 
+// INCLINAÇÃO DA ARMA BRANCA NA MÃO (rad; ~1,2 = lâmina para CIMA a 90° do antebraço, ~2,0 = lâmina PARA A FRENTE): NO JOGO toda arma branca aponta para a frente, empunhada pelo cabo (faca, espada, machado, lança, motosserra)
+const BLADE_X = { spear: 2.0, tridente: 2.0, chainsaw: 2.15, karambit: 1.85, caipora: 2.0, navalha: 2.0, paje: 2.0, cenoura: 1.9 }, BLADE_CLASS = { knife: 2.0, xknife: 2.0, machete: 2.0, katana: 2.05, sword: 2.0, plasma: 2.0, axe: 1.9, hammer: 1.9, bat: 1.9, foice: 1.95, facacurupira: 2.0 };
+// ONDE A OUTRA MÃO SEGURA (m ao longo da arma a partir da mão principal; + = rumo à cabeça/lâmina, − = rumo ao pomo): machado/marreta/lança/foice = mão da frente no cabo, ~30 cm da de trás;
+// katana = a mão de trás no pomo, ~11 cm da principal (que fica junto à guarda); taco = mão de baixo no cabo, a de cima mais à frente. Motosserra não está aqui: usa a pose fixa (cabo da frente).
+// PEGADA DE CADA ARMA BRANCA (bx = inclinação em relação ao antebraço: ~1,2 = lâmina/cabeça PARA CIMA a 90°, ~2,0 = para a FRENTE; g = onde a mão fecha no cabo (fração do pomo à guarda); r = giro em torno do cabo; pa = ombro/cotovelo/afastamento em graus):
+//  faca = pegada de martelo, lâmina para a frente · karambit = dedo no anel, lâmina curva para a frente/baixo · facão = para a frente (lâmina de corte, um pouco erguida) · katana, espada, plasma, marreta, machado, taco = viradas para cima, 90° do antebraço (katana, marreta, machado e taco a duas mãos) · lança = duas mãos, ponta à frente e um pouco acima · motosserra = duas mãos à frente
+const GRIP = { knife: { bx: 2.05, g: 0.5, pa: [-40, -96, -6] }, xknife: { bx: 2.05, g: 0.5, pa: [-40, -96, -6] }, karambit: { bx: 1.95, g: 0.55, r: Math.PI, pa: [-40, -96, -4] }, machete: { bx: 1.95, g: 0.5, pa: [-44, -90, -8] }, katana: { bx: 1.3, g: 0.55, pa: [-46, -84, -6] }, sword: { bx: 1.25, g: 0.5 }, plasma: { bx: 1.3, g: 0.5 }, hammer: { bx: 1.2, g: 0.5 }, axe: { bx: 1.2, g: 0.5 }, bat: { bx: 1.25, g: 0.5 }, spear: { bx: 1.7, g: 0.78, pa: [-26, -58, -6] }, chainsaw: { bx: 2.3, g: 0.52 } };
+const TWO_AT = { hammer: 0.3, axe: 0.3, spear: 0.52, tridente: 0.5, foice: 0.32, katana: -0.115, bat: -0.13 };
 // Personagem BASE: Urban (camiseta e calça), nada na cabeça. A aparência física é livre; o que se desbloqueia são roupas/corpos/estilos.
 export const URBAN = { outfit: 'tshirt', helmet: 'none', goggles: 'none', headset: 'none', mask: 'none', vest: 'none', pack: 'none', gloves: 'off', kneepads: 'off', camo: 'urban', weapon: 'none', special: 'none', pose: 'aim' };
 
@@ -39,6 +49,7 @@ export class Avatar {
   }
   // golpe do corpo (3ª pessoa e para os outros jogadores): punho = soco · arma de fogo = coronhada · faca = corte/corte diagonal/estocada · 'heavy' = golpe forte
   melee(kind) {
+    this.cancelInspect?.();
     if (this._mUntil && performance.now() < this._mUntil) return;   // golpe em andamento: o próximo só depois que o movimento terminar
     const id = this.weaponId, it = ITEMS[id], knife = it?.cls === 'melee' && !['fists', 'claws', 'train'].includes(id);
     this.mN = (this.mN || 0) + 1;
@@ -49,6 +60,12 @@ export class Avatar {
     const dur = { heavy: 0.82, butt: 0.52, punch: 0.28, slash: 0.34, slashD: 0.37, stab: 0.32, slashU: 0.36, chop: 0.42, saw: 0.5 }[k] * (k === 'heavy' ? Math.max(0.9, wt) : wt);
     this._mUntil = performance.now() + dur * 1000; this.char.swing(k, dur);
   }
+  // INSPECIONAR: a animaçãozinha da categoria da arma (só com a arma cheia, parado). Qualquer ação corta na hora (cancelInspect). onInspectSfx(nome, tipo) toca os sons.
+  inspect(slow = 1) { if (!this.weaponId || !this.weapon || this._in) return false; const kind = inspectKind(this.weaponId); this._in = { t: 0, kind, dur: (INSP_DUR[kind] || 3) * slow, last: 0 }; return true; }
+  cancelInspect() { if (!this._in) return; this._in = null; const w = this.char.rig.weps[0]; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } }
+  get inspecting() { return !!this._in; }
+  // TROCA DE ARMA: a arma desce e sobe até a posição de mira (0,6 s)
+  draw(dur) { const kind = this.weaponId ? inspectKind(this.weaponId) : 'rifle'; this._dr = { t: 0, dur: dur || DRAW_DUR[kind] || 0.7, kind, last: -1 }; }   // sacar: a animação fixa da CATEGORIA da arma (weapons/draw.js)
   pour(sec = 1.8) { this.char.swing('pour', sec); }   // abastecendo: inclina o tronco e estende os braços
   setLook(look) { Object.assign(this.char.S, look, gq()); this.char.rebuild(); const w = this.weaponId, a = this.att; this.weaponId = null; this.weapon = null; this.holder = null; if (w) this.hold(w, a, this.side); }
 
@@ -65,7 +82,7 @@ export class Avatar {
   barrelDir(out) { if (!this.model) return null; this.model.updateWorldMatrix(true, false); return out.set(1, 0, 0).transformDirection(this.model.matrixWorld); }   // cano do Arsenal = +X
   weaponUp(out) { return this.model ? out.set(0, 1, 0).transformDirection(this.model.matrixWorld) : null; }
   // recuo do base.html: rec = min(0,3, rec + rc) (decai ×5e-4^dt). Partes móveis: pump (.45 s), ferrolho (.9 s), tambor gira 60°.
-  kick(rc = 0.08) { this.rec = Math.min(0.3, this.rec + rc); }
+  kick(rc = 0.08) { this.cancelInspect?.(); this.rec = Math.min(0.3, this.rec + rc); }
   kickParts(mech) { for (const o of this.parts || []) { const u = o.userData; if (u.role === 'drum') u.tr = (u.tr || 0) + Math.PI / 3; else if (u.role === 'pump') { u.t = 0.45; mech?.('pump', o); } else if (u.role === 'bolt') { u.t = 0.9; mech?.('bolt', o); } } }
   // posição do olho da mira (âncora do Arsenal) em coordenadas de mundo: a câmera vai para lá ao mirar (ADS do base.html)
   eyeWorld(out) { if (!this.weapon?.eyeObj || this.weapon.model?.userData?.noads) return null; this.weapon.eyeObj.updateWorldMatrix(true, false); return this.weapon.eyeObj.getWorldPosition(out); }
@@ -79,10 +96,11 @@ export class Avatar {
     this.unhold();
     if ((ITEMS[id]?.cls === 'melee' && !['fists', 'claws', 'train'].includes(id)) || id === 'bomb') {            // arma branca na mão direita
       try { const info = buildWeapon(id), holder = new THREE.Group(); try { applySkin(info.group, skin, id); } catch { /* sem skin */ } if (id === 'bomb') holder.add(info.group); else {   // ARMA BRANCA: cabo na mão e lâmina SEMPRE para a frente (cada modelo vem com a lâmina para um lado), levemente erguida
-          const bb = new THREE.Box3().setFromObject(info.group), GZ = 0.06, fwd = (bb.max.z - GZ) >= (GZ - bb.min.z), pivot = new THREE.Group(); pivot.rotation.set(-0.32, fwd ? 0 : Math.PI, 0); info.group.position.z -= GZ; pivot.add(info.group); holder.add(pivot); }
+          const bb = new THREE.Box3().setFromObject(info.group), fwd = false /* todos os modelos de arma branca são feitos com a lâmina/cabeça para -Z e o cabo para +Z (a detecção por tamanho errava lanças e martelos) */, hz = Math.max(0.06, bb.max.z), GZ = Math.min(0.4, Math.max(0.05, hz * (GRIP[id]?.g ?? 0.52))), pivot = new THREE.Group();   /* a MÃO fica no CENTRO DO CABO (não na guarda nem na ponta): cabo = do fim do modelo até a guarda (z ≈ 0) */ pivot.rotation.set(-0.32, fwd ? 0 : Math.PI, 0); info.group.rotation.z = GRIP[id]?.r || 0; info.group.position.z -= GZ; pivot.add(info.group); holder.add(pivot); }
         const nm = info.muzzle;
         if (id === 'bomb') { this.char.rig.weps = [{ g: holder, grips: [['R', [0, 0, 0.06]]], type: 'pistol', side }]; this.char.rig.spine.add(holder); }
-        else { const sd = side === 'L' ? 'L' : 'R'; { const P = POSE[id] || POSE.knife, t = P.t; this.char.rig.weps = [{ g: holder, grips: [], type: 'melee', side: sd, hand: true, elev: Math.atan2(t[1], -t[2]), two: ['spear', 'tridente', 'chainsaw', 'hammer', 'axe', 'foice'].includes(id) }]; }   /* postura 3ª pessoa = a da 1ª: inclinação da lâmina e, nas armas longas/pesadas, a outra mão segura o cabo */ this.char.rig['f' + sd].add(holder); holder.position.set(0, -0.3, 0); holder.rotation.set(0.9 + (1.5708 - this.char.rig.weps[0].elev) / 0.76, 0, 0); }   // ARMA BRANCA: presa à MÃO (antebraço), não flutuando perto do corpo; os golpes movem o braço e a arma vai junto
+        else { const sd = side === 'L' ? 'L' : 'R'; { const P = POSE[id] || POSE.knife, t = P.t; this.char.rig.weps = [{ g: holder, grips: [], type: 'melee', side: sd, hand: true, elev: Math.atan2(t[1], -t[2]), bx: GRIP[id]?.bx ?? BLADE_X[id] ?? (BLADE_CLASS[id] ?? 0.62), pa: GRIP[id]?.pa, two: ['spear', 'tridente', 'chainsaw', 'hammer', 'axe', 'foice', 'katana', 'bat'].includes(id), twoAt: TWO_AT[id] }]; }   /* postura 3ª pessoa = a da 1ª: inclinação da lâmina e, nas armas longas/pesadas, a outra mão segura o cabo */ this.char.rig['f' + sd].add(holder); holder.position.set(0, -0.3, 0); holder.rotation.set(this.char.rig.weps[0].bx, 0, 0); }   // ARMA BRANCA: presa à MÃO (antebraço), não flutuando perto do corpo; os golpes movem o braço e a arma vai junto
+        this._ch = id === 'chainsaw' ? chainOf(info.group) : null; this._cp = 0;   // corrente da motosserra
         this.holder = holder; this.model = info.group; this.agroup = id === 'bomb' ? holder : null; this.shotN = 0; this.parts = []; /* arma branca: o rig (characterRig) move a arma junto com a mão; o bloco de recarga NÃO pode mexer nela */ this.weapon = { group: holder, model: info.group, muzzle: nm, muzzles: [nm], nextMuzzle() { return nm; }, eject: new THREE.Object3D(), flash: nm, dual: false, eyeObj: null, hide: null };
         this.char.S.pose = 'aim'; if (this.fp) this.applyFP(); } catch (e) { this.char.S.pose = 'idle'; } return; }
     if (!id || !ITEMS[id]?.gun || !BUILD[id]) { this.char.S.pose = 'idle'; return; }
@@ -126,7 +144,17 @@ export class Avatar {
     this.crouchV += ((crouch ? 1 : 0) - this.crouchV) * Math.min(1, dt * 12);
     this.char.setCrouch(this.crouchV);
     this.char.S.pose = this.weapon ? (run ? 'armed' : 'aim') : 'idle';       // padrão: SEMPRE mirando · correndo sem atirar: arma em outra posição (abaixada); atirou -> volta à mira       // POSIÇÃO PADRÃO = SEMPRE MIRANDO (como no base.html): arma erguida, encaixada na tela, parado, andando, correndo ou atirando
+    if (this._in && (reload > 0 || run || air || sliding || crouch || this.dead)) this.cancelInspect();
+    if (this._in) {   // INSPECIONAR em curso: calcula os deslocamentos e entrega ao rig (as mãos acompanham a arma)
+      const I = this._in; I.t += dt / I.dur; const w = this.char.rig.weps[0];
+      if (I.t >= 1) this.cancelInspect(); else if (w) { const s = inspectSample(I.kind, I.t), sg = this.side === 'L' ? -1 : 1;
+        if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
+        for (const [t, nm] of INSP_EV[I.kind] || []) if (I.last < t && I.t >= t) this.onInspectSfx?.(nm, I.kind); I.last = I.t; } }
+    if (this._dr && !this._in) { const D = this._dr; D.t += dt / D.dur; const w = this.char.rig.weps[0]; if (D.t >= 1) { this._dr = null; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } } else if (w) { const s = drawSample(D.kind, D.t), sg = this.side === 'L' ? -1 : 1;
+        if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
+        for (const [t, nm] of DRAW_EVENTS[D.kind] || []) if (D.last < t && D.t >= t) this.onInspectSfx?.(nm, D.kind); D.last = D.t; } }
     this.char.animate(dt, spd, sgn, pitch, air);
+    if (this._ch) { const hit = this._mUntil && performance.now() < this._mUntil; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._ch, this._cp); this.chainRev = hit ? 1 : 0.3; if (this.holder) this.holder.position.x = Math.sin(performance.now() * 0.09) * (hit ? 0.006 : 0.002); }   // MOTOSSERRA: a corrente corre sempre (mais rápido ao serrar) e a arma vibra
     // === movimento da arma IDÊNTICO ao base.html: group.position.x = -rec · group.rotation.z = rec*.35 - tilt(recarga) · (unidades do Arsenal ×0,3)
     this.rec *= Math.pow(5e-4, dt); if (this.rec < 1e-4) this.rec = 0;
     if (this.agroup) {

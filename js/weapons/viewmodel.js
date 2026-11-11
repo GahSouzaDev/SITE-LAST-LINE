@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { cloneModel } from './gunModels.js';
+import { chainAnim, chainOf } from './weaponBuilder.js';
+import { inspectKind, inspectSample, DUR as INSP_DUR, EVENTS as INSP_EV } from './inspect.js';
+import { drawSample, DRAW_DUR, DRAW_EVENTS } from './draw.js';
 import { applySkin } from './skins.js';
 import { ITEMS } from '/shared/items.js';
 import { MELEE } from '/shared/melee.js';
@@ -34,7 +37,7 @@ export class ViewModel {
     this.holder = new THREE.Group(); this.mirror.add(this.holder);
     this.side = 1; this.id = null; this.model = null; this.mode = 'gun';
     this.kz = 0; this.kzv = 0; this.kp = 0; this.kpv = 0; this.kr = 0; this.krv = 0;
-    this.bob = 0; this.ads = 0; this.rT = -1; this.rDur = 1; this.sT = 1; this.mT = -1; this.tT = -1; this.swayX = 0; this.swayY = 0; this.vis = true;
+    this.iT = -1; this.dT = -1; this.dK = 'rifle'; this.dDur = 0.7; this.dLast = 0; this._cp = 0; this._chain = null; this.bob = 0; this.ads = 0; this.rT = -1; this.rDur = 1; this.sT = 1; this.mT = -1; this.tT = -1; this.swayX = 0; this.swayY = 0; this.vis = true;
     this.handMat = new THREE.MeshStandardMaterial({ color: SKIN, roughness: 0.8 }); this.sleeveMat = new THREE.MeshStandardMaterial({ color: SLEEVE, roughness: 0.9 });
   }
   setSide(s) { this.side = s === 'left' ? -1 : 1; this.mirror.scale.set(this.side * this.VM_SCALE, this.VM_SCALE, this.VM_SCALE); }
@@ -60,7 +63,8 @@ export class ViewModel {
       if (m.dual) { this.holder.add(this.arm(m.grip.clone().add(new THREE.Vector3(-m.length * 0.0, 0, 0)), new THREE.Vector3(-0.1, -0.3, 0.3), false)); }
     }
     this.hideObj = this.model.group.getObjectByName('__hide') || null; if (this.hideObj) this.hideObj.visible = true;
-    this.sT = 0; this.rT = -1; this.mT = -1; this.tT = -1;
+    this.sT = 1; this.rT = -1; this.mT = -1; this.tT = -1; this.iT = -1; this._chain = null;
+    this.dK = inspectKind(id); this.dDur = DRAW_DUR[this.dK] || 0.7; this.dT = 0; this.dLast = -1;   // SACAR: cada categoria tem a sua animação (draw.js)
     const eye = m.eye || new THREE.Vector3(0, 0.06, 0);
     this.hip = new THREE.Vector3(0.2, -0.2, -0.42).divideScalar(this.VM_SCALE).sub(m.grip);
     if (m.dual) this.hip.x = 0.0 / this.VM_SCALE - m.grip.x;   // armas duplas: o PAR fica centralizado na tela, uma de cada lado (espelhado), como nos FPS
@@ -113,6 +117,10 @@ export class ViewModel {
     const wt = this.mode === 'knife' ? Math.min(1.9, Math.max(0.7, (MELEE[this.id]?.cd || 0.55) / 0.55)) : 1;   // arma pesada = golpe mais lento (e mais forte no servidor)
     this.mWt = wt; this.mDur = { heavy: 0.82, butt: 0.52, punch: 0.28, slash: 0.34, slashD: 0.37, stab: 0.32, slashU: 0.36, chop: 0.42, saw: 0.5 }[this.mK] * (this.mK === 'heavy' ? Math.max(0.9, wt) : wt);
   }
+  // INSPECIONAR (R com a arma cheia): animação da categoria; onInspectSfx(nome, tipo) toca os sons; cancelInspect() corta na hora
+  inspect(slow = 1) { if (!this.model || this.iT >= 0 || this.dT >= 0 || this.rT >= 0 || this.mT >= 0 || this.tT >= 0 || this.ads > 0.1) return false; const kind = inspectKind(this.id); this.iK = kind; this.iDur = (INSP_DUR[kind] || 3) * slow; this.iT = 0; this.iLast = 0; return true; }
+  cancelInspect() { this.iT = -1; }
+  get inspecting() { return this.iT >= 0; }
   throwIt() { this.tT = 0; }
   muzzleLocal() { this.rig.updateMatrixWorld(true); return this.model.muzzle.getWorldPosition(new THREE.Vector3()); }
   ejectLocal() { return this.model.eject.getWorldPosition(new THREE.Vector3()); }
@@ -182,6 +190,23 @@ export class ViewModel {
         }
       }
     }
+    // INSPECIONAR: gira/levanta a arma, a mão de apoio vai ao pente/ação e a arma branca gira na mão
+    if (this.iT >= 0) {
+      if (this.rT >= 0 || this.mT >= 0 || this.tT >= 0 || this.ads > 0.1 || st.sprint || st.sliding || !st.onGround) this.iT = -1; else {
+        this.iT += dt / this.iDur; const p = this.iT; if (p >= 1) this.iT = -1; else {
+          const s = inspectSample(this.iK, p), sd = this.side, K = 1 / this.VM_SCALE;
+          if (s.melee) { py += 0.06 * s.arm; px += -0.04 * sd * s.out; rx += s.twirl; rz += s.tilt * sd; ry += -0.2 * s.fore * sd; if (s.shake) { px += (Math.random() - 0.5) * 0.008 * s.shake; py += (Math.random() - 0.5) * 0.008 * s.shake; } }
+          else { py += s.lift * K; pz -= s.fwd * K; rx += s.pitch; rz += s.roll * sd; ry += s.yaw * sd; sup = Math.max(sup, s.sup); supZ = Math.min(supZ, -s.supF * 2.5); px += -0.02 * sd * s.sup; }
+          for (const [t, nm] of INSP_EV[this.iK] || []) if (this.iLast < t && p >= t) this.onInspectSfx?.(nm, this.iK); this.iLast = p; } } }
+    // SACAR (trocou de arma): a animação fixa da categoria (draw.js), com os barulhos dela; ficar parado não é exigido, mas disparar/recarregar/golpear a encerra
+    if (this.dT >= 0) {
+      if (this.rT >= 0 || this.mT >= 0 || this.tT >= 0) this.dT = -1; else {
+        this.dT += dt / this.dDur; const p = this.dT; if (p >= 1) this.dT = -1; else {
+          const s = drawSample(this.dK, p), sd = this.side, K = 1 / this.VM_SCALE;
+          if (s.melee) { py += 0.06 * s.arm; px += -0.04 * sd * s.out; rx += s.twirl; rz += s.tilt * sd; ry += -0.2 * s.fore * sd; if (s.shake) { px += (Math.random() - 0.5) * 0.008 * s.shake; py += (Math.random() - 0.5) * 0.008 * s.shake; } }
+          else { py += s.lift * K; pz -= s.fwd * K; rx += s.pitch; rz += s.roll * sd; ry += s.yaw * sd; sup = Math.max(sup, s.sup); supZ = Math.min(supZ, -s.supF * 2.5); px += -0.02 * sd * s.sup; }
+          for (const [t, nm] of DRAW_EVENTS[this.dK] || []) if (this.dLast < t && p >= t) this.onInspectSfx?.(nm, this.dK); this.dLast = p; } } }
+    if ((this.iT >= 0 || this.dT >= 0) && this.supArm) { this.supArm.position.set(0, -0.2 * sup, 0.12 * sup - 0.05 * supZ); this.supArm.rotation.x = 0.5 * sup; }   // a mão de apoio acompanha o inspecionar
     // arremesso de granada: braço para trás e à frente
     if (this.tT >= 0) { this.tT += dt / 0.4; const p = this.tT; if (p >= 1) this.tT = -1; else { const w = p < 0.45 ? -ease(p / 0.45) : ease((p - 0.45) / 0.55) * 1.2 - 1; pz += w * 0.14; py += (p < 0.45 ? -0.04 : 0.1) * Math.sin(Math.PI * p); rx += -w * 0.6; } }
     // deslize/corrida: arma abaixada
@@ -192,6 +217,7 @@ export class ViewModel {
     const br = this.baseRot || { x: 0, y: 0, z: 0 }, idle = this.mode === 'knife' && this.mT < 0 ? Math.sin(this.bob * 0.5) * 0.02 : 0;
     this.holder.rotation.set(rx + br.x + idle + this.kp * 0.045, ry + br.y, rz + br.z + this.kr * 0.03);
     if (this.baseQ) { const E = this.holder.quaternion.clone(), gp = this.pivot || this.model.grip || new THREE.Vector3(); this.holder.position.add(gp.clone().sub(gp.clone().applyQuaternion(this.baseQ)).applyQuaternion(E)); this.holder.quaternion.copy(E.multiply(this.baseQ)); }
+    if (this.id === 'chainsaw') { this._chain = this._chain || chainOf(this.model.group); if (this._chain) { const hit = this.mT >= 0; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._chain, this._cp); this.chainRev = hit ? 1 : 0.3; if (!hit) this.holder.position.x += Math.sin(performance.now() * 0.09) * 0.002; else this.holder.position.x += Math.sin(performance.now() * 0.09) * 0.006; } }   // MOTOSSERRA: corrente correndo e vibração
     this.mirror.position.z = 0;
     if (this.mode === 'gun' || this.mode === 'knife') this.model.group.visible = true;
     this.rig.visible = this.vis;
