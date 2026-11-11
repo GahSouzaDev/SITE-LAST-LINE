@@ -67,8 +67,22 @@ const FXSPEC = { ember: { n: 30, c: [1, .55, .15], size: 0.04, mode: 'rise', spe
   elec: { n: 44, c: [.85, .95, 1], size: 0.05, mode: 'spark', speed: 3 }, void: { n: 44, c: [.65, .3, 1], size: 0.04, mode: 'twinkle', speed: 1 } };
 const SPARKC = { gold: [1, .88, .54], frost: [.81, .96, 1], prism: [-1, 0, 0], holo: [.75, .99, 1], galaxy: [1, 1, 1] };
 const ICE = new THREE.MeshStandardMaterial({ color: 0xcfefff, metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.78, emissive: 0x4aa8ff, emissiveIntensity: 0.6 });
-function crystals(model) { const b = new THREE.Box3().setFromObject(model), s = b.getSize(new THREE.Vector3()), mat = ICE.clone(); model.userData.hasFx = true;
-  for (let i = 0, nC = lowQ() ? 8 : 16; i < nC; i++) { const up = Math.random() < 0.7, h = 0.14 + Math.random() * 0.26, r = 0.03 + Math.random() * 0.035, c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 5), mat); c.userData.fx = 'mesh'; c.userData.baseOp = 0.78; c.position.set(b.min.x + Math.random() * s.x, up ? b.max.y + h * 0.35 : b.min.y - h * 0.35, b.min.z + Math.random() * s.z); c.rotation.z = (Math.random() - 0.5) * 0.7; if (!up) c.rotation.x = Math.PI; model.add(c); } }
+// Cristais de gelo NASCEM DA SUPERFÍCIE da arma: cada um é lançado por um raio (de cima, de baixo ou do lado) contra as peças e fica com a base ENCOSTADA no ponto atingido, apontando na direção da superfície (antes ficavam soltos no ar em volta da caixa da arma)
+function crystals(model) {
+  model.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(model), sz = b.getSize(new THREE.Vector3()), mat = ICE.clone(); model.userData.hasFx = true;
+  const meshes = []; model.traverse((o) => { if (o.isMesh && !o.userData.fx && o.visible) meshes.push(o); }); if (!meshes.length) return;
+  const rc = new THREE.Raycaster(), inv = new THREE.Matrix4().copy(model.matrixWorld).invert(), Y = new THREE.Vector3(0, 1, 0), org = new THREE.Vector3(), dir = new THREE.Vector3(), nrm = new THREE.Vector3(), pl = new THREE.Vector3();
+  const want = lowQ() ? 8 : 16; let placed = 0;
+  for (let tries = 0; tries < want * 10 && placed < want; tries++) {
+    const rx = b.min.x + Math.random() * sz.x, ry = b.min.y + Math.random() * sz.y, rz = b.min.z + Math.random() * sz.z, w = Math.random();
+    if (w < 0.55) { org.set(rx, b.max.y + 0.3, rz); dir.set(0, -1, 0); } else if (w < 0.72) { org.set(rx, b.min.y - 0.3, rz); dir.set(0, 1, 0); } else { const sd = Math.random() < 0.5 ? 1 : -1; org.set(rx, ry, sd > 0 ? b.max.z + 0.3 : b.min.z - 0.3); dir.set(0, 0, -sd); }
+    rc.set(org, dir); const hit = rc.intersectObjects(meshes, false)[0]; if (!hit || !hit.face) continue;
+    nrm.copy(hit.face.normal).transformDirection(hit.object.matrixWorld).transformDirection(inv); pl.copy(hit.point).applyMatrix4(inv);
+    const h = 0.12 + Math.random() * 0.2, r = 0.025 + Math.random() * 0.03, c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 5), mat);
+    c.userData.fx = 'mesh'; c.userData.baseOp = 0.78; c.quaternion.setFromUnitVectors(Y, nrm); c.position.copy(pl).addScaledVector(nrm, h * 0.5 - 0.025);   // a base entra um pouco na peça: encostado, sem frestas
+    model.add(c); placed++;
+  }
+}
 // Metal espelhado (Cromo Espelho etc.) precisa de um mapa de AMBIENTE para refletir; sem ele fica PRETO. O ambiente de verdade (o mesmo da cena do jogo) chega por setSkinEnv()
 // assim que existe; enquanto isso um ambiente provisório de alto contraste (céu claro, horizonte, chão escuro e janelas brilhantes) evita o preto — e os materiais são TROCADOS pelo de verdade depois.
 let REAL = null, FALL = null; const FB = [];

@@ -2,6 +2,16 @@ import { FAUNA } from './fauna.js';
 // DINOSSAURO × DINOSSAURO (PvP): cada espécie tem 30 PONTOS divididos em VIDA, VELOCIDADE e DANO (10/10/10 = o equilíbrio). A diferença entre elas é SUTIL:
 // cada ponto a mais vale +step% (padrão 3%) naquele atributo; os pontos que sobem em um atributo saem de outro, então nenhuma espécie é melhor que as outras, só diferente.
 // Os números base e o step vêm do admin (Jogo › Dinossauro × Dinossauro) e ficam em DINO_CFG (o servidor atualiza em gamecfg.apply).
+/* pulo do dinossauro: o DOBRO da altura (altura ~ velocidade², então a velocidade sobe √2) */
+export const DINO_JUMP = Math.SQRT2;
+export const HUNT_UP = 2;   /* Caçada: a presa que corre EM PÉ (segurando o botão esquerdo) corre o DOBRO da corrida de bicho com Shift (cliente e servidor usam esta conta) */
+export const HUNTER_SKIN = 'caipira';   /* o CAÇADOR da Caçada é sempre o fazendeiro (partida e tela final) */
+/* PEIDO/ARRANQUE da Caçada: avanço BEM grande para a frente (começa em DASH_TOP m/s e vai acalmando até a velocidade normal), igual para qualquer bicho, até os lentos.
+   Durante o arranque o jogo força 'frente + correr', então a velocidade-base é a de CORRER (6,83 m/s × speedMul). Cliente e servidor usam esta MESMA conta. */
+export const DASH = { ms: 1600, top: 18 }, RUN_BASE = 6.83;   // DASH é ajustável (admin: distância do arranque); o servidor manda o valor para os clientes a cada rodada
+export const dashSpeedMul = (u, base) => base * u + (DASH.top / RUN_BASE) * (1 - u);   // u: 0 (começo) → 1 (fim)
+/* DISTÂNCIA (m) → velocidade inicial: com a queda linear até a velocidade normal (~6 m/s) a distância é (topo + 6) / 2 × duração */
+export const dashTopFor = (dist, ms = DASH.ms) => Math.max(8, +(2 * dist / (ms / 1000) - 6).toFixed(2));
 export const DINO_CFG = { hp: 200, speed: 11, fast: 30, strong: 90, step: 3 };   // vida 200 (o DOBRO do jogador) · mordida rápida 30 · forte 90 (por mordida, na vida do alvo)   // speed = m/s CORRENDO (jogador a pé corre a 6,8)
 export const DINO_PTS = {
   trex: { hp: 11, spd: 8, dmg: 11 }, raptor: { hp: 8, spd: 12, dmg: 10 }, dilo: { hp: 9, spd: 10, dmg: 11 }, carno: { hp: 11, spd: 9, dmg: 10 },

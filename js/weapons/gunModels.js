@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { addLaser, laserUpdate } from './laserSight.js';
 import { BUILD, setOV } from './arsenalModels.js';
 import { buildWeapon } from './weaponBuilder.js';
+import { rawWeapon, cloneArs } from './weaponProto.js';
 import { ARSENAL_BY_ID } from '/shared/arsenalData.js';
 import { ITEMS } from '/shared/items.js';
 
@@ -17,8 +18,7 @@ function build(id, att = {}) {
     return { ...b, scale: 1, sight: null, dual: false, real: true };
   }
   const w = ARSENAL_BY_ID[id];
-  setOV({ op: att.op && att.op !== 'def' ? att.op : undefined, tip: att.tip && att.tip !== 'def' ? att.tip : undefined, mag: att.mag | 0 });
-  const model = BUILD[id]();
+  const model = cloneArs(rawWeapon(id, att));   // cópia do protótipo (montado e fundido uma vez só)
   const holder = new THREE.Group(); holder.add(model);
   model.rotation.y = Math.PI / 2;                 // cano +X -> -Z
   holder.updateMatrixWorld(true);

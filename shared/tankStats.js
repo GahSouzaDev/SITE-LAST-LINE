@@ -14,6 +14,9 @@ export const TANK_PTS = {
   tamandua: { hp: 11, spd: 8, dmg: 11 }    // TAMANDUÁ: forte de frente, devagar
 };
 export const TANK_IDS = Object.keys(TANK_PTS);
+/* SUPERAQUECIMENTO da metralhadora (munição infinita, mas com barra de calor): cada tiro enche 20% (≈7 tiros seguidos enchem), esfria 12%/s soltando o gatilho; ao encher TRAVA e só volta a atirar quando esfriar TUDO (35%/s, ~3 s). Cliente e servidor usam esta mesma conta. */
+export const MG_HEAT = { shot: 0.09, cool: 0.12, overCool: 0.35 };   // ~28 tiros seguidos antes de superaquecer (eram ~7)
+export function mgHeatStep(h, over, dt) { if (over) { h -= MG_HEAT.overCool * dt; if (h <= 0) return { h: 0, over: false }; return { h, over: true }; } return { h: Math.max(0, h - MG_HEAT.cool * dt), over: false }; }
 export const TANK_INFO = {
   onca: { name: 'Onça', desc: 'Leve e ágil. Gira rápido e foge dos tiros, mas aguenta pouco.', col: '#c9a227', col2: '#3a2a10' },
   anta: { name: 'Anta', desc: 'Pesada e lenta, com muita vida. Um muro andando.', col: '#6b6f5a', col2: '#2b2e24' },

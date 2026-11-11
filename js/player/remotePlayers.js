@@ -1,10 +1,13 @@
 import { ZT } from '/shared/survival.js';
 import { FaunaAv } from '../creatures/faunaAv.js';
+import { TankAv } from '../creatures/tankAv.js';
 import { lampHex } from '/shared/grenadeColors.js';
 import * as THREE from 'three';
+import { FAUNA } from '/shared/fauna.js';
 import { PLAYER_HEIGHT } from '/shared/constants.js';
 import { ITEM_IDS } from '/shared/items.js';
 import { Avatar } from './avatar.js';
+import { Ragdoll, Slide, canRag } from '../effects/ragdoll.js';
 
 // Jogadores no mundo: personagem do criador (rig + IK) com a arma de verdade nas mãos. Interpolação ~100 ms.
 const INTERP_DELAY_MS = 90;   // servidor envia a 30 Hz (economia de banda): 90 ms de buffer cobre 2 pacotes (mínimo)
@@ -28,7 +31,7 @@ export function lookFor(info, idx) {
   const h = hash(info?.username || 'x'), pick = (a, n) => a[(h >> n) % a.length];
   const base = { gender: (h & 1) ? 'male' : 'female', skin: pick(SKINS, 3), hairStyle: pick(HAIRS, 5), hair: pick(HAIRCOL, 8), eyes: ['#4b7a8c', '#5b4a32', '#3a5a3a'][(h >> 11) % 3], pants: '#2f3640' };
   const look = { ...base, ...(info?.look || {}) };
-  if (info?.zombie) Object.assign(look, info.zalien ? { special: 'alien', mode: 'player' } : zombieLook(info.id));   // na Lua os infectados são ALIENÍGENAS
+  if (info?.zombie) Object.assign(look, info.zalien ? { special: 'alien', chroma: 'vermelho', mode: 'player' } : zombieLook(info.id), { lowDetail: true });   // infectado/alien da horda: visual simples (sem relevo nem rosto detalhado)   // na Lua os infectados são ALIENÍGENAS
   look.shirt = info?.team ? TEAM_SHIRT[info.team] : FFA_SHIRTS[(idx ?? 0) % FFA_SHIRTS.length];
   return look;
 }
@@ -40,19 +43,21 @@ export function lookFor(info, idx) {
 // [dist² do nível 1, do nível 2, do nível 3, distância máxima²]. Gráfico baixo (zq 0): sem o nível 0 (sempre ao menos "sem minúsculos" = ~22 peças em vez de ~190)
 const ZLOD = [[0, 40 * 40, 100 * 100, 200 * 200], [12 * 12, 25 * 25, 100 * 100, 330 * 330], [30 * 30, 60 * 60, 140 * 140, 400 * 400]];
 const _sc = new THREE.Vector3(), _q = new THREE.Quaternion(), _p = new THREE.Vector3();
-function lodParts(av) { if (av._lod) return av._lod; av.group.updateMatrixWorld(true); const L = []; av.group.traverse((o) => { if (!o.isMesh) return; if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); o.matrixWorld.decompose(_p, _q, _sc); L.push({ o, r: o.geometry.boundingSphere.radius * Math.max(_sc.x, _sc.y, _sc.z), v0: o.visible }); }); [...L].sort((a, b) => b.r - a.r).forEach((p, i) => { p.rank = i; }); return (av._lod = L); }
-function setLod(e, lvl) { if (e.lodL === lvl) return; e.lodL = lvl; for (const p of lodParts(e.av)) p.o.visible = p.v0 && !(lvl >= 1 && p.r < 0.05) && !(lvl >= 2 && p.r < 0.12) && !(lvl >= 3 && p.rank >= 12); }
+function lodParts(av) { if (av._lod) return av._lod; av.group.updateMatrixWorld(true); const L = []; av.group.traverse((o) => { if (!o.isMesh) return; if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); o.matrixWorld.decompose(_p, _q, _sc); L.push({ o, r: o.geometry.boundingSphere.radius * Math.max(_sc.x, _sc.y, _sc.z), v0: o.visible, tier: o.userData.lodTier }); }); [...L].sort((a, b) => b.r - a.r).forEach((p, i) => { p.rank = i; }); return (av._lod = L); }
+function setLod(e, lvl) { if (e.lodL === lvl) return; e.lodL = lvl; for (const p of lodParts(e.av)) p.o.visible = p.v0 && (p.tier !== undefined ? !((p.tier === 0 && lvl >= 1) || (p.tier === 1 && lvl >= 2) || (p.tier === 2 && lvl >= 3)) : !(lvl >= 1 && p.r < 0.05) && !(lvl >= 2 && p.r < 0.12) && !(lvl >= 3 && p.rank >= 12)); }   // infectado fundido em malhas por CAMADA (0 minúsculo · 1 pequeno · 2 corpo · 3 silhueta): mesma regra do LOD por peça, com muito menos chamadas de desenho
 function drawDonut(cv, f, col) {   /* col: cor do ALIADO (a mesma do nome); sem col = vermelho */   // vida sobre o jogador: mesmo tamanho, mais VISÍVEL (trilho escuro + vermelho luminoso com brilho)
   const g = cv.getContext('2d'); g.clearRect(0, 0, 64, 64); if (f <= 0) return; g.lineCap = 'butt';
   g.lineWidth = 14; g.strokeStyle = 'rgba(0,0,0,.65)'; g.beginPath(); g.arc(32, 32, 24, 0, Math.PI * 2); g.stroke();
   g.shadowColor = col || '#ff3a2e'; g.shadowBlur = 10; g.lineWidth = 10; g.strokeStyle = col || '#ff4a3d'; g.beginPath(); g.arc(32, 32, 24, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, f)); g.stroke();
   g.shadowBlur = 0; g.lineWidth = 2.5; g.strokeStyle = col ? '#fff' : 'rgba(255,225,215,.9)'; g.beginPath(); g.arc(32, 32, 24, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, f)); g.stroke();
 }
-function nameSprite(text, color) {
+/* altura dos rótulos: humano = PLAYER_HEIGHT; dinossauro = a altura do bicho (nome e vida ficam ACIMA da cabeça, não dentro do corpo) */
+function labelH(info) { if (info?.tank) return 3.4; const f = info?.dino && FAUNA[info.dino]; return f ? Math.max(PLAYER_HEIGHT, (f.hit?.h || 2) * (info.dscale || 1)) : PLAYER_HEIGHT; }
+function nameSprite(text, color, depth = false) {
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const g = cv.getContext('2d');
   g.font = 'bold 30px Segoe UI, Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 6; g.strokeStyle = '#000'; g.strokeText(text, 128, 34); g.fillStyle = color; g.fillText(text, 128, 34);
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false })); spr.scale.set(1.4, 0.35, 1); spr.renderOrder = 999; return spr;   // depthTest off: o nome do ALIADO aparece através das paredes
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: depth })); spr.scale.set(1.4, 0.35, 1); spr.renderOrder = 999; return spr;   /* depthTest off só para o ALIADO (aparece pelas paredes); o INIMIGO usa depth: o nome some atrás de árvores e objetos, igual à vida */
 }
 function lerpAngle(a, b, t) { const d = ((b - a + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI; return a + d * t; }
 
@@ -64,11 +69,28 @@ export function sampleReplay(list, t) {
   return { x: a[1] + (c[1] - a[1]) * k, y: a[2] + (c[2] - a[2]) * k, z: a[3] + (c[3] - a[3]) * k, yaw: lerpAngle(a[4], c[4], k), pitch: a[5] + (c[5] - a[5]) * k, flags: c[6], vx: c[7], vz: c[8], w: c[9], ads: a[10] | 0, fc: a[11] | 0 };
 }
 export class RemotePlayers {
-  constructor(scene, selfId) { this.scene = scene; this.selfId = selfId; this.roster = new Map(); this.entities = new Map(); this.zpool = []; this.selfTeam = null; this.ffaIndex = new Map(); this.handSide = 'R'; }
+  constructor(scene, selfId) { this.scene = scene; this.selfId = selfId; this.roster = new Map(); this.entities = new Map(); this.zpool = []; this.selfTeam = null; this.ffaIndex = new Map(); this.handSide = 'R'; this.getCol = null; this.hints = new Map(); }
+  // CORPO DE PANO: de onde veio o tiro que matou (direção e força), para o corpo ser empurrado ao morrer
+  hint(id, dir, str, head) { this.hints.set(id, { dir, str, head, t: performance.now() }); if (this.hints.size > 64) this.hints.delete(this.hints.keys().next().value); }
+  startRag(e, vx = 0, vz = 0) {
+    const col = this.getCol?.(); if (e.rd || !col?.bvh || e.replay || e.av.isTank || !canRag()) return;
+    const h = this.hints.get(e.id), hit = h && performance.now() - h.t < 2500 ? h : null, rd = e.av.cr ? new Slide(col, e.group) : new Ragdoll(col, e.group);
+    rd.start(hit?.dir || null, hit?.str ?? 2, !!hit?.head, e.av.cr ? null : { x: vx * 0.6, y: 0, z: vz * 0.6 }); this.hints.delete(e.id); e.rd = rd; if (!e.av.cr) e.av.rag = rd;
+  }
+  // EXPLOSÃO: empurra para longe do centro, mais forte perto e em explosão maior (granada < foguete < bomba); acorda corpos já caídos
+  explode(p, r, power) {
+    for (const e of this.entities.values()) {
+      if (!e.rd || e.rd.stop === undefined) continue; const g = e.group.position, dx = g.x - p.x, dy = g.y + 0.9 - p.y, dz = g.z - p.z, dist = Math.hypot(dx, dy, dz), R = Math.max(r * 1.25, 4); if (dist > R) continue;
+      const f = Math.pow(1 - dist / R, 1.2), s = Math.min(14, power * f + 0.4), hl = Math.hypot(dx, dz) || 1; e.rd.kick?.(dx / hl, dz / hl, s, e.av.cr ? 0 : 1);
+    }
+    this.lastBoom = { x: p.x, y: p.y, z: p.z, r, power, t: performance.now() };
+  }
+  endRag(e) { e.rd?.stop?.(); e.rd = null; e.av.rag = null; e.group.rotation.set(0, 0, 0); }
 
   setRoster(players) {
     this.roster = new Map(players.map((p) => [p.id, p]));
-    for (const [id, e] of this.entities) { const info = this.roster.get(id); if (info && !!info.zombie !== !!e.zombie) {   // virou zumbi (ou ressuscitou): troca o corpo
+    for (const [id, e] of this.entities) { const info0 = this.roster.get(id); if (info0 && !info0.npc && ((e.dinoSig ?? null) !== (info0.dino ?? null) || ((e.tankSig ?? null) !== (info0.tank ?? null) && !(this.keepTanks && e.tankSig && !info0.tank)) || (e.lookSig ?? null) !== (info0.look?.special ?? null))) { this.remove(id, e); continue; }   /* virou outro bicho/monstro (rodada nova, transformação): recria o corpo */
+      const info = info0; if (info && !!info.zombie !== !!e.zombie) {   // virou zumbi (ou ressuscitou): troca o corpo
       e.group.remove(e.av.group); e.av = new Avatar({ ...lookFor(info, this.ffaIndex.get(id)), noAura: true }); e.group.add(e.av.group); e.av.group.traverse((o) => { if (o.isMesh) o.castShadow = true; }); e.zombie = !!info.zombie; e.wIdx = -2; e.weapon = null; } }
     this.selfTeam = this.roster.get(this.selfId)?.team ?? null;
     players.forEach((p) => { if (!this.ffaIndex.has(p.id)) this.ffaIndex.set(p.id, this.ffaIndex.size); });
@@ -81,26 +103,38 @@ export class RemotePlayers {
   }
   // POOL DE ZUMBIS: montar um personagem (~200 malhas) custa 20–80 ms e travava o quadro quando a horda aparecia (principalmente dirigindo, que revela zumbis novos o tempo todo).
   // Eles são montados ANTES (aos poucos, no começo da partida) e reaproveitados quando um zumbi some.
-  fillPool(plan = { walker: 10, runner: 3, brute: 2, tank: 1 }) {
+  // lista de tarefas (uma por zumbi) para o aquecimento da tela de carregamento: monta o pool inteiro ANTES da partida
+  poolJobs(plan = { walker: 17, runner: 6, brute: 3, tank: 2 }) {
+    const jobs = []; for (const [t, n] of Object.entries(plan)) for (let i = 0; i < n; i++) jobs.push(() => { if (this.disposed) return; const k = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, av: new Avatar({ ...lookFor({ username: 'pool' + k, zombie: true, ztype: t, id: 9100 + k * 7, look: {} }, k), noAura: true }) }); });
+    return jobs;
+  }
+  fillPool(plan = { walker: 18, runner: 6, brute: 3, tank: 2 }) {
     const todo = []; for (const [t, n] of Object.entries(plan)) for (let i = 0; i < n; i++) todo.push(t);
     const step = () => { const t = todo.pop(); if (!t || this.disposed) return; try { const i = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, av: new Avatar({ ...lookFor({ username: 'pool' + i, zombie: true, ztype: t, id: 9100 + i * 7, look: {} }, i), noAura: true }) }); } catch { /* sem pool */ } setTimeout(step, 40); };
     setTimeout(step, 200);
   }
-  takePooled(info) { if (!info?.npc || !info.ztype || info.zalien || info.fauna) return null; const i = this.zpool.findIndex((p) => p.type === info.ztype); return i < 0 ? null : this.zpool.splice(i, 1)[0].av; }
+  // reposição do pool: cada zumbi tirado do pool manda montar outro em segundo plano (um por vez, com folga entre eles) — assim a próxima horda também encontra zumbis prontos e não monta 20 personagens de uma vez no meio do tiroteio
+  topUp(type) {
+    (this._tq ||= []).push(type); if (this._tt) return;
+    const run = () => { this._tt = 0; const t = this._tq.shift(); if (!t || this.disposed) return; if (this.zpool.length < 40) { try { const i = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, av: new Avatar({ ...lookFor({ username: 'pool' + i, zombie: true, ztype: t, id: 9100 + i * 7, look: {} }, i), noAura: true }) }); } catch { /* sem pool */ } } if (this._tq.length) this._tt = setTimeout(run, 140); };
+    this._tt = setTimeout(run, 160);
+  }
+  takePooled(info) { if (!info?.npc || !info.ztype || info.zalien || info.fauna) return null; const i = this.zpool.findIndex((p) => p.type === info.ztype); if (i < 0) { this.topUp(info.ztype); return null; } const av = this.zpool.splice(i, 1)[0].av; if (this.zpool.length < 8) this.topUp(info.ztype); return av; }   // só repõe quando o pool está acabando (montar um zumbi custa dezenas de ms)
   create(id) {
-    const info = this.roster.get(id), av = info?.dino ? new FaunaAv(info.dino, info.dscale || 1) : info?.fauna && info.ztype ? new FaunaAv(info.ztype.slice(2)) : (this.takePooled(info) || new Avatar({ ...lookFor(info, this.ffaIndex.get(id)), noAura: true }));
+    const info = this.roster.get(id), av = info?.tank ? new TankAv(info.tank) : info?.dino ? Object.assign(new FaunaAv(info.dino, info.dscale || 1), { animK: 0.46 }) : info?.fauna && info.ztype ? new FaunaAv(info.ztype.slice(2), info.dscale || 1) : (this.takePooled(info) || new Avatar({ ...lookFor(info, this.ffaIndex.get(id)), noAura: true }));
+    if (info?.dino) { const ls = []; av.group.traverse((o) => { if (o.isLight) ls.push(o); }); for (const l of ls) l.parent?.remove(l); }   /* junta as luzes ANTES de remover (remover durante o traverse quebrava o quadro: o bicho nunca virava monstro) */   /* a luz vermelha dos monstros vem de um pool fixo (game.js): luz nova no rig travava ao recompilar */
     const group = new THREE.Group(); group.add(av.group);
     let sprite = null;
-    if (info?.team && info.team === this.selfTeam && id !== this.selfId) { sprite = nameSprite(info.username, ALLY_COL); sprite.userData.col = ALLY_COL; sprite.position.y = PLAYER_HEIGHT + 0.68; group.add(sprite); }
+    if (info?.team && info.team === this.selfTeam && id !== this.selfId) { sprite = nameSprite(info.username, ALLY_COL); sprite.userData.col = ALLY_COL; sprite.position.y = labelH(info) + ((info?.dino || info?.tank) ? 1.0 : 0.68); if (info?.dino || info?.tank) sprite.scale.multiplyScalar(1.6); group.add(sprite); }
     const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64; const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-    const bar = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); bar.scale.set(0.36, 0.36, 1); bar.position.y = PLAYER_HEIGHT + 0.34; bar.visible = false; group.add(bar);
+    const bar = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); bar.scale.set(0.36, 0.36, 1); bar.position.y = labelH(info) + ((info?.dino || info?.tank) ? 0.5 : 0.34); if (info?.dino || info?.tank) bar.scale.multiplyScalar(1.7); bar.visible = false; group.add(bar);
     let alertSp = null;
     if (info?.npc) { const ac = document.createElement('canvas'); ac.width = ac.height = 64; const g = ac.getContext('2d'); g.font = 'bold 54px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 7; g.strokeStyle = '#000'; g.strokeText('!', 32, 34); g.fillStyle = '#ff3b30'; g.fillText('!', 32, 34); const at = new THREE.CanvasTexture(ac); at.colorSpace = THREE.SRGBColorSpace; alertSp = new THREE.Sprite(new THREE.SpriteMaterial({ map: at, transparent: true, depthWrite: false, depthTest: false })); alertSp.scale.set(0.3, 0.3, 1); alertSp.position.y = PLAYER_HEIGHT + 0.62; alertSp.visible = false; alertSp.renderOrder = 10; group.add(alertSp); }
     const lamp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xfff1d0, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); lamp.scale.set(0.55, 0.55, 1); lamp.visible = false; group.add(lamp);
     group.visible = false; this.scene.add(group);
     av.group.traverse((o) => { if (o.isMesh) o.castShadow = !info?.npc; });   // zumbis NPC não projetam sombra (dezenas de corpos × sombra = o que mais pesava)
     if (info?.ztype && ZT[info.ztype]) { const T = ZT[info.ztype]; group.scale.set(T.b, T.h, T.b); }   // brutamontes e tanques são maiores
-    const e = { zombie: !!info?.zombie, id, group, av, sprite, lamp, light: false, pitch: 0, buf: [], wIdx: -2, weapon: null, bar, alertSp, npc: !!info?.npc && !info.companion, hpMax: 1, ztype0: info?.npc && info.ztype && !info.zalien && !info.fauna ? info.ztype : null, aggro: false, barCv: cv, barTex: tex, lastHp: -1, vis: false, outline: null, lastShot: -9, alive: true };
+    const e = { dinoSig: info?.dino ?? null, tankSig: info?.tank ?? null, lookSig: info?.look?.special ?? null, zombie: !!info?.zombie, id, group, av, sprite, lamp, light: false, pitch: 0, buf: [], wIdx: -2, weapon: null, bar, alertSp, npc: !!info?.npc && !info.companion, hpMax: 1, ztype0: info?.npc && info.ztype && !info.zalien && !info.fauna ? info.ztype : null, aggro: false, barCv: cv, barTex: tex, lastHp: -1, vis: false, outline: null, lastShot: -9, alive: true };
     this.entities.set(id, e); return e;
   }
   get entityList() { return [...this.entities.values()]; }
@@ -119,10 +153,11 @@ export class RemotePlayers {
   // jogador local (3ª pessoa): posição direta, sem interpolação
   poseSelf(id, pose, idx, vel, pitch, aiming, dt, extra = {}) {
     const e = this.entities.get(id) || this.create(id); if (e.replay) return e;   // durante o replay da morte quem manda na pose é o replay
-    e.group.position.set(pose.x, pose.y, pose.z); e.group.rotation.y = pose.yaw;
+    if (extra.dead && !e.rd) { e.group.position.set(pose.x, pose.y, pose.z); e.group.rotation.y = pose.yaw; this.startRag(e, vel.x, vel.z); } else if (!extra.dead && e.rd) this.endRag(e);
+    if (e.rd) e.rd.step(dt); else { e.group.position.set(pose.x, pose.y, pose.z); e.group.rotation.y = pose.yaw; }
     this.setWeapon(e, idx);
-    const fx = -Math.sin(pose.yaw), fz = -Math.cos(pose.yaw), spd = Math.hypot(vel.x, vel.z);
-    e.av.update(dt, { spd, sgn: vel.x * fx + vel.z * fz >= -0.2 ? 1 : -1, pitch, air: !pose.onGround, crouch: pose.crouch, aiming, sliding: !!pose.sliding, reload: extra.reload || 0, run: !!extra.run });
+    const fx = -Math.sin(pose.yaw), fz = -Math.cos(pose.yaw), chute = !!(e.fl & 256), spd = chute ? 0 : Math.hypot(vel.x, vel.z);   // de paraquedas: pernas paradas (só mexem quando pisa no chão)
+    e.av.update(dt, { spd, sgn: vel.x * fx + vel.z * fz >= -0.2 ? 1 : -1, pitch, air: !chute && !pose.onGround, crouch: pose.crouch, aiming, sliding: !!pose.sliding, reload: extra.reload || 0, run: !!extra.run });
     e.av.setDead(!!extra.dead);
     return e;
   }
@@ -130,7 +165,7 @@ export class RemotePlayers {
   remove(id, e = this.entities.get(id)) {
     if (!e) return;
     this.scene.remove(e.group); e.lamp?.material.dispose(); e.sprite?.material.map.dispose(); e.sprite?.material.dispose(); e.barTex.dispose(); e.bar.material.dispose();
-    if (e.npc && e.ztype0 && this.zpool.length < 24 && !this.disposed) { try { const av = e.av; av.group.removeFromParent(); av.setDead(false); av.fall = 0; if (av._lod) for (const p of av._lod) p.o.visible = p.v0; av.group.position.set(0, 0, 0); av.group.rotation.set(0, 0, 0); this.zpool.push({ type: e.ztype0, av }); } catch { try { e.av.dispose(); } catch { /* ok */ } } }
+    if (e.npc && e.ztype0 && this.zpool.length < 40 && !this.disposed) { try { const av = e.av; av.group.removeFromParent(); av.setDead(false); av.fall = 0; if (av._lod) for (const p of av._lod) p.o.visible = p.v0; av.group.position.set(0, 0, 0); av.group.rotation.set(0, 0, 0); this.zpool.push({ type: e.ztype0, av }); } catch { try { e.av.dispose(); } catch { /* ok */ } } }
     else { try { e.av.dispose(); } catch { /* ok */ } }
     this.entities.delete(id);
   }
@@ -143,7 +178,7 @@ export class RemotePlayers {
       const id = p[0];
       if (id === this.selfId || !this.roster.has(id)) continue;
       let e = this.entities.get(id); if (!e) { if (now - (this._lastCreate || 0) < 160) continue; this._lastCreate = now; e = this.create(id); }   // no máximo 1 personagem novo a cada ~160 ms: nada de travadinha quando a horda aparece
-      e.buf.push({ t: now, x: p[1], y: p[2], z: p[3], yaw: p[4], pitch: p[5], flags: p[6], vx: p[7], vz: p[9] });
+      e.buf.push({ t: now, x: p[1], y: p[2], z: p[3], yaw: p[4], pitch: p[5], flags: p[6], vx: p[7], vz: p[9], ay: p[12] });
       if (e.buf.length > 20) e.buf.shift();
       this.setWeapon(e, p[11] ?? -1); e.hp = p[10]; e.alive = !!(p[6] & 8); e.fl = p[6]; e.light = !!(p[6] & 32); e.lampC = (p[6] >> 12) & 7; if (e.lampC !== e._lc) { e._lc = e.lampC; e.lamp.material.color.setHex(lampHex(e.lampC)); } e.aggro = !!(p[6] & 128); if (e.npc && p[10] > e.hpMax) e.hpMax = p[10];
     }
@@ -157,14 +192,15 @@ export class RemotePlayers {
       while (b.length > 2 && b[1].t <= rt) b.shift();
       let s;
       if (b.length === 1 || rt <= b[0].t) s = b[0]; else if (rt >= b[b.length - 1].t) s = b[b.length - 1];
-      else { const a = b[0], c = b[1], k = (rt - a.t) / Math.max(1, c.t - a.t); s = { x: a.x + (c.x - a.x) * k, y: a.y + (c.y - a.y) * k, z: a.z + (c.z - a.z) * k, yaw: lerpAngle(a.yaw, c.yaw, k), pitch: a.pitch + (c.pitch - a.pitch) * k, flags: c.flags, vx: c.vx, vz: c.vz }; }
-      if (e.alive === false) { if (!e.deadAt) e.deadAt = now; e.av.setDead(true); e.group.visible = now - e.deadAt < 9000; } else { e.deadAt = 0; e.av.setDead(false); e.group.visible = !(e.fl & 2048); }
-      e.group.position.set(s.x, s.y, s.z); e.group.rotation.y = s.yaw; e.pitch = s.pitch;
-      e.lamp.visible = e.light && e.alive !== false; if (e.lamp.visible) { const cp = Math.cos(s.pitch); e.lamp.position.set(0, PLAYER_HEIGHT * 0.9, 0).add(new THREE.Vector3(-Math.sin(s.yaw) * cp, Math.sin(s.pitch), -Math.cos(s.yaw) * cp).multiplyScalar(0.3)); e.lamp.position.x -= 0; }
-      const fx = -Math.sin(s.yaw), fz = -Math.cos(s.yaw), spd = Math.hypot(s.vx || 0, s.vz || 0);
+      else { const a = b[0], c = b[1], k = (rt - a.t) / Math.max(1, c.t - a.t); s = { x: a.x + (c.x - a.x) * k, y: a.y + (c.y - a.y) * k, z: a.z + (c.z - a.z) * k, yaw: lerpAngle(a.yaw, c.yaw, k), pitch: a.pitch + (c.pitch - a.pitch) * k, ay: a.ay != null && c.ay != null ? lerpAngle(a.ay, c.ay, k) : c.ay, flags: c.flags, vx: c.vx, vz: c.vz }; }
+      if (e.alive === false) { if (!e.deadAt) { e.deadAt = now; try { this.onDeath?.(e); } catch { /* sem som */ } e.group.position.set(s.x, s.y, s.z); e.group.rotation.y = s.yaw; this.startRag(e, s.vx, s.vz); } e.av.setDead(true); e.group.visible = now - e.deadAt < 9000; } else { e.deadAt = 0; if (e.rd) this.endRag(e); e.av.setDead(false); e.group.visible = !(e.fl & 2048); }
+      if (e.rd) e.rd.step(dt); else { e.group.position.set(s.x, s.y, s.z); e.group.rotation.y = s.yaw; } e.pitch = s.pitch; if (e.av.isTank) e.av.setTurret(s.ay ?? s.yaw, s.pitch, s.yaw); if (e.av.setUpright) e.av.setUpright(!!(s.flags & 65536), dt);   /* tanque: torre e cano atualizam sempre (a animação por distância só vale para as esteiras) */
+      if (e.av.isTank && e.id !== this.selfId) e.av.setLights?.(e.light && e.alive !== false);   // tanque: a lanterna (L) liga os faróis do casco
+      e.lamp.visible = e.light && e.alive !== false && !e.av.isTank; if (e.lamp.visible) { const cp = Math.cos(s.pitch); e.lamp.position.set(0, PLAYER_HEIGHT * 0.9, 0).add(new THREE.Vector3(-Math.sin(s.yaw) * cp, Math.sin(s.pitch), -Math.cos(s.yaw) * cp).multiplyScalar(0.3)); e.lamp.position.x -= 0; }
+      const fx = -Math.sin(s.yaw), fz = -Math.cos(s.yaw), chute = !!(e.fl & 256), spd = chute ? 0 : Math.hypot(s.vx || 0, s.vz || 0);   // de paraquedas: pernas paradas
       let ddt = dt; { const cp = this._cp, d2 = cp ? (cp.x - s.x) ** 2 + (cp.z - s.z) ** 2 : 0;   // ANIMAÇÃO POR DISTÂNCIA: longe quase não se vê o esqueleto mexer — perto 100%, médio a cada 3 quadros, muito longe congela
         if (d2 > 150 * 150) continue; if (d2 > 25 * 25) { const div = d2 > 50 * 50 ? 4 : 2; e._ad = (e._ad || 0) + dt; if ((e._af = ((e._af || 0) + 1) % div) !== 0) continue; ddt = e._ad; e._ad = 0; } }   // animação por distância: >25 m a cada 2 quadros, >50 m a cada 4
-      e.av.update(ddt, { spd, sgn: (s.vx || 0) * fx + (s.vz || 0) * fz >= -0.2 ? 1 : -1, pitch: s.pitch, air: !(s.flags & 2), crouch: !!(s.flags & 1), aiming: now - e.lastShot < 1500, sliding: !!(s.flags & 16), reload: e.rl ? Math.max(0, 1 - (performance.now() - e.rl.t0) / e.rl.tot) : 0, run: spd > 5.4 && now - e.lastShot > 600 });
+      e.av.update(ddt, { spd, sgn: (s.vx || 0) * fx + (s.vz || 0) * fz >= -0.2 ? 1 : -1, pitch: s.pitch, air: !chute && !(s.flags & 2), crouch: !!(s.flags & 1), aiming: now - e.lastShot < 1500, sliding: !!(s.flags & 16), reload: e.rl ? Math.max(0, 1 - (performance.now() - e.rl.t0) / e.rl.tot) : 0, run: spd > 5.4 && now - e.lastShot > 600 });
     }
   }
 
@@ -187,20 +223,21 @@ export class RemotePlayers {
       if (e.npc) {                                                                  // ZUMBIS: vida sobre a cabeça só no Fácil/Normal (sempre, sem depender de linha de visão) · "!" quando em aggro
         { const p = e.group.position, dd = camera.position.distanceToSquared(p), Z = ZLOD[this.zq ?? 1]; if (e.alive !== false) { let v = dd < Z[3]; if (v && dd > 625) { sph.center.set(p.x, p.y + 1, p.z); sph.radius = 2 + Math.sqrt(dd) * 0.07; v = fr.intersectsSphere(sph); sph.radius = 1.1; } e.group.visible = v; } setLod(e, dd > Z[2] ? 3 : dd > Z[1] ? 2 : dd > Z[0] ? 1 : 0); }   // zumbi longe demais nem é desenhado
         const alive = e.alive !== false && e.group.visible, near = camera.position.distanceToSquared(e.group.position) < 55 * 55;
-        e.bar.visible = alive && diff <= 1 && near; if (e.alertSp) e.alertSp.visible = alive && !!e.aggro && near;
+        e.bar.visible = alive && diff <= 1 && near && !this.huntMode; if (e.alertSp) e.alertSp.visible = alive && !!e.aggro && near && !this.huntMode;   /* Caçada: bicho do mapa não tem barra de vida nem '!' (senão entregaria quem é jogador) */
         if (e.bar.visible && e.lastHp !== e.hp) { e.lastHp = e.hp; drawDonut(e.barCv, Math.max(0, Math.min(1, (e.hp ?? 1) / Math.max(1, e.hpMax)))); e.barTex.needsUpdate = true; }
         e.vis = false; if (e.outline) e.outline.forEach((o) => { o.visible = false; }); continue;
       }
-      const info = this.roster.get(id), enemy = !info?.companion && !(teams && info?.team && info.team === selfTeam) && !(info?.squad && info.squad === this.roster.get(this.selfId)?.squad), alive = e.alive !== false && e.group.visible, show = enemy && alive && level === 2;
+      const info = this.roster.get(id), enemy = !info?.companion && !this.huntAllies?.has(id) && !(teams && info?.team && info.team === selfTeam) && !(info?.squad && info.squad === this.roster.get(this.selfId)?.squad), alive = e.alive !== false && e.group.visible, show = enemy && alive && level === 2;
       // NOME E VIDA (configuração da sala): 2 = todos veem nome e vida de todos · 4 = só aliados · 3 = ninguém (aliados continuam com o nome)
-      if (!e.sprite && info?.username && (!enemy || level === 2)) { e.nameCol = enemy ? null : ALLY_COL; e.sprite = nameSprite(info.username, enemy ? '#ff4a3d' : e.nameCol); e.sprite.position.y = PLAYER_HEIGHT + 0.68; e.group.add(e.sprite); }
+      if (!e.sprite && info?.username && (!enemy || level === 2)) { e.nameCol = enemy ? null : ALLY_COL; e.sprite = nameSprite(info.username, enemy ? '#ff4a3d' : e.nameCol, enemy); e.sprite.position.y = labelH(info) + ((info?.dino || info?.tank) ? 1.0 : 0.68); if (info?.dino || info?.tank) e.sprite.scale.multiplyScalar(1.6); e.group.add(e.sprite); }
       if (e.sprite) e.sprite.visible = enemy ? (show && !!e.vis) : alive;
       if (!enemy) { const nearA = alive && level !== 3 && camera.position.distanceToSquared(e.group.position) < 60 * 60; e.bar.visible = nearA; if (nearA && e.lastHp !== e.hp) { e.lastHp = e.hp; drawDonut(e.barCv, Math.max(0, Math.min(1, (e.hp ?? 100) / (info?.companion ? 200 : 100))), e.nameCol || e.sprite?.userData?.col); e.barTex.needsUpdate = true; } continue; }   // ALIADO: nome (sempre) + vida (níveis 2 e 4)
-      if (!show || this.hideNames) { e.bar.visible = false; e.vis = false; if (e.sprite) e.sprite.visible = false; continue; }
+      const seeBar = this.huntMode && ((this.huntRole === 'hunter' && info?.hrole === 'monster') || (this.huntRole === 'monster' && info?.hrole === 'hunter'));   /* Caçada: o caçador vê a VIDA dos monstros e os monstros veem a do caçador (para saber o dano que estão causando) */
+      if (!show || (this.hideNames && !seeBar)) { e.bar.visible = false; e.vis = false; if (e.sprite) e.sprite.visible = false; continue; }
       if (frame % 3 === ((id % 3) + 3) % 3) {   /* id de bot é NEGATIVO: sem o ajuste só 1 em cada 3 bots atualizava nome e vida */
         const p = e.group.position; sph.center.set(p.x, p.y + 0.8, p.z);
         let vis = fr.intersectsSphere(sph);
-        if (vis) { vis = false; for (const h of [1.35, 0.8, 0.3]) { tv.set(p.x, p.y + h, p.z); dv.subVectors(tv, camera.position); const len = dv.length(); dv.normalize(); ray.origin.copy(camera.position); ray.direction.copy(dv); if (!collider.bvh.raycastFirst(ray, THREE.DoubleSide, 0, len - 0.25)) { vis = true; break; } } }
+        if (vis) { vis = false; const lh = labelH(info), hs = (info?.dino || info?.tank) ? [lh * 0.95, lh * 0.6, lh * 0.3] : [1.35, 0.8, 0.3]; for (const h of hs) { tv.set(p.x, p.y + h, p.z); dv.subVectors(tv, camera.position); const len = dv.length(); dv.normalize(); ray.origin.copy(camera.position); ray.direction.copy(dv); if (!collider.bvh.raycastFirst(ray, THREE.DoubleSide, 0, len - 0.25)) { vis = true; break; } } }
         e.vis = vis;
       }
       if (e.outline) e.outline.forEach((o) => { o.visible = false; });

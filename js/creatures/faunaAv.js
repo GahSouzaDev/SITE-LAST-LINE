@@ -12,5 +12,7 @@ export class FaunaAv {
   setDead(d) { d = !!d; if (d && !this.dead) { this.cr.die(); try { FaunaAv.voice?.(this, 'die'); } catch { /* sem som */ } } else if (!d && this.dead) this.cr.revive(); this.dead = d; }
   melee(k, big = false) { const a = this.cr.sp.atk; if (this.cr.sp.hp === undefined && !a.length) return; try { this.cr.attack(a.includes(k) ? k : a[0], big); } catch { /* sem animação */ } try { FaunaAv.voice?.(this, 'melee', a.includes(k) ? k : a[0], big); } catch { /* sem som */ } }
   hurt() { this.cr.hurt(); try { FaunaAv.voice?.(this, 'hurt'); } catch { /* sem som */ } }
+  // CORRER EM PÉ (Caçada): o bicho levanta o corpo como um bípede (o nariz sobe, as patas de trás seguram) e a corrida continua rápida
+  setUpright(on, dt = 0.016) { this.upK = (this.upK || 0) + ((on ? 1 : 0) - (this.upK || 0)) * Math.min(1, dt * 8); const h = this.group.children[0]; if (!h) return; h.rotation.x = 0.95 * this.upK; h.position.y = this.upK * ((this.cr.sp.bodyL || 2) * this.scale * 0.22); }
   setFP() {} hold() {} dispose() {} kick() {} rec() {} barrelDir() { return new THREE.Vector3(0, 0, -1); } eyeWorld() { return this.group.getWorldPosition(new THREE.Vector3()); }
 }

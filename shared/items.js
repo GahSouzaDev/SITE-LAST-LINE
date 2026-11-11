@@ -17,6 +17,8 @@ ITEMS.grenade_flash = { id: 'grenade_flash', name: 'Granada de luz', slot: SLOT.
 ITEMS.grenade_impact = { id: 'grenade_impact', name: 'Granada de impacto', slot: SLOT.GRENADE, cls: 'grenade', desc: 'Explode no contato: bateu no chão, na parede ou em alguém.', gun: false };
 ITEMS.grenade_mine = { id: 'grenade_mine', name: 'Mina (armadilha)', slot: SLOT.GRENADE, cls: 'grenade', desc: 'Colocada no chão: explode quando alguém passa perto (inclusive você).', gun: false };
 for (const m of Object.values(MELEE)) if (!ITEMS[m.id]) ITEMS[m.id] = { id: m.id, name: m.name, slot: SLOT.MELEE, cls: 'melee', desc: m.desc, gun: false };
+ITEMS.tank_shell = { id: 'tank_shell', name: 'Canhão do tanque', slot: SLOT.MELEE, cls: 'melee', desc: 'Tiro de canhão em parábola, com dano em área.', gun: false };
+ITEMS.tank_mg = { id: 'tank_mg', name: 'Metralhadora do tanque', slot: SLOT.MELEE, cls: 'melee', desc: 'Metralhadora do cano do tanque.', gun: false };
 ITEMS.bomb = { id: 'bomb', name: 'Bomba C4', slot: 'bomb', cls: 'bomb', desc: 'Planta num ponto de bomba (segure o botão de atirar).', gun: false };   // modo Bomba (Tático)
 export const GUN_IDS = ARSENAL.map((w) => w.id);
 export const ITEM_IDS = Object.keys(ITEMS);

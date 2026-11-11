@@ -2,6 +2,7 @@ import { PER_SHELL } from '/shared/weaponStats.js';
 import * as THREE from 'three';
 import { createCharacter } from './characterRig.js';
 import { BUILD, setOV } from '../weapons/arsenalModels.js';
+import { rawWeapon, cloneArs } from '../weapons/weaponProto.js';
 import { applySkin } from '../weapons/skins.js';
 import { buildWeapon } from '../weapons/weaponBuilder.js';
 import { addLaser } from '../weapons/laserSight.js';
@@ -22,14 +23,19 @@ const wkey = (k) => { const c = ARSENAL_BY_ID[k]?.cls; return /^(pistol|deagle|r
 // Personagem BASE: Urban (camiseta e calça), nada na cabeça. A aparência física é livre; o que se desbloqueia são roupas/corpos/estilos.
 export const URBAN = { outfit: 'tshirt', helmet: 'none', goggles: 'none', headset: 'none', mask: 'none', vest: 'none', pack: 'none', gloves: 'off', kneepads: 'off', camo: 'urban', weapon: 'none', special: 'none', pose: 'aim' };
 
+// qualidade dos personagens (ajuste de vídeo): sem texturas / sem luz neon; ao mudar nas configurações todos os personagens vivos se refazem
+import { effective, onGfx } from '../core/graphics.js';
+const gq = () => { const e = effective(); return { noTex: e.ctex === false, noNeon: e.cneon === false }; };
+const LIVE = new Set();
+onGfx(() => { for (const r of [...LIVE]) { const a = r.deref(); if (!a) { LIVE.delete(r); continue; } try { a.setLook({}); } catch { /* sem personagem */ } } });
 export class Avatar {
   static env = null;                                   // mapa de ambiente (RoomEnvironment) para os metais, como o scene.environment do base.html
   constructor(look = {}) {
-    this.char = createCharacter({ ...URBAN, ...look });
+    this.char = createCharacter({ ...URBAN, ...look, ...gq() }); LIVE.add(new WeakRef(this));
     this.group = new THREE.Group();
     this.char.root.rotation.y = Math.PI;                 // o rig olha para +Z; o jogo olha para -Z
     this.group.add(this.char.root); this.group.scale.setScalar(SCALE);
-    this.fp = 0; this.fall = 0; this.dead = false; this.rec = 0; this.crouchV = 0; this.weaponId = null; this.weapon = null; this.side = 'R'; this.holder = null; this.attKey = '';
+    this.fp = 0; this.fall = 0; this.rag = null; this.dead = false; this.rec = 0; this.crouchV = 0; this.weaponId = null; this.weapon = null; this.side = 'R'; this.holder = null; this.attKey = '';
   }
   // golpe do corpo (3ª pessoa e para os outros jogadores): punho = soco · arma de fogo = coronhada · faca = corte/corte diagonal/estocada · 'heavy' = golpe forte
   melee(kind) {
@@ -44,7 +50,7 @@ export class Avatar {
     this._mUntil = performance.now() + dur * 1000; this.char.swing(k, dur);
   }
   pour(sec = 1.8) { this.char.swing('pour', sec); }   // abastecendo: inclina o tronco e estende os braços
-  setLook(look) { Object.assign(this.char.S, look); this.char.rebuild(); const w = this.weaponId, a = this.att; this.weaponId = null; this.weapon = null; this.holder = null; if (w) this.hold(w, a, this.side); }
+  setLook(look) { Object.assign(this.char.S, look, gq()); this.char.rebuild(); const w = this.weaponId, a = this.att; this.weaponId = null; this.weapon = null; this.holder = null; if (w) this.hold(w, a, this.side); }
 
   // PRIMEIRA PESSOA (como o base.html): só braços e arma ficam visíveis; câmera na cabeça do mesmo personagem
   // modos (setBody do base.html): 0 = corpo inteiro (3ª pessoa) · 1 = SÓ BRAÇOS + arma (1ª pessoa) · 2 = SÓ A ARMA (mirando)
@@ -52,7 +58,7 @@ export class Avatar {
   applyFP() {
     const keep = new Set(), rig = this.char.rig;
     for (const g of this.fp === 2 ? [this.holder] : [rig.aL, rig.aR, this.holder]) g?.traverse((o) => keep.add(o));
-    this.group.traverse((o) => { if (o.isMesh) o.visible = o.userData.isOutline ? false : (!this.fp || keep.has(o)); });
+    this.group.traverse((o) => { if (o.isMesh) o.visible = o.userData.isOutline ? false : (!this.fp || keep.has(o) || (this.fp === 1 && !!o.userData.fp)); else if (o.isPoints) o.visible = !this.fp; });   // peças fundidas do corpo carregam a marca 'fp' (braços); brilho neon (pontos) some na 1ª pessoa
   }
   setDead(on) { if (on && !this.dead) { const r = Math.random(); this.fdir = r < 0.4 ? 'f' : r < 0.75 ? 'b' : (r < 0.88 ? 'l' : 'r'); } this.dead = on; }
   // direção do CANO no mundo (para alinhar o cano com a visão ao mirar, como o ADS do base.html)
@@ -63,7 +69,7 @@ export class Avatar {
   kickParts(mech) { for (const o of this.parts || []) { const u = o.userData; if (u.role === 'drum') u.tr = (u.tr || 0) + Math.PI / 3; else if (u.role === 'pump') { u.t = 0.45; mech?.('pump', o); } else if (u.role === 'bolt') { u.t = 0.9; mech?.('bolt', o); } } }
   // posição do olho da mira (âncora do Arsenal) em coordenadas de mundo: a câmera vai para lá ao mirar (ADS do base.html)
   eyeWorld(out) { if (!this.weapon?.eyeObj || this.weapon.model?.userData?.noads) return null; this.weapon.eyeObj.updateWorldMatrix(true, false); return this.weapon.eyeObj.getWorldPosition(out); }
-  unhold() { if (this.holder) { this.model?.traverse((o) => o.geometry?.dispose?.()); this.holder.parent?.remove(this.holder); this.holder = null; } this.laser = null; this.weapon = null; this.model = null; this.agroup = null; this.parts = []; this.char.rig.weps = []; }
+  unhold() { if (this.holder) { this.model?.traverse((o) => { if (!o.userData.shared) o.geometry?.dispose?.(); });   /* peças do protótipo são compartilhadas: só descarta o que a cópia criou (laser etc.) */ this.holder.parent?.remove(this.holder); this.holder = null; } this.laser = null; this.weapon = null; this.model = null; this.agroup = null; this.parts = []; this.char.rig.weps = []; }
   // segura a arma `id`: CÓPIA do attach() do base.html (modelo BRUTO do Arsenal ×0,3, mesmo ponto de empunhadura, mesmas mãos).
   // side: 'R' destro / 'L' canhoto (troca o lado da arma e das mãos)
   hold(id, att = {}, side = 'R', skin = 'base') {
@@ -82,7 +88,7 @@ export class Avatar {
     if (!id || !ITEMS[id]?.gun || !BUILD[id]) { this.char.S.pose = 'idle'; return; }
     const dual = id.startsWith('dual') || ARSENAL_BY_ID[id]?.cls === 'dual', pist = wkey(id) === 'pistol' && !dual, T = Math.PI;
     setOV({ op: att.op && att.op !== 'def' ? att.op : undefined, tip: att.tip && att.tip !== 'def' ? att.tip : undefined, mag: att.mag | 0 });
-    const model = BUILD[id](), agroup = new THREE.Group(); applySkin(model, skin, id);                                           // = renderWeapon() do base.html:
+    const model = cloneArs(rawWeapon(id, att)), agroup = new THREE.Group(); applySkin(model, skin, id);   // cópia do protótipo (montado uma vez só, fundido por material)                                           // = renderWeapon() do base.html:
     { const c = new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()); model.position.sub(c); }   //   model.position.sub(centro da caixa) — o modelo é CENTRADO antes do attach
     agroup.add(model);
     const orient = new THREE.Group(), holder = new THREE.Group(); holder.add(orient);
@@ -95,9 +101,10 @@ export class Avatar {
       return two ? [['R', [cx, cy - 0.08, zn + zl * 0.27]], ['L', [cx, cy - 0.03, zn + zl * 0.62]]] : [[cx > 0 ? 'L' : 'R', [cx, cy - 0.07, zn + zl * (pist ? 0.22 : 0.3)]]]; };
     let grips = [];
     if (dual) model.children.filter((c) => c.userData.mz).forEach((c) => grips.push(...gr(c, false))); else grips = gr(model, !pist);
-    if (pist) { const [sd, p] = grips[0]; grips = [[sd, p], [sd === 'R' ? 'L' : 'R', [p[0] + (sd === 'R' ? -0.014 : 0.014), p[1] + 0.012, p[2] - 0.02]]]; }   // PISTOLA SIMPLES: a outra mão fica JUNTO da que segura (empunhadura de duas mãos)
+    if (pist) { const [sd, p] = grips[0]; grips = [[sd, p], [sd === 'R' ? 'L' : 'R', [p[0] + (sd === 'R' ? 0.04 : -0.04), p[1] + 0.012, p[2] + 0.01]]]; }   // PISTOLA SIMPLES: a outra mão fica JUNTO da que segura (empunhadura de duas mãos)
     if (side === 'L') grips = grips.map(([sd, p]) => [sd === 'R' ? 'L' : 'R', p]);
-    grips = grips.map(([sd, p], i) => (dual || i === 0) ? [sd, [p[0] + (sd === 'R' ? -0.03 : 0.03), p[1], p[2]]] : [sd, p]);   // mão do gatilho um pouco PARA FORA: segura a arma em vez de ficar enterrada nela
+    const big = !dual && !pist;   // fuzil/metralhadora/escopeta/sniper: mão de trás um pouco mais à frente e para fora; pistola e duais ficam como eram
+    grips = grips.map(([sd, p], i) => (dual || i === 0) ? [sd, [p[0] + (sd === 'R' ? (big ? -0.06 : -0.03) : 0.03), p[1], p[2] + (sd === 'R' && big ? 0.05 : 0)]] : [sd, p]);   // mão do gatilho um pouco PARA FORA: segura a arma em vez de ficar enterrada nela
     this.char.WP.dual = [[0, 0.35, 0.34], [0, 0.55, 0.34]];
     this.char.rig.weps = [{ g: holder, grips, type: dual ? 'dual' : wkey(id), side }];
     this._rk = reloadKind(id);
@@ -144,7 +151,8 @@ export class Avatar {
     }
     // queda ao morrer (corpo cai para trás e fica no chão)
     this.fall += ((this.dead ? 1 : 0) - this.fall) * (1 - Math.exp(-dt * (this.dead ? 7 : 20)));
-    { const f = this.fall, d = this.fdir || 'f'; this.group.rotation.x = d === 'f' ? f * 1.5 : d === 'b' ? -f * 1.45 : f * 0.25; this.group.rotation.z = d === 'l' ? f * 1.45 : d === 'r' ? -f * 1.45 : 0; this.group.position.y = -f * (d === 'b' ? 0.1 : 0.04); }
+    if (this.rag && this.dead) { this.group.rotation.set(0, 0, 0); this.group.position.y = 0; this.rag.limbs(this.char.rig); }   // CORPO DE PANO: quem gira o corpo é a simulação (ragdoll.js); aqui só braços/pernas/cabeça soltos
+    else { const f = this.fall, d = this.fdir || 'f'; this.group.rotation.x = d === 'f' ? f * 1.5 : d === 'b' ? -f * 1.45 : f * 0.25; this.group.rotation.z = d === 'l' ? f * 1.45 : d === 'r' ? -f * 1.45 : 0; this.group.position.y = -f * (d === 'b' ? 0.1 : 0.04); }
   }
   dispose() {                                            // as geometrias/materiais da ARMA são compartilhados: unhold() antes
     this.unhold();

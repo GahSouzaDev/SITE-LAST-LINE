@@ -3,8 +3,8 @@
 const KEY = 'lastline.gfx';
 export const SHADOW_Q = { off: { on: false }, low: { on: true, res: 1024, ext: 40 }, med: { on: true, res: 2048, ext: 50 }, high: { on: true, res: 2048, ext: 70 }, ultra: { on: true, res: 4096, ext: 90 }, extreme: { on: true, res: 4096, ext: 130 } };
 export const PRESETS = {
-  vlow: { scale: 0.55, shadows: 'off', aa: false, clouds: false, particles: 0.3, view: 350, zq: 0 },   // MUITO BAIXO: para PC fraco (igual ao nível mais leve do automático)
-  low: { scale: 0.7, shadows: 'low', aa: false, clouds: false, particles: 0.4, view: 400, zq: 0 },
+  vlow: { scale: 0.55, shadows: 'off', aa: false, clouds: false, particles: 0.3, view: 350, zq: 0, ctex: false, cneon: false },   // MUITO BAIXO: para PC fraco (igual ao nível mais leve do automático)
+  low: { scale: 0.7, shadows: 'low', aa: false, clouds: false, particles: 0.4, view: 400, zq: 0, ctex: true, cneon: true },
   med: { scale: 0.85, shadows: 'med', aa: true, clouds: true, particles: 0.7, view: 900, zq: 1 },
   high: { scale: 1, shadows: 'high', aa: true, clouds: true, particles: 1, view: 1800, zq: 2 },
   ultra: { scale: 1.25, shadows: 'ultra', aa: true, clouds: true, particles: 1, view: 3000, zq: 2 },
@@ -12,7 +12,7 @@ export const PRESETS = {
 };
 // níveis do modo AUTOMÁTICO (0 = mais leve … 4 = mais bonito)
 export const TIERS = [
-  { scale: 0.55, shadows: 'off', aa: false, clouds: false, particles: 0.3, view: 350, zq: 0 }, { scale: 0.7, shadows: 'low', aa: false, clouds: true, particles: 0.5, view: 600, zq: 0 },
+  { scale: 0.55, shadows: 'off', aa: false, clouds: false, particles: 0.3, view: 350, zq: 0, ctex: false, cneon: false }, { scale: 0.7, shadows: 'low', aa: false, clouds: true, particles: 0.5, view: 600, zq: 0 },
   { scale: 0.85, shadows: 'med', aa: true, clouds: true, particles: 0.7, view: 1000, zq: 1 }, { scale: 1, shadows: 'high', aa: true, clouds: true, particles: 1, view: 1800, zq: 2 }, { scale: 1.2, shadows: 'ultra', aa: true, clouds: true, particles: 1, view: 3000, zq: 2 }
 ];
 export const TIER_NAMES = ['Muito baixo', 'Baixo', 'Médio', 'Alto', 'Ultra'];
@@ -36,7 +36,8 @@ const listeners = new Set(); export const onGfx = (fn) => { listeners.add(fn); r
 export function setGfx(patch) { Object.assign(gfx, patch); try { localStorage.setItem(KEY, JSON.stringify(gfx)); } catch { /* ignora */ } for (const fn of listeners) fn(gfx); }
 export function effective() {
   const base = gfx.preset === 'auto' ? TIERS[Math.max(0, Math.min(4, gfx.tier))] : gfx.preset === 'custom' ? gfx.custom : (PRESETS[gfx.preset] || PRESETS.high);
-  const out = { ...PRESETS.high, ...base, fps: gfx.fps || 0 }; if (gfx.preset !== 'auto' && protectMul < 1) out.scale = Math.max(0.4, out.scale * protectMul);   /* proteção de FPS: resolução reduzida só enquanto o jogo engasga */
+  const out = { ctex: true, cneon: true, ...PRESETS.high, ...base, fps: gfx.fps || 0 };
+  if (gfx.charTex === 'on' || gfx.charTex === 'off') out.ctex = gfx.charTex === 'on'; if (gfx.charNeon === 'on' || gfx.charNeon === 'off') out.cneon = gfx.charNeon === 'on';   // ajustes à parte: valem em qualquer predefinição if (gfx.preset !== 'auto' && protectMul < 1) out.scale = Math.max(0.4, out.scale * protectMul);   /* proteção de FPS: resolução reduzida só enquanto o jogo engasga */
   return out;
 }
 // ---- ajuste automático (histerese: desce rápido quando engasga, sobe devagar quando sobra FPS) ----

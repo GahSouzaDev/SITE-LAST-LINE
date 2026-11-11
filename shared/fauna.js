@@ -26,21 +26,21 @@ export const DINOS = {
 };
 export const MAMMALS = {
   mamute: { id: 'mamute', name: 'Mamute-Lanoso', kind: 'mamifero', rig: 'quad', temper: 'agressivo', colors: { sk: '#6b4a2e', bl: '#9a7a52', ac: '#e8dec0' }, legL: 2.0, bodyL: 4.0, bodyH: 2.1, bodyW: 1.9, neckL: 0.9, headL: 1.5, tailL: 0.9,
-    walk: 2.2, run: 6.5, dmg: 10, reach: 3.0, cd: 2.6, hear: 55, sight: 60, flee: 38, atk: ['gore'], hit: { r: 1.6, h: 3.6 } },
+    hp: 450, walk: 2.2, run: 6.5, dmg: 10, reach: 3.0, cd: 2.6, hear: 55, sight: 60, flee: 38, atk: ['gore'], hit: { r: 1.6, h: 3.6 } },
   smilo:  { id: 'smilo',  name: 'Tigre-Dente-de-Sabre', kind: 'mamifero', rig: 'quad', temper: 'agressivo', colors: { sk: '#c99a52', bl: '#efe0b8', ac: '#3a2412' }, legL: 0.85, bodyL: 1.9, bodyH: 0.8, bodyW: 0.75, neckL: 0.5, headL: 0.6, tailL: 0.7,
-    walk: 3.2, run: 11, dmg: 10, reach: 1.9, cd: 1.6, hear: 60, sight: 70, flee: 30, atk: ['pounce', 'bite'], hit: { r: 0.6, h: 1.3 } },
+    hp: 170, walk: 3.2, run: 11, dmg: 10, reach: 1.9, cd: 1.6, hear: 60, sight: 70, flee: 30, atk: ['pounce', 'bite'], hit: { r: 0.6, h: 1.3 } },
   pregui: { id: 'pregui', name: 'Preguiça-Gigante', kind: 'mamifero', rig: 'quad', temper: 'manso', colors: { sk: '#6a5a3a', bl: '#9a8a5a', ac: '#e8dcc0' }, legL: 1.3, bodyL: 2.8, bodyH: 1.6, bodyW: 1.4, neckL: 0.6, headL: 0.7, tailL: 1.6,
-    walk: 1.6, run: 5, dmg: 8, reach: 2.4, cd: 2.4, hear: 45, sight: 45, flee: 24, atk: ['swat'], hit: { r: 1.1, h: 2.2 } },
+    hp: 320, walk: 1.6, run: 5, dmg: 8, reach: 2.4, cd: 2.4, hear: 45, sight: 45, flee: 24, atk: ['swat'], hit: { r: 1.1, h: 2.2 } },
   glipto: { id: 'glipto', name: 'Gliptodonte Blindado', kind: 'mamifero', rig: 'quad', temper: 'arisco', colors: { sk: '#6a6a58', bl: '#b0a27a', ac: '#3a3a30' }, legL: 0.6, bodyL: 2.6, bodyH: 1.5, bodyW: 1.8, neckL: 0.3, headL: 0.5, tailL: 1.9,
-    walk: 1.8, run: 5.5, dmg: 0, reach: 0, cd: 3, hear: 60, sight: 55, flee: 30, atk: [], hit: { r: 1.3, h: 1.7 } },
+    hp: 380, walk: 1.8, run: 5.5, dmg: 0, reach: 0, cd: 3, hear: 60, sight: 55, flee: 30, atk: [], hit: { r: 1.3, h: 1.7 } },
   elasmo: { id: 'elasmo', name: 'Elasmotério', kind: 'mamifero', rig: 'quad', temper: 'agressivo', colors: { sk: '#7a6a5a', bl: '#a89a88', ac: '#efe6d0' }, legL: 1.5, bodyL: 3.4, bodyH: 1.7, bodyW: 1.5, neckL: 0.8, headL: 1.2, tailL: 0.9,
-    walk: 2.4, run: 8, dmg: 12, reach: 2.6, cd: 2.4, hear: 55, sight: 55, flee: 32, atk: ['gore'], hit: { r: 1.3, h: 2.7 } },
+    hp: 400, walk: 2.4, run: 8, dmg: 12, reach: 2.6, cd: 2.4, hear: 55, sight: 55, flee: 32, atk: ['gore'], hit: { r: 1.3, h: 2.7 } },
   mega:   { id: 'mega',   name: 'Megalóceros', kind: 'mamifero', rig: 'quad', temper: 'arisco', colors: { sk: '#8a5a32', bl: '#e8d8b8', ac: '#d9ceb0' }, legL: 1.5, bodyL: 2.3, bodyH: 0.95, bodyW: 0.8, neckL: 1.0, headL: 0.7, tailL: 0.3,
-    walk: 3.0, run: 12, dmg: 0, reach: 0, cd: 3, hear: 80, sight: 90, flee: 50, atk: [], hit: { r: 0.7, h: 2.9 } },
+    hp: 160, walk: 3.0, run: 12, dmg: 0, reach: 0, cd: 3, hear: 80, sight: 90, flee: 50, atk: [], hit: { r: 0.7, h: 2.9 } },
   gigan:  { id: 'gigan',  name: 'Gigantopiteco', kind: 'mamifero', rig: 'quad', temper: 'agressivo', colors: { sk: '#a8581f', bl: '#2a2018', ac: '#2a2018' }, legL: 1.5, bodyL: 1.9, bodyH: 1.5, bodyW: 1.4, neckL: 0.4, headL: 0.7, tailL: 0,
-    walk: 2.4, run: 8, dmg: 10, reach: 2.4, cd: 2.0, hear: 60, sight: 65, flee: 30, atk: ['swat', 'bite'], hit: { r: 1.0, h: 2.6 } },
+    hp: 280, walk: 2.4, run: 8, dmg: 10, reach: 2.4, cd: 2.0, hear: 60, sight: 65, flee: 30, atk: ['swat', 'bite'], hit: { r: 1.0, h: 2.6 } },
   macro:  { id: 'macro',  name: 'Macrauquênia', kind: 'mamifero', rig: 'quad', temper: 'arisco', colors: { sk: '#b08a5a', bl: '#e8d8b0', ac: '#5a4028' }, legL: 1.3, bodyL: 2.0, bodyH: 0.9, bodyW: 0.75, neckL: 1.3, headL: 0.6, tailL: 0.5,
-    walk: 2.8, run: 10.5, dmg: 0, reach: 0, cd: 3, hear: 85, sight: 90, flee: 48, atk: [], hit: { r: 0.7, h: 2.8 } }
+    hp: 150, walk: 2.8, run: 10.5, dmg: 0, reach: 0, cd: 3, hear: 85, sight: 90, flee: 48, atk: [], hit: { r: 0.7, h: 2.8 } }
 };
 // MONSTROS DO FOLCLORE (terror): lendas brasileiras que a floresta da Zona UMBRA despertou. Morrem como os dinossauros e cada um tem um PODER (server/rooms/fauna.js › poderes).
 export const MONSTROS = {
@@ -53,6 +53,15 @@ export const FAUNA = { ...DINOS, ...MAMMALS, ...MONSTROS };
 export const hunts = (sp) => sp?.kind === 'dino' || sp?.kind === 'monstro';   // quem caça (dinossauros e monstros) × quem foge (mamíferos)
 export const FAUNA_IDS = Object.keys(FAUNA);
 export const isDino = (id) => FAUNA[id]?.kind === 'dino';
+/* alcance (m) para o bicho COMER o cogumelo: bicho grande/comprido/de pescoço longo alcança de mais longe (antes todo mundo precisava estar a 3,6 m e os altos não conseguiam) */
+export const eatReach = (id) => { const f = FAUNA[id]; return f ? 3.4 + (f.bodyL || 2) * 0.7 + (f.neckL || 0.5) * 0.6 : 3.6; };
+/* VELOCIDADES da CAÇADA (mamíferos): correr = ¾ da corrida do bicho, entre 5,3 e 8,2 m/s (o humano corre 6,83: os mais ligeiros passam dele); andar = a mesma proporção do humano (4,05/6,83). Presas e bichos do mapa andam igual (se misturam). */
+export const HUNT_SPEED = { pct: 100 };   // admin: velocidade dos bichos da Caçada em % (100 = padrão)
+export const huntRun = (id) => { const f = FAUNA[id]; return +((f ? Math.max(5.3, Math.min(8.2, f.run * 0.75)) : 5.3) * HUNT_SPEED.pct / 100).toFixed(2); };
+export const huntWalk = (id) => +(huntRun(id) * 4.05 / 6.83).toFixed(2);
+/* TAMANHO na Caçada: o bicho fica só um pouco MAIOR que o jogador (1,8 m): mamífero com ~2,1 m e os monstros (Mapinguari/Mula) com ~2,5 m, sempre reduzindo (nunca aumenta) */
+const VISUAL_H = { mamute: 4.46, smilo: 1.76, pregui: 3.19, glipto: 2.88, elasmo: 4.47, mega: 5.61, gigan: 3.43, macro: 3.51, mapinguari: 3.86, mula: 5.12 };   // altura REAL do modelo 3D (medida do caixote do Creature; a hit.h é só a esfera de acerto)
+export const huntScale = (id) => { const h = VISUAL_H[id] || FAUNA[id]?.hit?.h; if (!h) return 1; return +Math.max(0.3, Math.min(1, (FAUNA[id]?.kind === 'monstro' ? 2.5 : 2.1) / h)).toFixed(3); };
 export const isMammal = (id) => FAUNA[id]?.kind === 'mamifero';
 // animações que o modelo sabe tocar (nomes usados pelo servidor/cliente)
 export const FAUNA_ANIMS = ['idle', 'walk', 'run', 'attack', 'hurt', 'roar', 'die'];

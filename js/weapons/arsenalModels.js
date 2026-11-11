@@ -22,19 +22,22 @@ const P=(g,pts,t,m,p=[0,0,0])=>{const geo=new THREE.ExtrudeGeometry(new THREE.Sh
 const mz=(g,x,y=0,z=0)=>{const o=new THREE.Object3D();o.position.set(x,y,z);g.add(o);g.userData.mz=(g.userData.mz||[]).concat(o)};
 const eyeA=(g,x,y,z,info)=>{const o=new THREE.Object3D();o.position.set(x,y,z);g.add(o);g.userData.eye=o;g.userData.sight=info};
 const fin=g=>{const b=new THREE.Box3().setFromObject(g);g.userData.ej=V(b.min.x+(b.max.x-b.min.x)*.42,.05,.1);g.userData.mz.forEach(o=>{o.userData.eye=g.userData.eye;o.userData.g=g});return g};
+MT.tipk=new THREE.MeshStandardMaterial({color:0x07080a,roughness:.55,metalness:.35});MT.glassG=new THREE.MeshStandardMaterial({color:0x39ff6a,emissive:0x1bd44a,emissiveIntensity:.45,transparent:true,opacity:.16,roughness:0,metalness:0,depthWrite:false});
 let OV={};
 function tipFx(g,x,t,r,y=0,z=0){
- if(t==='supp'){C(g,r*1.9,r*1.9,.62,[x+.3,y,z],MT.black,14);for(let i=0;i<4;i++)C(g,r*2.05,r*2.05,.03,[x+.12+i*.14,y,z],MT.steel,14);return x+.64}
- if(t==='brake'){C(g,r*1.5,r*1.5,.2,[x+.08,y,z],MT.black,10);return x+.2}
- if(t==='comp'){C(g,r*1.4,r*1.2,.14,[x+.06,y,z],MT.black,8);return x+.14}
+ C(g,r*1.1,r*1.1,.07,[x-.02,y,z],MT.tipk,12);   // PONTA DO CANO sempre preta e lisa (nenhuma skin pinta/texturiza este anel)
+ if(t==='supp'){C(g,r*1.9,r*1.9,.62,[x+.3,y,z],MT.tipk,14);for(let i=0;i<4;i++)C(g,r*2.05,r*2.05,.03,[x+.12+i*.14,y,z],MT.steel,14);return x+.64}
+ if(t==='brake'){C(g,r*1.5,r*1.5,.2,[x+.08,y,z],MT.tipk,10);return x+.2}
+ if(t==='comp'){C(g,r*1.4,r*1.2,.14,[x+.06,y,z],MT.tipk,8);return x+.14}
  if(t==='none')return x;
- C(g,r,r*1.35,.13,[x+.05,y,z],MT.black,8);return x+.12}
+ C(g,r,r*1.35,.13,[x+.05,y,z],MT.tipk,8);return x+.12}
 // ---------- miras ----------
 function irons(g,xr,xf,yS,m=MT.black){for(const s of[-1,1])B(g,[.05,.1,.03],[xr,yS-.03,s*.045],m);B(g,[.07,yS-.08,.14],[xr,(yS-.08)/2,0],m);B(g,[.05,yS-.07,.05],[xf,(yS-.07)/2,0],m);B(g,[.014,.07,.014],[xf,yS-.035,0],MT.gold);eyeA(g,xr-.5,yS,0,{k:'iron',fov:[32],n:['Ferro · alça e massa']})}
-const OP={dot:['dot',[30,17],['Red dot · 1x','Red dot · 2x']],holo:['holo',[30,17],['Holográfica · 1x','Holográfica · 2x']],acog:['acog',[22,12],['ACOG · 2x','ACOG · 4x']],s6:['scope',[14,8,5],['Luneta · 3x','Luneta · 6x','Luneta · 9x']],s12:['scope',[12,7,4],['Luneta · 4x','Luneta · 8x','Luneta · 12x']]};
+const OP={dot:['dot',[30,17],['Red dot · 1x','Red dot · 2x']],holo:['holo',[30,17],['Holográfica · 1x','Holográfica · 2x']],gdot:['gdot',[30,17],['Red dot verde · 1x','Red dot verde · 2x']],mini:['mini',[30,17],['Mini red dot · 1x','Mini red dot · 2x']],gholo:['gholo',[30,17],['Holográfica verde · 1x','Holográfica verde · 2x']],acog:['acog',[22,12],['ACOG · 2x','ACOG · 4x']],gacog:['gacog',[22,12],['ACOG verde · 2x','ACOG verde · 4x']],s4:['scope',[18,10],['Luneta · 2x','Luneta · 4x']],s6:['scope',[14,8,5],['Luneta · 3x','Luneta · 6x','Luneta · 9x']],s12:['scope',[12,7,4],['Luneta · 4x','Luneta · 8x','Luneta · 12x']]};
 function optic(g,x,yS,t){const [k,fov,n]=OP[t],bk=MT.black;let back;
- if(k==='dot'||k==='holo'){const L=k==='dot'?.28:.4;B(g,[.16,yS-.19,.1],[x,(yS-.09+.1)/2,0],bk);for(const s of[-1,1])B(g,[L,.17,.022],[x,yS,s*.06],bk);B(g,[L,.03,.15],[x,yS+.1,0],bk);B(g,[L,.025,.15],[x,yS-.09,0],bk);B(g,[.01,.15,.1],[x+L*.2,yS,0],MT.glass);back=x-L/2-.4}
- else{const og=new THREE.Group(),len=t==='acog'?.45:t==='s6'?.7:.9,r=t==='acog'?.07:.055;g.add(og);g.userData.hide=og;C(og,r,r,len,[x,yS,0],bk,14);C(og,r*1.5,r,.16,[x-len/2-.05,yS,0],bk,14);C(og,r,r*1.6,.2,[x+len/2+.02,yS,0],bk,14);add(og,new THREE.CylinderGeometry(.03,.03,.1,10),bk,[x,yS+r+.04,0]);
+ if(k==='dot'||k==='gdot'||k==='mini'||k==='holo'||k==='gholo'){const mini=k==='mini',holo=k==='holo'||k==='gholo',L=mini?.17:holo?.4:.28,hh=mini?.1:.17,ys=mini?yS-.04:yS,w=mini?.11:.15,zs=mini?.045:.06,lens=k==='gdot'||k==='gholo'?MT.glassG:MT.glass,bot=ys-hh/2;B(g,[w+.01,bot-.1,.1],[x,(bot+.1)/2,0],bk);for(const s of[-1,1])B(g,[L,hh,.022],[x,ys,s*zs],bk);B(g,[L,.03,w],[x,ys+hh/2+.015,0],bk);B(g,[L,.025,w],[x,bot-.012,0],bk);B(g,[.01,hh-.02,w-.05],[x+L*.2,ys,0],lens);back=x-L/2-.4;yS=ys}
+ else{const og=new THREE.Group(),ac=k==='acog'||k==='gacog',len=ac?.45:t==='s4'?.55:t==='s6'?.7:.9,r=ac?.07:.055;g.add(og);g.userData.hide=og;C(og,r,r,len,[x,yS,0],bk,14);C(og,r*1.5,r,.16,[x-len/2-.05,yS,0],bk,14);C(og,r,r*1.6,.2,[x+len/2+.02,yS,0],bk,14);add(og,new THREE.CylinderGeometry(.03,.03,.1,10),bk,[x,yS+r+.04,0]);
+  if(k==='gacog')for(const e of[-1,1])C(og,r*.8,r*.8,.012,[x+e*(len/2+(e<0?.14:.12)),yS,0],MT.glassG,12);
   for(const d of[-.3,.3]){C(og,r*1.3,r*1.3,.06,[x+d*len,yS,0],MT.steel,14);B(g,[.08,yS-r-.1,.08],[x+d*len,(.1+yS-r)/2,0],bk)}back=x-len/2-.45}
  eyeA(g,back,yS,0,{k,fov,n})}
 // ---------- armas longas ----------
@@ -54,6 +57,14 @@ function rifle(o){const g=new THREE.Group(),c=o.c,L=o.L||1.1,xF=L/2,xR=-L/2,hg=o
  if(o.belt){const S=V(x0+.05,.13,.11),E=V(x0+.2,-.14,.15),Q=V(x0-.15,-.02,.5);for(let i=0;i<16;i++){const t=i/15,a=(1-t)*(1-t),b=2*(1-t)*t,cc=t*t,p=[S.x*a+Q.x*b+E.x*cc,S.y*a+Q.y*b+E.y*cc,S.z*a+Q.z*b+E.z*cc];C(g,.022,.022,.1,p,MT.gold,6,[Math.PI/2,0,0]);B(g,[.07,.035,.03],p,MT.steel)}}
  if(o.bolt){const bg=new THREE.Group();bg.position.set(xR*.2,.05,.1);bg.userData.role='bolt';bg.userData.bx=xR*.2;g.add(bg);C(bg,.015,.015,.2,[0,0,.02],c.m,8,[Math.PI/2,0,0]);add(bg,new THREE.SphereGeometry(.04,8,6),c.m,[0,0,.14])}
  {const op=OV.op||o.op;if(op==='irons')irons(g,xR+.1,xh+hg+Math.min(bl,.15),.29);else optic(g,o.ox??xR*.1,.33,op)}
+ // DETALHES (tudo rente ao corpo e abaixo da linha de mira — nada tapa a visada; fica na mesma malha fundida, custo de desenho zero)
+ {const bk=MT.black,bx=(sx,sy,sz,p,m=bk,r)=>add(g,new THREE.BoxGeometry(sx,sy,sz),m,p,r),rl=L*.7,nS=Math.max(3,Math.round(rl/.07));
+  for(let i=0;i<nS;i++)bx(.02,.012,.15,[.02-rl/2+.03+i*(rl-.06)/(nS-1),.187,0]);   // fendas do trilho
+  bx(.2,.07,.012,[-L*.04,.05,.087]);bx(.2,.012,.012,[-L*.04,.088,.087],MT.steel);   // janela de ejeção
+  bx(.05,.035,.05,[xR+.3,.19,0],MT.steel);bx(.02,.08,.02,[xR+.4,-.2,0],MT.steel,[0,0,.3]);   // alavanca de carregar e gatilho
+  for(const x of[xR+.2,xF*.15])add(g,new THREE.CylinderGeometry(.014,.014,.2,8),MT.steel,[x,-.08,0],[Math.PI/2,0,0]);   // pinos
+  if(hg>=.2&&!o.shield)for(let i=0;i<Math.floor((hg-.08)/.09);i++)for(const sd of[-1,1])bx(.05,.028,.012,[xh+.07+i*.09,0,sd*.071]);   // aberturas de ventilação
+  if(o.mag!=='none'&&o.mag!=='box'&&!o.drum&&!o.belt)bx(.3,.04,.2,[x0+.11,-.155,0],c.b)}   // boca do carregador
  return fin(g)}
 function ener(k){const a=k==='arc',g=rifle({c:{b:MT.navy,m:MT.steel,p:MT.black,a:a?MT.glow2:MT.glow},L:a?1:1.1,hg:a?.5:.7,bl:a?.3:.2,tip:'flash',fixTip:a,mag:'straight',s:'tel',op:a?'dot':'holo'}),gm=a?MT.glow2:MT.glow;
  B(g,[.5,.05,.18],[0,-.08,0],gm);
@@ -65,7 +76,12 @@ function pist(o){const g=new THREE.Group(),L=o.L||1,c=o.c,r=-.4*L,fr=.6*L;
  B(g,[L,.2,.16],[L*.1,0,0],c.m);B(g,[L*.9,.09,.15],[L*.05,-.14,0],c.p);P(g,[[r+.02,-.09],[r+.28,-.09],[r+.2,-.62],[r-.1,-.58]],.15,c.p);B(g,[.2,.04,.16],[r+.05,-.62,0],c.m);if(OV.mag)B(g,[.22,.3,.16],[r+.02,-.76,0],c.p);
  B(g,[.3,.025,.11],[.16*L,-.22,0],c.p);B(g,[.025,.1,.11],[.3*L,-.17,0],c.p);B(g,[.03,.1,.03],[.1,-.2,0],MT.black);
  for(let i=0;i<4;i++)B(g,[.02,.2,.17],[r+.08+i*.045,0,0],c.b);B(g,[.3,.012,.17],[L*.2,.02,0],c.a);
- C(g,.04,.04,.1,[fr+.03,0,0],c.b,10);mz(g,tipFx(g,fr+.07,OV.tip||'none',.04));{const op=OV.op||'irons';if(op==='irons')irons(g,r+.05,fr-.05,.17);else optic(g,L*.05,.3,op)}return fin(g)}
+ C(g,.04,.04,.1,[fr+.03,0,0],c.b,10);mz(g,tipFx(g,fr+.07,OV.tip||'none',.04));{const op=OV.op||'irons';if(op==='irons')irons(g,r+.05,fr-.05,.17);else optic(g,L*.05,.3,op)}
+ {const bk=MT.black,bx=(sx,sy,sz,p,m=bk,rr)=>add(g,new THREE.BoxGeometry(sx,sy,sz),m,p,rr);   // detalhes: janela de ejeção, placas de aderência, ponta do cano, gatilho
+  bx(.2,.06,.01,[L*.12,.04,.083]);bx(.2,.012,.01,[L*.12,.074,.083],MT.steel);
+  for(const sd of[-1,1]){bx(.13,.38,.01,[r+.1,-.35,sd*.079],bk,[0,0,-.15]);for(let i=0;i<5;i++)bx(.11,.008,.012,[r+.1-i*.012,-.2-i*.07,sd*.08],MT.steel,[0,0,-.15])}
+  bx(.02,.07,.02,[.13,-.18,0],MT.steel,[0,0,.25]);bx(.02,.02,.1,[fr-.02,.115,0],MT.steel)}
+ return fin(g)}
 function rev(o){const g=new THREE.Group(),m=o.m,bl=o.bl;
  B(g,[.62,.26,.15],[-.05,0,0],m);const dg=new THREE.Group();dg.position.set(.12,0,0);dg.userData.role='drum';g.add(dg);C(dg,.14,.14,.4,[0,0,0],m,12);for(let i=0;i<6;i++){const a=i*Math.PI/3;C(dg,.03,.03,.42,[0,Math.cos(a)*.085,Math.sin(a)*.085],MT.black,8)}
  C(g,.05,.05,bl,[.3+bl/2,0,0],m,12);B(g,[bl,.03,.04],[.3+bl/2,.06,0],m);B(g,[bl*.6,.07,.07],[.3+bl*.3,-.07,0],m);
@@ -92,7 +108,7 @@ function sci(red){const g=new THREE.Group(),W2=Mt(0xe9eef4,.3,.35),D=MT.blued,GL
  for(const s of[-1,1]){B(g,[.9,.05,.05],[1,0,s*.07],D);B(g,[.9,.015,.03],[1,0,s*.07],GL)}
  for(let i=0;i<3;i++){const rg=new THREE.Group();rg.position.set(.55+i*.25,0,0);rg.userData.role='ring';g.add(rg);add(rg,new THREE.TorusGeometry(.13,.018,6,16),GL,[0,0,0],[0,Math.PI/2,0]);for(const y of[-1,1])B(rg,[.05,.05,.05],[0,y*.13,0],D)}
  if(red)for(let i=0;i<4;i++)B(g,[.04,.2,.21],[-.45+i*.1,-.01,0],MT.glowR);
- mz(g,1.5);optic(g,-.05,.36,OV.op||'holo');return fin(g)}
+ mz(g,1.5);{const op=OV.op||'holo';if(op==='irons')irons(g,-.45,.5,.36);else optic(g,-.05,.36,op)}return fin(g)}
 function flame(){const g=rifle({c:CS(MT.black,MT.steel,MT.black,MT.red),L:1,hg:.3,bl:.8,tip:'none',mag:'none',s:'tel',op:'irons'});
  C(g,.2,.2,.8,[.3,-.42,0],MT.red,14);for(const x of[-.1,.7])C(g,.215,.215,.05,[x,-.42,0],MT.steel,14);C(g,.03,.03,.4,[.4,-.17,0],MT.rubber,8);C(g,.04,.06,.24,[1.5,0,0],MT.steel,10);g.userData.mz[0].position.x=1.62;return g}
 const CS=(b,m,p,a)=>({b,m,p,a});
@@ -151,7 +167,7 @@ function railB(){const g=new THREE.Group();
  for(const s of[-1,1]){B(g,[1.9,.07,.07],[1.45,0,s*.1],MT.chrome);B(g,[1.8,.02,.075],[1.45,0,s*.1],MT.glow)}
  B(g,[1.9,.05,.2],[1.45,-.07,0],MT.black);
  for(let i=0;i<5;i++){const rg=new THREE.Group();rg.position.set(.75+i*.34,0,0);rg.userData.role='ring';g.add(rg);add(rg,new THREE.TorusGeometry(.17,.025,6,16),MT.glow,[0,0,0],[0,Math.PI/2,0])}
- C(g,.1,.1,.55,[-.05,.27,0],MT.glass,14);C(g,.06,.06,.5,[-.05,.27,0],MT.glow,12);mz(g,2.45);sgt(g,'s6',-.4,2.2,.4,.3,.5);return fin(g)}
+ C(g,.1,.1,.55,[-.05,.27,0],MT.glass,14);C(g,.06,.06,.5,[-.05,.27,0],MT.glow,12);mz(g,2.45);sgt(g,'acog',-.4,2.2,.4,.3,.5);return fin(g)}
 function teslaB(){const g=new THREE.Group();
  B(g,[.9,.3,.24],[0,0,0],MT.navy);P(g,[[-.12,-.14],[.1,-.14],[.04,-.6],[-.2,-.55]],.17,MT.black);P(g,[[-.45,.12],[-.45,-.14],[-.95,-.28],[-1.0,0]],.14,MT.black);
  C(g,.07,.07,.8,[.85,0,0],MT.steel,12);

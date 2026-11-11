@@ -5,6 +5,10 @@
 // O animal olha para +Z; a origem é o chão embaixo dele. c.height / c.radius / c.eye servem para colisão e mira.
 import * as THREE from 'three';
 import { FAUNA } from '../../../shared/fauna.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+export const CREATURE_CFG = { stand: false };   // true só no modo Caçada: lá os bichos correm em pé nas duas patas (engraçado); nos outros modos correm de quatro patas
+export const CREATURE_OPT = { on: true, beauty: true };   // beauty: caixas com quinas chanfradas (pegam luz nas arestas, bem menos 'quadradas')   // false = sem a fusão por esqueleto (serve para comparar o visual)
+let BONES = null;   // as juntas do animal que está sendo montado viram ossos (esqueleto do otimizador)
 
 const lerp = (a, b, t) => a + (b - a) * t, clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const sm = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
@@ -13,12 +17,27 @@ const env = (p, a, b, c, d) => (p < a || p > d ? 0 : p < b ? sm((p - a) / (b - a
 const matCache = new Map();
 const M = (c, o = {}) => { const k = c + JSON.stringify(o); let m = matCache.get(k); if (!m) { m = new THREE.MeshStandardMaterial({ color: c, roughness: 0.86, metalness: 0.02, flatShading: true, ...o }); matCache.set(k, m); } return m; };
 const G = { box: new Map(), cone: new Map() };
-const boxG = (x, y, z) => { const k = `${x}|${y}|${z}`; let g = G.box.get(k); if (!g) G.box.set(k, g = new THREE.BoxGeometry(x, y, z)); return g; };
+// caixa chanfrada: 26 faces (6 faces + 12 chanfros + 8 cantos), 44 triângulos; sombreamento chapado como o resto do jogo
+function chamferBox(X, Y, Z, c) {
+  const hx = X / 2, hy = Y / 2, hz = Z / 2, P = [], sg = [-1, 1], A = {}, B = {}, C = {};
+  for (const sx of sg) for (const sy of sg) for (const sz of sg) { const k = sx + ',' + sy + ',' + sz; A[k] = [sx * hx, sy * (hy - c), sz * (hz - c)]; B[k] = [sx * (hx - c), sy * hy, sz * (hz - c)]; C[k] = [sx * (hx - c), sy * (hy - c), sz * hz]; }
+  const tri = (a, b, d) => { const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [d[0] - a[0], d[1] - a[1], d[2] - a[2]], n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], cx = (a[0] + b[0] + d[0]) / 3, cy = (a[1] + b[1] + d[1]) / 3, cz = (a[2] + b[2] + d[2]) / 3; if (n[0] * cx + n[1] * cy + n[2] * cz < 0) P.push(...a, ...d, ...b); else P.push(...a, ...b, ...d); };
+  const quad = (a, b, d, e) => { tri(a, b, d); tri(a, d, e); };
+  for (const sx of sg) quad(A[sx + ',-1,-1'], A[sx + ',1,-1'], A[sx + ',1,1'], A[sx + ',-1,1']);
+  for (const sy of sg) quad(B['-1,' + sy + ',-1'], B['1,' + sy + ',-1'], B['1,' + sy + ',1'], B['-1,' + sy + ',1']);
+  for (const sz of sg) quad(C['-1,-1,' + sz], C['1,-1,' + sz], C['1,1,' + sz], C['-1,1,' + sz]);
+  for (const sx of sg) for (const sy of sg) quad(A[sx + ',' + sy + ',-1'], A[sx + ',' + sy + ',1'], B[sx + ',' + sy + ',1'], B[sx + ',' + sy + ',-1']);   // arestas ao longo de z
+  for (const sx of sg) for (const sz of sg) quad(A[sx + ',-1,' + sz], A[sx + ',1,' + sz], C[sx + ',1,' + sz], C[sx + ',-1,' + sz]);   // ao longo de y
+  for (const sy of sg) for (const sz of sg) quad(B['-1,' + sy + ',' + sz], B['1,' + sy + ',' + sz], C['1,' + sy + ',' + sz], C['-1,' + sy + ',' + sz]);   // ao longo de x
+  for (const sx of sg) for (const sy of sg) for (const sz of sg) { const k = sx + ',' + sy + ',' + sz; tri(A[k], B[k], C[k]); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(P.length / 3 * 2), 2)); g.computeVertexNormals(); return g;
+}
+const boxG = (x, y, z) => { const mn = Math.min(x, y, z), ch = CREATURE_OPT.beauty && mn >= 0.12, k = `${x}|${y}|${z}|${ch ? 1 : 0}`; let g = G.box.get(k); if (!g) G.box.set(k, g = ch ? chamferBox(x, y, z, Math.min(0.2, mn * 0.2)) : new THREE.BoxGeometry(x, y, z)); return g; };
 const coneG = (r, h, n = 6) => { const k = `${r}|${h}|${n}`; let g = G.cone.get(k); if (!g) G.cone.set(k, g = new THREE.ConeGeometry(r, h, n)); return g; };
 function put(p, g, m, x, y, z, rx = 0, ry = 0, rz = 0) { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.castShadow = true; p.add(o); return o; }
 const bx = (p, sx, sy, sz, x, y, z, m, rx, ry, rz) => put(p, boxG(sx, sy, sz), m, x, y, z, rx, ry, rz);
 const cn = (p, r, h, x, y, z, m, rx, ry, rz, n) => put(p, coneG(r, h, n), m, x, y, z, rx, ry, rz);   // cone aponta para +Y; rx=π/2 → +Z (frente); rx=π → para baixo
-const grp = (p, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); p.add(g); return g; };
+const grp = (p, x = 0, y = 0, z = 0) => { const g = BONES ? new THREE.Bone() : new THREE.Group(); if (BONES) BONES.push(g); g.position.set(x, y, z); p.add(g); return g; };
 
 // perna de 2 ossos: coxa (pivô no quadril) + canela (pivô no joelho) + pé
 function leg(p, x, y, z, len1, len2, t, m, dark) {
@@ -28,6 +47,9 @@ function leg(p, x, y, z, len1, len2, t, m, dark) {
   return { hip, knee, ankle, len1, len2 };
 }
 
+const h01 = (i) => ((Math.sin(i * 12.9898) * 43758.5453) % 1 + 1) % 1;   // número 'aleatório' fixo por peça (o animal sempre sai igual)
+const VC = new Map();
+const vcMat = (rq, mq) => { const k = rq + '_' + mq; let m = VC.get(k); if (!m) { m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: rq / 5, metalness: mq / 4, flatShading: true }); m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', 'outgoingLight+=pow(1.-saturate(dot(normalize(normal),normalize(vViewPosition))),3.)*vec3(.2,.26,.34)*.5;\n#include <opaque_fragment>'); }; m.customProgramCacheKey = () => 'crrim'; VC.set(k, m); } return m; };
 export class Creature {
   constructor(id) {
     const sp = FAUNA[id]; if (!sp) throw new Error(`espécie desconhecida: ${id}`);
@@ -35,12 +57,13 @@ export class Creature {
     const c = sp.colors; this.mats = { sk: M(c.sk), bl: M(c.bl), ac: M(c.ac), dark: M('#1b1612'), tooth: M('#efe8d6', { roughness: 0.5 }), eye: M('#ffd23a', { emissive: '#ffb300', emissiveIntensity: 0.9 }), claw: M('#2a221b', { roughness: 0.5 }) };
     this.t = Math.random() * 10; this.ph = 0; this.spd = 0; this.want = 0; this.mood = 'calm'; this.alertK = 0; this.fleeK = 0; this.atk = null; this.hurtT = -1; this.roarT = -1; this.dyingT = -1; this.dead = false;
     this.tails = []; this.fx = []; this.arms = []; this.legs = []; this.trunk = [];
-    this.root = grp(this.group);
+    BONES = this.bones = []; this.root = grp(this.group);
     if (sp.rig === 'biped') this.buildBiped(); else this.buildQuad();
     (FEATURES[id] || (() => {}))(this);
     this.group.traverse((o) => { if (o.isMesh) o.matrixAutoUpdate = true; });
     this.group.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(this.group); this.height = +(box.max.y - box.min.y).toFixed(2); this.radius = sp.hit?.r ?? Math.max(box.max.x - box.min.x, box.max.z - box.min.z) / 2; this.eye = +(this.height * 0.86).toFixed(2);
+    BONES = null; if (CREATURE_OPT.on) { try { this.optimize(); } catch (e) { console.warn('[criatura] otimizador desativado:', e.message); } }
     this.update(0.001);
   }
 
@@ -124,7 +147,7 @@ export class Creature {
     else if (A === 'pounce') { const cr = env(atkP, 0, 0.25, 0.32, 0.4), lp = env(atkP, 0.32, 0.5, 0.62, 0.92); crouch = cr * 0.35; lunge = lp * sp.legL * 2.2; hop = Math.sin(clamp((atkP - 0.32) / 0.45) * Math.PI) * sp.legL * 0.7; jawOpen = env(atkP, 0.4, 0.55, 0.68, 0.8); bodyPitch = -lp * 0.12; frontSwat = -1.2 * env(atkP, 0.4, 0.55, 0.65, 0.85); }
     else if (A === 'swat') { const up = env(atkP, 0, 0.3, 0.34, 0.46), dn = env(atkP, 0.34, 0.46, 0.54, 0.9); frontSwat = -1.7 * up + 1.9 * dn; neckAdd = -0.2 * up + 0.2 * dn; lunge = dn * sp.legL * 0.12; }
     this.leapLeft = (this.leapLeft || 0) - dt; this.leapK = (this.leapK || 0) + ((this.leapLeft > 0 ? 1 : 0) - (this.leapK || 0)) * Math.min(1, dt * 12);
-    { const stT = !biped && !this.dead && this.spd > 4.8 ? 1 : 0; this.standK = (this.standK || 0) + (stT - (this.standK || 0)) * Math.min(1, dt * 6); bodyPitch -= this.standK * 0.55; }   /* CORRIDA: o bicho levanta o peito e corre meio de pé (cômico), igual ao jogo de referência */
+    { const stT = CREATURE_CFG.stand && !biped && !this.dead && sp.kind !== 'monstro' && this.spd > 4.8 ? 1 : 0; this.standK = (this.standK || 0) + (stT - (this.standK || 0)) * Math.min(1, dt * 6); bodyPitch -= this.standK * 0.55; }   /* CORRIDA: o bicho levanta o peito e corre meio de pé (cômico); MONSTROS (Mula) correm com as quatro patas, sem graça: é terror */
     this.lookLeft = (this.lookLeft || 0) - dt; const lookY = this.lookLeft > 0 ? Math.sin(t * 2.6) * 0.9 * Math.min(1, this.lookLeft) : 0;
     this.grazeLeft = (this.grazeLeft || 0) - dt; this.grazeK = (this.grazeK || 0) + (((this.grazeLeft > 0 && this.spd < 0.3 && !A ? 1 : 0)) - (this.grazeK || 0)) * Math.min(1, dt * 2.5); if (this.grazeK > 0.01) { neckAdd += this.grazeK * (0.95 + Math.sin(t * 5) * 0.07); jawOpen = Math.max(jawOpen, this.grazeK * (0.12 + 0.1 * Math.max(0, Math.sin(t * 5)))); }
     jawOpen = Math.max(jawOpen, roarE * 0.9, dieE * 0.5);
@@ -160,10 +183,64 @@ export class Creature {
     for (const f of this.fx) f(t, { mv, runK, roarE, atkP, A, dieE, alert: this.alertK, hurtE });
     this.group.updateMatrixWorld(false);
   }
+
+  // ------------------------------------------------------------------ OTIMIZADOR
+  // 1) descobre as peças que se mexem SOZINHAS (respirar, fogo, nadadeiras...) rodando as animações em vários estados; essas ficam soltas
+  // 2) o resto vira SkinnedMesh: 1 malha por material (cor por vértice com sombreado de oclusão e variação leve por peça), o esqueleto são as juntas
+  optimize() {
+    const g0 = this.group, sp = this.sp, all = [], nodes = []; g0.traverse((o) => { if (o === g0) return; all.push(o); if (!o.isBone) nodes.push(o); });
+    const rest = all.map((o) => [o.position.clone(), o.quaternion.clone(), o.scale.clone(), o.visible]);
+    const ms = (o) => { const m = o.material; return o.isMesh && m && !Array.isArray(m) ? `${m.emissiveIntensity}|${m.opacity}|${m.color.getHex()}` : ''; };
+    const snap = () => nodes.map((o) => [o.position.x, o.position.y, o.position.z, o.rotation.x, o.rotation.y, o.rotation.z, o.scale.x, o.scale.y, o.scale.z, o.visible ? 1 : 0, ms(o)].join());
+    const S = []; const step = (n = 3, dt = 0.2) => { for (let i = 0; i < n; i++) this.update(dt); S.push(snap()); };
+    step(); this.setMotion(sp.walk, 'calm'); step(8); this.setMotion(sp.run, 'flee'); step(8); this.setMotion(0, 'alert'); this.roar(); step(4); this.hurt(); step(2);
+    for (const k of sp.atk || []) { this.attack(k, false); step(3, 0.25); this.attack(k, true); step(3, 0.25); }
+    this.setMotion(0, 'calm'); this.leap(0.6); step(2); this.look(0.6); step(2); this.graze(0.6); step(3); { this.die(); step(8, 0.2); this.revive(); step(1); }
+    const moving = new Set(); nodes.forEach((o, i) => { for (let k = 1; k < S.length; k++) if (S[k][i] !== S[0][i]) { moving.add(o); break; } });
+    all.forEach((o, i) => { o.position.copy(rest[i][0]); o.quaternion.copy(rest[i][1]); o.scale.copy(rest[i][2]); o.visible = rest[i][3]; });
+    Object.assign(this, { ph: 0, spd: 0, want: 0, mood: 'calm', alertK: 0, fleeK: 0, atk: null, hurtT: -1, roarT: -1, dyingT: -1, dead: false, leapK: 0, standK: 0, grazeK: 0, lookLeft: 0, grazeLeft: 0, leapLeft: 0 });
+    const under = (o) => { for (let a = o; a && a !== g0 && !a.isBone; a = a.parent) if (moving.has(a)) return true; return false };
+    const rb = new THREE.Bone(); g0.add(rb); const bl = [rb, ...this.bones], bi = new Map(bl.map((b, i) => [b, i]));
+    g0.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g0.matrixWorld).invert(), H = Math.max(0.5, this.height);
+    const own = (o) => { for (let a = o; a && a !== g0; a = a.parent) if (!a.visible) return -1; for (let a = o.parent; a && a !== g0; a = a.parent) if (a.isBone) return bi.get(a); return 0; };
+    const ent = new Map(), meshes = []; g0.traverse((o) => { if (o.isMesh) meshes.push(o); });
+    let idx = 0;
+    for (const o of meshes) {
+      idx++; if (under(o) || Array.isArray(o.material) || o.children.length) continue; const mt = o.material; if (mt.transparent || mt.alphaMap || mt.map) continue; const b = own(o); if (b < 0) continue;
+      const lit = (mt.emissive ? mt.emissive.getHex() : 0) !== 0, fold = !lit && mt.metalness < 0.5, rq = Math.round(mt.roughness * 5), mq = Math.round((mt.metalness || 0) * 4), k = (fold ? 'vc' + rq + '_' + mq : [mt.type, mt.color.getHex(), mt.roughness, mt.metalness, mt.emissive.getHex(), mt.emissiveIntensity, mt.side, mt.flatShading].join('|')) + '|' + (o.castShadow ? 1 : 0);
+      const m4 = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld), c = o.geometry.clone(); if (!c.index) c.setIndex(Array.from({ length: c.attributes.position.count }, (_, i) => i));
+      for (const a of Object.keys(c.attributes)) if (!['position', 'normal', 'uv'].includes(a)) c.deleteAttribute(a);
+      const n = c.attributes.position.count; if (!c.attributes.uv) c.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+      c.applyMatrix4(m4); if (m4.determinant() < 0) { const ix = c.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } }
+      const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4); for (let i = 0; i < n; i++) { si[i * 4] = b; sw[i * 4] = 1; }
+      c.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); c.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
+      if (fold) {   // BELEZA: sombra de oclusão (embaixo mais escuro, em cima mais claro), gradiente de altura e variação leve de tom por peça — tudo assado na cor do vértice (custo zero na GPU)
+        const col = new Float32Array(n * 3), nn = c.attributes.normal, pp = c.attributes.position, jit = 0.93 + 0.14 * h01(idx), hue = h01(idx * 1.7) - 0.5;
+        for (let i = 0; i < n; i++) { const ao = 0.66 + 0.34 * (nn.getY(i) * 0.5 + 0.5), hy = Math.min(1, Math.max(0, pp.getY(i) / H)), gr = 0.9 + 0.2 * hy, q = ao * gr * jit; col[i * 3] = Math.min(1, mt.color.r * q * (1 + hue * 0.08)); col[i * 3 + 1] = Math.min(1, mt.color.g * q); col[i * 3 + 2] = Math.min(1, mt.color.b * q * (1 - hue * 0.08)); }
+        c.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      }
+      const e = ent.get(k) || ent.set(k, { mat: fold ? vcMat(rq, mq) : mt, g: [], o: [], cs: o.castShadow }).get(k); e.g.push(c); e.o.push(o);
+    }
+    if (!ent.size) { g0.remove(rb); return; }
+    const sk = new THREE.Skeleton(bl), made = [];
+    for (const e of ent.values()) { const mg = e.g.length > 1 ? mergeGeometries(e.g) : e.g[0]; if (!mg) continue; if (e.g.length > 1) e.g.forEach((c) => c.dispose()); const sm = new THREE.SkinnedMesh(mg, e.mat); sm.castShadow = e.cs; sm.receiveShadow = true; sm.frustumCulled = false; e.o.forEach((o) => o.parent.remove(o)); g0.add(sm); made.push(sm); }   // (as geometrias das peças são COMPARTILHADAS entre os animais: não se descarta nada)
+    g0.updateMatrixWorld(true); made.forEach((m) => m.bind(sk));
+  }
   dispose() { this.group.removeFromParent(); }   // geometrias e materiais são compartilhados entre os animais: nada para liberar aqui
 }
 
 // ======================================================================== detalhes de cada espécie
+// FOGO/FUMAÇA BARATOS: em vez de dezenas de malhas, 1 Points por tipo (sprite redondo, cor+alfa por partícula) — mesma ideia do neon dos personagens
+let SPR = null; const _V = new THREE.Vector3(), _I = new THREE.Matrix4();
+function fxPoints(c, n, size, add) {
+  if (!SPR && typeof document !== 'undefined') { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const g = cv.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.3, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); SPR = new THREE.CanvasTexture(cv); SPR.colorSpace = THREE.SRGBColorSpace; }
+  const geo = new THREE.BufferGeometry(), pos = new Float32Array(n * 3), col = new Float32Array(n * 4);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 4));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size, map: SPR, vertexColors: true, transparent: true, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending })); pts.frustumCulled = false; c.group.add(pts);
+  return { pts, begin() { c.group.updateMatrixWorld(true); _I.copy(c.group.matrixWorld).invert(); },
+    set(i, bone, x, y, z, hex, a) { _V.set(x, y, z); bone.localToWorld(_V); _V.applyMatrix4(_I); pos[i * 3] = _V.x; pos[i * 3 + 1] = _V.y; pos[i * 3 + 2] = _V.z; col[i * 4] = ((hex >> 16) & 255) / 255; col[i * 4 + 1] = ((hex >> 8) & 255) / 255; col[i * 4 + 2] = (hex & 255) / 255; col[i * 4 + 3] = a; },
+    flush() { geo.attributes.position.needsUpdate = geo.attributes.color.needsUpdate = true; } };
+}
 const FEATURES = {
   // MAPINGUARI: gigante peludo de um olho só e uma boca enorme na barriga (a lenda amazônica); solta um fedor verde
   mapinguari(c) {
@@ -176,9 +253,9 @@ const FEATURES = {
     bx(c.body, bw * 1.08, bh * 1.12, 0.12, 0, by, bz - 0.05, fur); bx(c.body, bw, bh, 0.1, 0, by, bz, gut); const tg = bx(c.body, bw * 0.5, 0.16, 0.5, 0, by - bh * 0.18, bz + 0.2, tongue);
     const upper = [], lower = []; for (let i = 0; i < 9; i++) { const x = (i / 8 - 0.5) * bw * 0.9; upper.push(cn(c.body, 0.07, 0.34, x, by + bh * 0.44, bz + 0.12, m.tooth, Math.PI, 0, 0)); lower.push(cn(c.body, 0.07, 0.3, x, by - bh * 0.44, bz + 0.12, m.tooth, 0, 0, 0)); }
     c.fx.push((t) => { const o = 0.5 + 0.5 * Math.sin(t * 2.4); tg.position.z = bz + 0.2 + o * 0.18; upper.forEach((q) => { q.position.y = by + bh * 0.44 - o * 0.05; }); lower.forEach((q) => { q.position.y = by - bh * 0.44 + o * 0.05; }); });
-    const puffs = []; for (let i = 0; i < 4; i++) { const p = put(c.root, new THREE.SphereGeometry(0.5, 7, 5), M('#8fd35a', { transparent: true, opacity: 0.28, roughness: 1, depthWrite: false }), 0, 1, 0); puffs.push(p); }
+    const gas = fxPoints(c, 4, 3.2, false);
     { const red = new THREE.PointLight(0xff1a1a, 7, 24, 1.5); red.position.set(0, sp.bodyH * 0.9, 0.3); c.body.add(red); c.fx.push(() => { red.intensity = 7; }); }   /* luz VERMELHA de terror: o Mapinguari clareia o chão em volta */
-    c.fx.push((t) => puffs.forEach((p, i) => { const a = t * 0.6 + i * 1.57; p.position.set(Math.cos(a) * 1.4, 0.8 + 0.5 * Math.sin(t * 1.3 + i), Math.sin(a) * 1.4); p.scale.setScalar(0.7 + 0.3 * Math.sin(t * 2 + i)); }));   // nuvem fedorenta em volta
+    c.fx.push((t) => { gas.begin(); for (let i = 0; i < 4; i++) { const a = t * 0.6 + i * 1.57; gas.set(i, c.root, Math.cos(a) * 1.4, 0.8 + 0.5 * Math.sin(t * 1.3 + i), Math.sin(a) * 1.4, 0x8fd35a, 0.22 + 0.06 * Math.sin(t * 2 + i)); } gas.flush(); });   // nuvem fedorenta em volta (pontos)
   },
   // MULA SEM CABEÇA (versão assustadora): égua carbonizada e enorme, costelas à mostra, rachaduras de brasa no corpo, coto de pescoço com osso e uma FOGUEIRA no lugar da cabeça,
   // crina e cauda em chamas, ferraduras em brasa que soltam fogo a cada passada, brasas subindo e luz laranja pulsando
@@ -191,23 +268,23 @@ const FEATURES = {
     bx(c.head, sp.bodyW * 0.55, sp.bodyW * 0.55, 0.4, 0, 0, 0.1, char); bx(c.head, 0.2, 0.2, 0.7, 0, 0.02, 0.42, bone); bx(c.head, 0.3, 0.3, 0.14, 0, 0.02, 0.8, bone);   // coto do pescoço com a vértebra de fora
     const flames = [];   // (a fogueira da cabeça agora é de bolinhas de fogo + fumaça, igual ao capô do carro pegando fogo: ver 'fogoCabeca' abaixo)
     const mkF = (mat, r, h, n, spread, y0) => { for (let i = 0; i < n; i++) { const a = i * 2.4, f = put(c.head, coneG(r * (0.8 + (i % 3) * 0.18), h * (0.8 + (i % 4) * 0.2), 7), mat, Math.cos(a) * spread, y0, 0.85 + Math.sin(a) * spread * 0.8); f.userData.ph = i * 1.7; f.userData.h = h; flames.push(f); } };
-    const manes = []; for (const g of [c.neckA, c.neckB]) for (let i = 0; i < 5; i++) { const f = put(g, coneG(0.16, 0.7 + (i % 2) * 0.3, 6), i % 2 ? ember : red, 0, sp.bodyW * 0.3, (g === c.neckA ? 0.15 : 0.1) + i * (sp.neckL * 0.18), -0.5); f.userData.ph = i * 1.3; manes.push(f); }   // crina em chamas
-    for (const g of c.tails) { const f = put(g, coneG(0.2, 0.9, 6), red, 0, 0.1, -0.2, -Math.PI / 2); f.userData.ph = Math.random() * 6; manes.push(f); }   // cauda em chamas
-    const hooves = []; for (const l of c.legs) { bx(l.ankle, 0.5, 0.07, 0.56, 0, 0.05, 0.12, M('#ff7a2a', { emissive: '#ff5a10', emissiveIntensity: 2, metalness: 0.4, roughness: 0.4 })); const f = put(l.ankle, coneG(0.16, 0.5, 6), ember, 0, 0.3, 0.1); f.userData.ph = Math.random() * 6; hooves.push(f); }   // ferraduras em brasa e fogo nas patas
+    const manes = []; for (const g of [c.neckA, c.neckB]) for (let i = 0; i < 5; i++) { manes.push({ g, x: 0, y: sp.bodyW * 0.3, z: (g === c.neckA ? 0.15 : 0.1) + i * (sp.neckL * 0.18), ph: i * 1.3, hot: i % 2, h: 0.7 + (i % 2) * 0.3 }); }   // crina em chamas (pontos)
+    for (const g of c.tails) manes.push({ g, x: 0, y: 0.1, z: -0.2, ph: Math.random() * 6, hot: 0, h: 0.9, tail: 1 });   // cauda em chamas (pontos)
+    const hooves = []; for (const l of c.legs) { bx(l.ankle, 0.5, 0.07, 0.56, 0, 0.05, 0.12, M('#ff7a2a', { emissive: '#ff5a10', emissiveIntensity: 2, metalness: 0.4, roughness: 0.4 })); hooves.push({ g: l.ankle, ph: Math.random() * 6 }); }   // ferraduras em brasa e fogo nas patas
     const glow = new THREE.PointLight(0xff1a1a, 7, 24, 1.5);   /* luz VERMELHA de terror: clareia em volta da Mula */ glow.position.set(0, 0.8, 1.0); c.head.add(glow);
     const pool = put(c.root, new THREE.CylinderGeometry(2.8, 2.8, 0.03, 20), new THREE.MeshBasicMaterial({ color: 0xff2410, transparent: true, opacity: 0.2, depthWrite: false }), 0, 0.03, 0);   // brilho no chão em volta
     // FOGO DA CABEÇA = o do CAPÔ DO CARRO PEGANDO FOGO (client/js/effects/vehFx.js › _puff): bolinhas que sobem e somem — fogo laranja/amarelo (aditivo, 0,7 s) misturado com fumaça preta e cinza (1,6–2,4 s)
-    const fogoCabeca = []; for (let i = 0; i < 44; i++) { const fire = i < 26, m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })); m.userData = { fire, ph: (i * 0.6180339) % 1, u0: 9, ox: 0, oz: 0, c: 0 }; c.head.add(m); fogoCabeca.push(m); }
-    const sparks = [];
+    const fogoCabeca = []; for (let i = 0; i < 44; i++) fogoCabeca.push({ fire: i < 26, ph: (i * 0.6180339) % 1, u0: 9, ox: 0, oz: 0, c: 0, hex: 0xff6a10 });
+    const fireB = fxPoints(c, 26, 2.0, true), smoke = fxPoints(c, 18, 3.2, false), fireS = fxPoints(c, manes.length * 2 + hooves.length * 3, 1.0, true), pend = [...manes, ...hooves];
     c.fx.push((t) => {
-      fogoCabeca.forEach((m) => { const u = m.userData, life = u.fire ? 0.7 : 1.6 + u.c * 0.8, k = ((t / life + u.ph) % 1);   // k = idade 0..1 (volta ao zero = nasce de novo)
-        if (k < u.u0) { u.ox = (Math.random() - 0.5) * 0.9; u.oz = (Math.random() - 0.5) * 0.8; u.c = Math.random() < 0.25 ? 1 : 0; m.material.color.setHex(u.fire ? (Math.random() < 0.5 ? 0xff6a10 : 0xffc030) : (u.c ? 0x1c1c1c : 0x666a70)); m.material.blending = u.fire ? THREE.AdditiveBlending : THREE.NormalBlending; }
-        u.u0 = k; const K = 1.6, vy = u.fire ? 1.6 : 1.2 + u.c * 0.4, s0 = u.fire ? 0.6 : 0.8, s1 = u.fire ? 1.3 : 2.4 + u.c, a0 = u.fire ? 0.9 : 0.55;
-        m.position.set(u.ox * K * 0.6 + 0.25 * k * life, 0.1 + vy * k * life * K, 0.85 + u.oz * K * 0.6); m.scale.setScalar((s0 + (s1 - s0) * k) * K * 0.75); m.material.opacity = a0 * (1 - k); });
-      flames.forEach((f, i) => { const s = 0.75 + 0.45 * Math.sin(t * 3.2 + f.userData.ph) + 0.15 * Math.sin(t * 1.6 + i), w = 0.9 + 0.25 * Math.cos(t * 2.4 + f.userData.ph); f.scale.set(w, s, w); f.rotation.x = Math.sin(t * 1.8 + f.userData.ph) * 0.25; f.rotation.z = Math.cos(t * 1.6 + f.userData.ph) * 0.25; });
-      manes.forEach((f) => { const s = 0.7 + 0.5 * Math.abs(Math.sin(t * 2.6 + f.userData.ph)); f.scale.set(1, s, 1); });
-      hooves.forEach((f) => { const s = 0.5 + 0.9 * Math.abs(Math.sin(t * 3.4 + f.userData.ph)); f.scale.set(1, s, 1); });
-      sparks.forEach((s) => { const u = (t * 0.9 + s.userData.ph) % 1; s.position.set(Math.sin(s.userData.ph * 9 + t * 2) * (0.2 + u * 0.8), 0.4 + u * 3.2, 0.85 + Math.cos(s.userData.ph * 7 + t * 2) * (0.2 + u * 0.7)); s.scale.setScalar(1 - u * 0.8); });
+      fireB.begin(); smoke.begin(); fireS.begin(); let fi = 0, si = 0;
+      fogoCabeca.forEach((u) => { const life = u.fire ? 0.7 : 1.6 + u.c * 0.8, k = ((t / life + u.ph) % 1);   // k = idade 0..1 (volta ao zero = nasce de novo)
+        if (k < u.u0) { u.ox = (Math.random() - 0.5) * 0.9; u.oz = (Math.random() - 0.5) * 0.8; u.c = Math.random() < 0.25 ? 1 : 0; u.hex = u.fire ? (Math.random() < 0.5 ? 0xff6a10 : 0xffc030) : (u.c ? 0x1c1c1c : 0x666a70); }
+        u.u0 = k; const K = 1.6, vy = u.fire ? 1.6 : 1.2 + u.c * 0.4, a0 = u.fire ? 0.95 : 0.5, x = u.ox * K * 0.6 + 0.25 * k * life, y = 0.1 + vy * k * life * K, z = 0.85 + u.oz * K * 0.6;
+        if (u.fire) fireB.set(fi++, c.head, x, y, z, u.hex, a0 * (1 - k)); else smoke.set(si++, c.head, x, y + 0.4, z, u.hex, a0 * (1 - k)); });
+      let qi = 0; for (const p of manes) { const s0 = 0.7 + 0.5 * Math.abs(Math.sin(t * 2.6 + p.ph)); fireS.set(qi++, p.g, p.x, p.y, p.z, p.hot ? 0xff7a1a : 0xff3a10, 0.85); fireS.set(qi++, p.g, p.x, p.y + p.h * s0 * 0.5, p.z, 0xffb030, 0.55 * s0); }
+      for (const p of hooves) { const s0 = 0.5 + 0.9 * Math.abs(Math.sin(t * 3.4 + p.ph)); for (let j = 0; j < 3; j++) fireS.set(qi++, p.g, 0, 0.2 + j * 0.2 * s0, 0.1, j ? 0xffb030 : 0xff5a10, 0.9 - j * 0.25); }
+      fireB.flush(); smoke.flush(); fireS.flush();
       glow.intensity = 7;   /* luz de ponto vermelha, parada (sem piscar) */ pool.material.opacity = 0.2;
     });
   },
