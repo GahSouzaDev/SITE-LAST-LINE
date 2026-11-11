@@ -12,6 +12,24 @@ class SphereGeometry extends THREE.SphereGeometry{constructor(r,w,h,...a){super(
 class LatheGeometry extends THREE.LatheGeometry{constructor(p,s=12,...a){super(p,sg(s,.62,12),...a)}}
 class CapsuleGeometry extends THREE.CapsuleGeometry{constructor(r,l,cs=4,rs=8,...a){super(r,l,sg(cs,.6,2),sg(rs,.62,8),...a)}}
 class CylinderGeometry extends THREE.CylinderGeometry{constructor(a,b,h,rs=8,...r){super(a,b,h,sg(rs,.75,10),...r)}}
+function handGeoT(sd,B,LOW,fist=false){   // geometria da mão (palma + dedos + polegar, fundidos) no referencial da mão; usada pelo rig e pela 1ª pessoa
+ const tg=new THREE.Group(),parts=[];   // palma e dedos são montados e FUNDIDOS em UMA malha por mão (1 chamada de desenho em vez de 11)
+ const add=(p,geo,pos,sc)=>{const o=new THREE.Mesh(geo);o.position.set(...pos);if(sc)o.scale.set(...sc);p.add(o);parts.push(o);return o};
+ const seg=(p,r,L)=>add(p,new CapsuleGeometry(r,Math.max(.002,L-2*r),LOW?2:3,LOW?5:8),[0,-L/2,0]);
+ add(tg,new SphereGeometry(1,LOW?10:14,LOW?8:10),[0,-.292,.002],[.04*B,.047,.027]);
+ const L1=[.034,.038,.036,.029],L2=[.024,.028,.026,.021],cu=fist?[1.45,1.5,1.5,1.5]:[.8,.75,.8,.9];
+ for(let i=0;i<4;i++){const r=.0088*B*(i===3?.88:1),g1=new THREE.Group();   // i=0 indicador (perto do polegar) ... i=3 mínimo
+  g1.position.set(sd*(.027-i*.018),-.333,.008);g1.rotation.x=-cu[i];tg.add(g1);seg(g1,r,L1[i]);
+  const g2=new THREE.Group();g2.position.set(0,-L1[i]+.003,0);g2.rotation.x=fist?-1.75:-1.0;g1.add(g2);seg(g2,r*.9,L2[i])}
+ const t1=new THREE.Group();t1.position.set(sd*.036,-.288,.014);t1.rotation.set(fist?-1.05:-.6,0,fist?-sd*.25:sd*.45);tg.add(t1);seg(t1,.0098*B,.032);
+ const t2=new THREE.Group();t2.position.set(0,-.03,0);t2.rotation.x=fist?-.9:-.65;t1.add(t2);seg(t2,.009*B,.027);
+ tg.updateMatrixWorld(true);
+ const geos=parts.map((o)=>{const g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);return g});
+ const merged=mergeGeometries(geos,false);geos.forEach((g)=>g.dispose());parts.forEach((o)=>o.geometry.dispose());
+ return merged}
+const HANDG={},FISTG={};const fistGeom=(sd)=>{const k=sd>0?'L':'R';return FISTG[k]||(FISTG[k]=handGeoT(sd,1,false,true))};   // geometria COMPARTILHADA (uma por lado): cada mão da 1ª pessoa é 1 desenho só, sem criar malha nova a cada troca de arma
+// A MESMA mão do personagem para a 1ª pessoa (sd=+1 esquerda, -1 direita); referencial do ANTEBRAÇO: pulso em (0,0,0), mão em -Y, eixo do punho = Z (polegar do lado +Z), dedos fecham para dentro. Gire o mesh em Y por -sd*PI/2.
+export function handMesh(sd,mat,fist=false){const k=sd>0?'L':'R',C=fist?FISTG:HANDG;const m=new THREE.Mesh(C[k]||(C[k]=handGeoT(sd,1,false,fist)),mat);m.userData.shared=true;m.castShadow=false;return m}
 export function createCharacter(initial = {}) {
 const rad = (d) => d * Math.PI / 180, clamp = THREE.MathUtils.clamp, T = Math.PI, K = 1 / 0.3;
 const WPS = { on: false };
@@ -210,23 +228,8 @@ const cap=(p,len,r,m)=>LOW?mesh(p,new CapsuleGeometry(r,Math.max(.01,len-r),4,12
 const tatCap=(p,len,r,kind,sd)=>{const o=mesh(p,limbGeo(len,r+.0012),tatMat(kind,sd),[0,0,0]);o.rotation.y=-T/2;o.castShadow=false;o.renderOrder=2;return o};
 // mão com dedos (palma + 4 dedos de 2 falanges + polegar), levemente fechada para segurar a arma.
 // Orientação: a palma fica virada para o centro do corpo, com o polegar do lado certo (sd=+1 mão esquerda, sd=-1 mão direita).
-function hand(fr,sd,gm,B){
- const hg=new THREE.Group();hg.rotation.y=-sd*Math.PI/2;fr.add(hg);   // giro da mão em torno do antebraço
- const tg=new THREE.Group(),parts=[];   // palma e dedos são montados e FUNDIDOS em UMA malha por mão (1 chamada de desenho em vez de 11)
- const add=(p,geo,pos,sc)=>{const o=new THREE.Mesh(geo,gm);o.position.set(...pos);if(sc)o.scale.set(...sc);p.add(o);parts.push(o);return o};
- const seg=(p,r,L)=>add(p,new CapsuleGeometry(r,Math.max(.002,L-2*r),LOW?2:3,LOW?5:8),[0,-L/2,0]);
- add(tg,new SphereGeometry(1,LOW?10:14,LOW?8:10),[0,-.292,.002],[.04*B,.047,.027]);
- const L1=[.034,.038,.036,.029],L2=[.024,.028,.026,.021],cu=[.8,.75,.8,.9];
- for(let i=0;i<4;i++){const r=.0088*B*(i===3?.88:1),g1=new THREE.Group();   // i=0 indicador (perto do polegar) ... i=3 mínimo
-  g1.position.set(sd*(.027-i*.018),-.333,.008);g1.rotation.x=-cu[i];tg.add(g1);seg(g1,r,L1[i]);
-  const g2=new THREE.Group();g2.position.set(0,-L1[i]+.003,0);g2.rotation.x=-1.0;g1.add(g2);seg(g2,r*.9,L2[i])}
- const t1=new THREE.Group();t1.position.set(sd*.036,-.288,.014);t1.rotation.set(-.6,0,sd*.45);tg.add(t1);seg(t1,.0098*B,.032);
- const t2=new THREE.Group();t2.position.set(0,-.03,0);t2.rotation.x=-.65;t1.add(t2);seg(t2,.009*B,.027);
- tg.updateMatrixWorld(true);
- const geos=parts.map((o)=>{const g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);return g});
- const merged=mergeGeometries(geos,false);geos.forEach((g)=>g.dispose());parts.forEach((o)=>o.geometry.dispose());
- const m=mesh(hg,merged,gm);m.castShadow=false;
-}
+function hand(fr,sd,gm,B){const hg=new THREE.Group();hg.rotation.y=-sd*Math.PI/2;fr.add(hg);   // giro da mão em torno do antebraço
+ const m=mesh(hg,handGeoT(sd,B,LOW),gm);m.castShadow=false;(rig.hm||(rig.hm={}))[sd>0?'L':'R']=m;m.userData.open=m.geometry;m.userData.sd=sd;if(rig.fists)m.geometry=fistGeom(sd)}
 function ribbon(p,pts,w,m){const n=pts.length,pos=[],ix=[];for(let i=0;i<n;i++){const h=(typeof w==='function'?w(i/(n-1)):w)/2,q=pts[i];pos.push(q[0],q[1]+h,q[2],q[0],q[1]-h,q[2]);if(i<n-1){const a=i*2;ix.push(a,a+1,a+2,a+1,a+3,a+2)}}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(n*4),2));g.setIndex(ix);g.computeVertexNormals();return mesh(p,g,m)}
 const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.25,'rgba(255,255,255,.45)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c)})();
@@ -1352,7 +1355,8 @@ function animate(dt,spd,sgn,pitch,air){
  let swp=-1,swk='';if(SW){SW.t+=dt/SW.dur;if(SW.t>=1)SW=null;else{swp=SW.t;swk=SW.k}}
  const sws=swp>=0?Math.sin(Math.PI*swp):0,swe=swp>=0?Math.sin(Math.PI*Math.min(1,swp*1.6)):0;
  if(swp>=0&&swk==='pour'){const e=Math.sin(Math.PI*Math.min(1,swp*5))*(swp<.9?1:Math.max(0,(1-swp)*10));rig.spine.rotation.x+=.5*e;rig.head.rotation.x+=.2*e;if(!rig.weps.length){rig.aR.rotation.x-=1.25*e;rig.aL.rotation.x-=.9*e;rig.fR.rotation.x=-.6*e;rig.fL.rotation.x=-.5*e}}   // abastecer: tronco inclinado, braços à frente segurando o galão
- if(swp>=0&&swk!=='pour'&&!rig.weps.length){const sd=SW.n%2?'R':'L',ar=rig['a'+sd],fo=rig['f'+sd];ar.rotation.x-=1.55*swe;ar.rotation.z+=(sd==='R'?-1:1)*.15*swe;fo.rotation.x=-.15*swe;rig.spine.rotation.y+=(sd==='R'?1:-1)*.45*(swe-.3)}   // soco: braço vai à frente, tronco gira
+ if(rig.fists&&!rig.weps.length){for(const s2 of ['L','R']){const a2=rig['a'+s2],f2=rig['f'+s2],g2=s2==='R'?1:-1;a2.rotation.set(rad(-36),0,g2*rad(-10));f2.rotation.set(rad(-118),0,0)}}   // GUARDA DE BOXE: os dois punhos fechados perto do queixo, cotovelos dobrados
+ if(swp>=0&&swk!=='pour'&&!rig.weps.length){const sd=SW.n%2?'R':'L',ar=rig['a'+sd],fo=rig['f'+sd];if(rig.fists){const sg=sd==='R'?1:-1;ar.rotation.x-=.86*swe;ar.rotation.z+=sg*.3*swe;fo.rotation.x+=1.9*swe;rig.spine.rotation.y+=sg*.55*(swe-.25);rig.spine.rotation.x+=.1*swe}else{ar.rotation.x-=1.55*swe;ar.rotation.z+=(sd==='R'?-1:1)*.15*swe;fo.rotation.x=-.15*swe;rig.spine.rotation.y+=(sd==='R'?1:-1)*.45*(swe-.3)}}   // SOCO: alterna as mãos; o braço estica até a altura do ombro e o tronco gira junto   // soco: braço vai à frente, tronco gira
  const tuck=air?.6:0;
  // AGACHAR (X): agacha BASTANTE (quadril desce, coxa e joelho dobram) e, andando agachado, os passos ficam curtos e lentos
  const cw=1-.5*crouch;
@@ -1379,7 +1383,7 @@ function animate(dt,spd,sgn,pitch,air){
    if(w.ikT){const e=swp>=0?Math.sin(Math.PI*swp):0,q=w.ix||{arm:0,twirl:0},sx=sd==='R'?-1:1;_o.set(sx*w.ikT[0],w.ikT[1]-.1*e+.18*(q.arm||0),w.ikT[2]+.45*e);ik(ar,fo,sd==='R'?-1:1,_o);_g.setFromEuler(_eu.set((w.ikP||0)-.35*e+.5*(q.twirl||0),0,0));_v2.set(0,0,-1).applyQuaternion(_g);_q.copy(ar.quaternion).multiply(fo.quaternion);_v3.set(0,-1,0).applyQuaternion(_q);_v1.set(0,0,1).applyQuaternion(_q);_v1.addScaledVector(_v3,-_v1.dot(_v3));_v4.copy(_v2).addScaledVector(_v3,-_v2.dot(_v3));
     if(_v1.lengthSq()>1e-4&&_v4.lengthSq()>1e-4){_v1.normalize();_v4.normalize();const an=Math.atan2(_v3.dot(_v5.crossVectors(_v1,_v4)),_v1.dot(_v4));_g2.setFromAxisAngle(_v3,an);_q.premultiply(_g2);fo.quaternion.copy(_g2.copy(ar.quaternion).invert().multiply(_q))}   // gira o antebraço em torno do próprio eixo: o FURO do punho fechado fica na direção da haste e o POLEGAR aponta para TRÁS (para o pomo), como na pegada de lança por cima
     w.g.quaternion.copy(_g2.copy(_q).invert().multiply(_g))}   // MÃO POSTA POR IK (lança: acima da cabeça, haste na horizontal, ponta um pouco abaixada; estocada empurra a mão à frente)
-   if(w.two&&w.twoAt!=null){rig.spine.updateMatrixWorld(true);_o.set(0,0,w.twoAt);w.g.localToWorld(_o);rig.spine.worldToLocal(_o);ik(oa,of,sd==='R'?1:-1,_o)}   // OUTRA MÃO NO CABO de verdade (IK até um ponto do cabo, certo para cada arma), não num ângulo fixo
+   if(w.two&&w.twoAt!=null){ar.updateMatrixWorld(true);_o.set(0,0,w.twoAt);w.g.localToWorld(_o);rig.spine.worldToLocal(_o);ik(oa,of,sd==='R'?1:-1,_o)}   // OUTRA MÃO NO CABO de verdade (IK até um ponto do cabo, certo para cada arma), não num ângulo fixo
    continue;}
   const pz=WP[w.type],m=(w.side==='L'?-1:1)*(rig.weps.length>1?1.45:1),Hh=S.height;
   w.g.position.set(m*(pz[0][0]+(pz[1][0]-pz[0][0])*aimT),Hh*(pz[0][1]+(pz[1][1]-pz[0][1])*aimT)+(mv?Math.sin(ph*2)*A*.012:br),pz[0][2]+(pz[1][2]-pz[0][2])*aimT);
@@ -1407,6 +1411,7 @@ return {
   root, S, D, L, hasNeon, KITS, POSES, WP, WPS,
   get rig() { return rig; }, rebuild() { build(); }, animate, ik,
   swing(k,dur){SW={t:0,k,dur,n:(SW?SW.n:0)+1};},
+  setFists(on){rig.fists=!!on;for(const k of ['L','R']){const m=rig.hm&&rig.hm[k];if(!m)continue;m.geometry=on?fistGeom(m.userData.sd):m.userData.open}},   // PUNHOS: mãos fechadas de verdade + guarda de boxe; o soco estica o braço de fato
   setCrouch(v) { crouch = v; }
 };
 }

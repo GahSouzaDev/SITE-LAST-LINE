@@ -66,6 +66,7 @@ export class Avatar {
   get inspecting() { return !!this._in; }
   // TROCA DE ARMA: a arma desce e sobe até a posição de mira (0,6 s)
   draw(dur) { const kind = this.weaponId ? inspectKind(this.weaponId) : 'rifle'; this._dr = { t: 0, dur: dur || DRAW_DUR[kind] || 0.7, kind, last: -1 }; }   // sacar: a animação fixa da CATEGORIA da arma (weapons/draw.js)
+  throwIt() { this.char.swing('chop', 0.42); this._mUntil = performance.now() + 420; }   // arremesso de granada: braço sobe e desce
   pour(sec = 1.8) { this.char.swing('pour', sec); }   // abastecendo: inclina o tronco e estende os braços
   setLook(look) { Object.assign(this.char.S, look, gq()); this.char.rebuild(); const w = this.weaponId, a = this.att; this.weaponId = null; this.weapon = null; this.holder = null; if (w) this.hold(w, a, this.side); }
 
@@ -93,8 +94,8 @@ export class Avatar {
     const key = id + JSON.stringify(att) + side + (skin || 'base');
     if (key === this.attKey && this.holder) return;
     this.attKey = key; this.weaponId = id; this.att = att; this.side = side;
-    this.unhold();
-    if ((ITEMS[id]?.cls === 'melee' && !['fists', 'claws', 'train'].includes(id)) || id === 'bomb') {            // arma branca na mão direita
+    this.unhold(); try { this.char.setFists?.(id === 'fists'); } catch { /* sem punhos */ }   // punhos: mãos fechadas + guarda de boxe
+    if ((ITEMS[id]?.cls === 'melee' && !['fists', 'claws', 'train'].includes(id)) || id === 'bomb' || ITEMS[id]?.slot === 'grenade') {            // arma branca na mão direita
       try { const info = buildWeapon(id), holder = new THREE.Group(); try { applySkin(info.group, skin, id); } catch { /* sem skin */ } if (id === 'bomb') holder.add(info.group); else {   // ARMA BRANCA: cabo na mão e lâmina SEMPRE para a frente (cada modelo vem com a lâmina para um lado), levemente erguida
           const bb = new THREE.Box3().setFromObject(info.group), fwd = false /* todos os modelos de arma branca são feitos com a lâmina/cabeça para -Z e o cabo para +Z (a detecção por tamanho errava lanças e martelos) */, hz = Math.max(0.06, bb.max.z), GZ = Math.min(0.4, Math.max(0.05, hz * (GRIP[id]?.g ?? 0.52))), pivot = new THREE.Group();   /* a MÃO fica no CENTRO DO CABO (não na guarda nem na ponta): cabo = do fim do modelo até a guarda (z ≈ 0) */ pivot.rotation.set(-0.32, fwd ? 0 : Math.PI, 0); info.group.rotation.z = GRIP[id]?.r || 0; info.group.position.z -= GZ; pivot.add(info.group); holder.add(pivot); }
         const nm = info.muzzle;
