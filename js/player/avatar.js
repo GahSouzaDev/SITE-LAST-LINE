@@ -11,7 +11,7 @@ import { PLAYER_HEIGHT } from '/shared/constants.js';
 import { ITEMS } from '/shared/items.js';
 import { MELEE } from '/shared/melee.js';
 import { POSE } from '../weapons/viewmodel.js';
-import { inspectKind, inspectSample, DUR as INSP_DUR, EVENTS as INSP_EV } from '../weapons/inspect.js';
+import { inspectKind, inspectSample, pickVariant, DUR as INSP_DUR, EVENTS as INSP_EV } from '../weapons/inspect.js';
 import { drawSample, DRAW_DUR, DRAW_EVENTS } from '../weapons/draw.js';
 
 // Avatar = personagem (rig do criador) + arma de verdade nas mãos, com IK dos braços.
@@ -61,7 +61,7 @@ export class Avatar {
     this._mUntil = performance.now() + dur * 1000; this.char.swing(k, dur);
   }
   // INSPECIONAR: a animaçãozinha da categoria da arma (só com a arma cheia, parado). Qualquer ação corta na hora (cancelInspect). onInspectSfx(nome, tipo) toca os sons.
-  inspect(slow = 1) { if (!this.weaponId || !this.weapon || this._in) return false; const kind = inspectKind(this.weaponId); this._in = { t: 0, kind, dur: (INSP_DUR[kind] || 3) * slow, last: 0 }; return true; }
+  inspect(slow = 1) { if (!this.weaponId || !this.weapon || this._in) return false; const kind = inspectKind(this.weaponId); this._in = { t: 0, kind, v: pickVariant(), dur: (INSP_DUR[kind] || 3) * slow, last: 0 }; return true; }
   cancelInspect() { if (!this._in) return; this._in = null; const w = this.char.rig.weps[0]; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } }
   get inspecting() { return !!this._in; }
   // TROCA DE ARMA: a arma desce e sobe até a posição de mira (0,6 s)
@@ -148,7 +148,7 @@ export class Avatar {
     if (this._in && (reload > 0 || run || air || sliding || crouch || this.dead)) this.cancelInspect();
     if (this._in) {   // INSPECIONAR em curso: calcula os deslocamentos e entrega ao rig (as mãos acompanham a arma)
       const I = this._in; I.t += dt / I.dur; const w = this.char.rig.weps[0];
-      if (I.t >= 1) this.cancelInspect(); else if (w) { const s = inspectSample(I.kind, I.t), sg = this.side === 'L' ? -1 : 1;
+      if (I.t >= 1) this.cancelInspect(); else if (w) { const s = inspectSample(I.kind, I.t, I.v), sg = this.side === 'L' ? -1 : 1;
         if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
         I.last = I.t;   /* inspecionar fica SEM som (o som da troca de arma continua) */ } }
     if (this._dr && !this._in) { const D = this._dr; D.t += dt / D.dur; const w = this.char.rig.weps[0]; if (D.t >= 1) { this._dr = null; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } } else if (w) { const s = drawSample(D.kind, D.t), sg = this.side === 'L' ? -1 : 1;

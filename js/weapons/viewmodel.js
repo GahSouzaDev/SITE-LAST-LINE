@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { cloneModel } from './gunModels.js';
 import { chainAnim, chainOf } from './weaponBuilder.js';
-import { inspectKind, inspectSample, DUR as INSP_DUR, EVENTS as INSP_EV } from './inspect.js';
+import { inspectKind, inspectSample, pickVariant, DUR as INSP_DUR, EVENTS as INSP_EV } from './inspect.js';
 import { drawSample, DRAW_DUR, DRAW_EVENTS } from './draw.js';
 import { applySkin } from './skins.js';
 import { ITEMS } from '/shared/items.js';
@@ -119,7 +119,7 @@ export class ViewModel {
     this.mWt = wt; this.mDur = { heavy: 0.82, butt: 0.52, punch: 0.28, slash: 0.34, slashD: 0.37, stab: 0.32, slashU: 0.36, chop: 0.42, saw: 0.5 }[this.mK] * (this.mK === 'heavy' ? Math.max(0.9, wt) : wt);
   }
   // INSPECIONAR (R com a arma cheia): animação da categoria; onInspectSfx(nome, tipo) toca os sons; cancelInspect() corta na hora
-  inspect(slow = 1) { if (!this.model || this.iT >= 0 || this.dT >= 0 || this.rT >= 0 || this.mT >= 0 || this.tT >= 0 || this.ads > 0.1) return false; const kind = inspectKind(this.id); this.iK = kind; this.iDur = (INSP_DUR[kind] || 3) * slow; this.iT = 0; this.iLast = 0; return true; }
+  inspect(slow = 1) { if (!this.model || this.iT >= 0 || this.dT >= 0 || this.rT >= 0 || this.mT >= 0 || this.tT >= 0 || this.ads > 0.1) return false; const kind = inspectKind(this.id); this.iK = kind; this.iV = pickVariant(); this.iDur = (INSP_DUR[kind] || 3) * slow; this.iT = 0; this.iLast = 0; return true; }
   cancelInspect() { this.iT = -1; }
   get inspecting() { return this.iT >= 0; }
   throwIt() { this.tT = 0; }
@@ -195,7 +195,7 @@ export class ViewModel {
     if (this.iT >= 0) {
       if (this.rT >= 0 || this.mT >= 0 || this.tT >= 0 || this.ads > 0.1 || st.sprint || st.sliding || !st.onGround) this.iT = -1; else {
         this.iT += dt / this.iDur; const p = this.iT; if (p >= 1) this.iT = -1; else {
-          const s = inspectSample(this.iK, p), sd = this.side, K = 1 / this.VM_SCALE;
+          const s = inspectSample(this.iK, p, this.iV), sd = this.side, K = 1 / this.VM_SCALE;
           if (s.melee) { py += 0.06 * s.arm; px += -0.04 * sd * s.out; rx += s.twirl; rz += s.tilt * sd; ry += -0.2 * s.fore * sd; if (s.shake) { px += (Math.random() - 0.5) * 0.008 * s.shake; py += (Math.random() - 0.5) * 0.008 * s.shake; } }
           else { py += s.lift * K; pz -= s.fwd * K; rx += s.pitch; rz += s.roll * sd; ry += s.yaw * sd; sup = Math.max(sup, s.sup); supZ = Math.min(supZ, -s.supF * 2.5); px += -0.02 * sd * s.sup; }
           this.iLast = p;   /* inspecionar fica SEM som (o som da troca de arma continua) */ } } }

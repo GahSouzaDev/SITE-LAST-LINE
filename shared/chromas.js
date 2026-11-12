@@ -47,6 +47,12 @@ export const CHROMAS = {
   samurai: { unique: false, list: [ { id: 'escarlate', n: 'Samurai Escarlate', hue: 130, sat: 0.25, p: {} } ] },
   viking: { unique: false, list: [ { id: 'gelo', n: 'Viking do Gelo', hue: 175, sat: 0.2, lit: 0.1, p: {} } ] },
   vampiro: { unique: false, list: [ { id: 'conde', n: 'Conde Carmesim', p: { shirt: '#6b0f1a', pants: '#2a0a0f' } } ] },
+  // ZÉ PEQUENO: 3 cromas à venda no Mercado (price = moedas). tex = estampa da camisa · kit = acessórios extras · mir = óculos juliete espelhado
+  ze: { unique: false, list: [
+    { id: 'timao', n: 'Zé Pequeno Corinthiano', tex: 'corinthians', kit: 'corinthians', mir: true, price: 600, p: { vest: 'plate', pack: 'assault', goggles: 'tac', shirt: '#f3f3ef' } },
+    { id: 'mengao', n: 'Zé Pequeno Rubro-Negro', tex: 'flamengo', kit: 'flamengo', mir: true, price: 600, p: { vest: 'plate', pack: 'assault', goggles: 'tac', shirt: '#c8102e' } },
+    { id: 'mandrake', n: 'Zé Mandrake', kit: 'mandrake', mir: true, price: 650, p: { helmet: 'cap', goggles: 'tac', shirt: '#0e1013', pants: '#15181d', accent: '#101215' } }
+  ] },
   pm: { unique: false, list: [ { id: 'rotam', n: 'PM Rotam', p: { shirt: '#14161a', pants: '#0e1013' } } ] },
   cowboy: { unique: false, list: [ { id: 'foralei', n: 'Cowboy Fora da Lei', p: { shirt: '#2a2a2a', pants: '#3a2a1a' } } ] }
 };

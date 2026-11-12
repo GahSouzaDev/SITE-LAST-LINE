@@ -45,8 +45,14 @@ const M = {
   grenade: { arm: [[0, 0], [0.2, 0.3], [0.8, 0.3], [1, 0]], out: [[0, 0], [0.2, 0.1], [0.8, 0.1], [1, 0]], twirl: [[0, 0], [0.5, 1.2], [1, 0]], tilt: [[0, 0], [0.5, 0.6], [1, 0]], fore: [[0, 0], [0.2, 0.2], [0.8, 0.2], [1, 0]] },
 };
 const OUT = {};
-export function inspectSample(kind, p) {
+// VARIAÇÕES: cada vez que se inspeciona, UMA variação é SORTEADA (nada de fila): 0 = a clássica · 1 = espelhada (gira para o outro lado) · 2 = exagerada (floreio maior)
+export const VARIANTS = 3;
+let lastV = -1;
+export function pickVariant() { let v = Math.floor(Math.random() * VARIANTS); if (v === lastV && Math.random() < 0.6) v = (v + 1 + Math.floor(Math.random() * (VARIANTS - 1))) % VARIANTS; lastV = v; return v; }
+export function inspectSample(kind, p, v = 0) {
   const o = OUT;
-  if (MELEE_KINDS.has(kind) || kind === 'grenade') { const t = M[kind]; o.melee = true; for (const k of ['arm', 'out', 'twirl', 'tilt', 'fore']) o[k] = kf(p, t[k]); o.shake = t.shake ? kf(p, t.shake) : 0; return o; }
-  const t = A[kind] || A.rifle; o.melee = false; for (const k of ['lift', 'fwd', 'pitch', 'roll', 'yaw', 'sup', 'supF']) o[k] = kf(p, t[k]); return o;
+  if (MELEE_KINDS.has(kind) || kind === 'grenade') { const t = M[kind]; o.melee = true; for (const k of ['arm', 'out', 'twirl', 'tilt', 'fore']) o[k] = kf(p, t[k]); o.shake = t.shake ? kf(p, t.shake) : 0;
+    if (v === 1) { o.twirl = -o.twirl; o.tilt = -o.tilt; o.out = -o.out * 0.6; } else if (v === 2) { o.twirl *= 1.25; o.tilt *= 1.3; o.arm *= 1.1; } return o; }
+  const t = A[kind] || A.rifle; o.melee = false; for (const k of ['lift', 'fwd', 'pitch', 'roll', 'yaw', 'sup', 'supF']) o[k] = kf(p, t[k]);
+  if (v === 1) { o.roll = -o.roll; o.yaw = -o.yaw; } else if (v === 2) { o.roll *= 1.3; o.pitch *= 1.2; o.lift *= 1.25; o.fwd *= 1.15; } return o;
 }
