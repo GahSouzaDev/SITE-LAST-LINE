@@ -249,3 +249,5 @@ footer{padding:30px 20px;text-align:center;color:var(--mut);font-size:13.5px;bor
 .nav-dc{color:#aab4ff!important;display:inline-flex;align-items:center;gap:6px}.nav-dc .dc-ic{fill:#7b86ff}
 .btn-dc{background:#5865f2;color:#fff;border-color:#5865f2;display:inline-flex;align-items:center;gap:8px}.btn-dc:hover{background:#4752c4;box-shadow:0 0 18px #5865f288}.btn-dc .dc-ic{fill:#fff}
 .foot-dc{color:#aab4ff}.foot-dc .dc-ic{fill:#7b86ff}
+.nav-dc{padding:0 8px}.nav-dc .dc-ic{width:1.5em;height:1.5em}
+.dc-card{max-width:900px;margin:0 auto;overflow:hidden}.dc-card img{display:block;width:100%;height:auto}.dc-body{padding:22px clamp(16px,3vw,32px);display:grid;gap:18px;justify-items:center;text-align:center}.dc-body p{margin:0;line-height:1.6;max-width:640px}
