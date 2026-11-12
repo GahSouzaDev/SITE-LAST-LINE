@@ -2,7 +2,7 @@
 // 10/10/10 = o equilíbrio; cada ponto a mais vale +step% naquele atributo, e o ponto que sobe em um sai de outro: nenhum tanque é melhor que os outros, só diferente.
 // Os números base vêm do admin (Jogo › Batalha de Tanques) e ficam em TANK_CFG (o servidor atualiza em gamecfg.apply).
 // O mesmo arquivo roda no cliente e no servidor: o cliente usa para prever o movimento e mostrar recargas; o servidor decide o dano.
-export const TANK_CFG = { hp: 500, speed: 8, shell: 150, mg: 33, step: 5, reload: 4000, mgCd: 450, splash: 4.5, range: 260 };   // vida 500 · tiro do canhão 150 (área de 4,5 m) · metralhadora 33 por tiro · recarga do canhão 4 s
+export const TANK_CFG = { hp: 500, speed: 8, shell: 150, mg: 28, step: 5, reload: 4000, mgCd: 300, splash: 4.5, range: 260 };   // vida 500 · tiro do canhão 150 (área de 4,5 m) · metralhadora 28 por tiro, 1 tiro a cada 0,3 s · recarga do canhão 4 s
 export const TANK_PTS = {
   onca: { hp: 8, spd: 13, dmg: 9 },        // ONÇA: ágil, frágil: foge e contorna
   anta: { hp: 13, spd: 7, dmg: 10 },       // ANTA: pesada, lenta, aguenta muito

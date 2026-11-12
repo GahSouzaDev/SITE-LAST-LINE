@@ -64,10 +64,10 @@ function lerpAngle(a, b, t) { const d = ((b - a + Math.PI) % (Math.PI * 2) + Mat
 
 // REPLAY DA MORTE: amostras [t, x, y, z, yaw, pitch, flags, vx, vz, arma] (t em ms, negativo = antes da morte) → pose interpolada no instante t
 export function sampleReplay(list, t) {
-  if (!list?.length) return null; const mk = (a) => ({ x: a[1], y: a[2], z: a[3], yaw: a[4], pitch: a[5], flags: a[6], vx: a[7], vz: a[8], w: a[9], ads: a[10] | 0, fc: a[11] | 0 });
+  if (!list?.length) return null; const mk = (a) => ({ x: a[1], y: a[2], z: a[3], yaw: a[4], pitch: a[5], flags: a[6], vx: a[7], vz: a[8], w: a[9], ads: a[10] | 0, fc: a[11] | 0, hy: a[12] ?? a[4] });
   if (t <= list[0][0]) return mk(list[0]); if (t >= list[list.length - 1][0]) return mk(list[list.length - 1]);
   let i = 1; while (i < list.length - 1 && list[i][0] < t) i++; const a = list[i - 1], c = list[i], k = (t - a[0]) / Math.max(1, c[0] - a[0]);
-  return { x: a[1] + (c[1] - a[1]) * k, y: a[2] + (c[2] - a[2]) * k, z: a[3] + (c[3] - a[3]) * k, yaw: lerpAngle(a[4], c[4], k), pitch: a[5] + (c[5] - a[5]) * k, flags: c[6], vx: c[7], vz: c[8], w: c[9], ads: a[10] | 0, fc: a[11] | 0 };
+  return { x: a[1] + (c[1] - a[1]) * k, y: a[2] + (c[2] - a[2]) * k, z: a[3] + (c[3] - a[3]) * k, yaw: lerpAngle(a[4], c[4], k), pitch: a[5] + (c[5] - a[5]) * k, flags: c[6], vx: c[7], vz: c[8], w: c[9], ads: a[10] | 0, fc: a[11] | 0, hy: a[12] != null && c[12] != null ? lerpAngle(a[12], c[12], k) : (c[12] ?? c[4]) };
 }
 export class RemotePlayers {
   constructor(scene, selfId) { this.scene = scene; this.selfId = selfId; this.roster = new Map(); this.entities = new Map(); this.zpool = []; this.selfTeam = null; this.ffaIndex = new Map(); this.handSide = 'R'; this.getCol = null; this.hints = new Map(); }
@@ -189,7 +189,7 @@ export class RemotePlayers {
   update(now, dt = 0.016) {
     const rt = now - (this.delay ?? INTERP_DELAY_MS);
     for (const e of this.entities.values()) {
-      if (e.replay) { const s = sampleReplay(e.replay.list, e.replay.t()); if (s) { this.setWeapon(e, s.w ?? -1); e.alive = true; e.av.setDead(false); e.group.visible = true; e.group.position.set(s.x, s.y, s.z); e.group.rotation.y = s.yaw; e.pitch = s.pitch; e.lamp.visible = false; const fx = -Math.sin(s.yaw), fz = -Math.cos(s.yaw), spd = Math.hypot(s.vx || 0, s.vz || 0); e.av.update(dt, { spd, sgn: (s.vx || 0) * fx + (s.vz || 0) * fz >= -0.2 ? 1 : -1, pitch: s.pitch, air: !(s.flags & 2), crouch: !!(s.flags & 1), aiming: e.replay.aim, sliding: !!(s.flags & 16), reload: 0, run: false }); } continue; }
+      if (e.replay) { const s = sampleReplay(e.replay.list, e.replay.t()); if (s) { if (e.rd) this.endRag(e); e.deadAt = 0; if (!e.av.isTank) this.setWeapon(e, s.w ?? -1); e.alive = true; e.av.setDead(false); e.group.visible = true; e.group.position.set(s.x, s.y, s.z); const bodyY = (e.av.isTank || e.av.cr) ? s.hy : s.yaw; e.group.rotation.set(0, bodyY, 0); e.pitch = s.pitch; if (e.av.isTank) e.av.setTurret(s.yaw, s.pitch, s.hy); if (e.av.setUpright) e.av.setUpright(false, dt);   /* corpo de pé e na direção certa: encerra o corpo de pano (antes o personagem ficava torto/de lado), o casco/bicho usa a direção do corpo e a torre a da mira */ e.lamp.visible = false; const fx = -Math.sin(s.yaw), fz = -Math.cos(s.yaw), spd = Math.hypot(s.vx || 0, s.vz || 0); e.av.update(dt, { spd, sgn: (s.vx || 0) * fx + (s.vz || 0) * fz >= -0.2 ? 1 : -1, pitch: s.pitch, air: !(s.flags & 2), crouch: !!(s.flags & 1), aiming: e.replay.aim, sliding: !!(s.flags & 16), reload: 0, run: false }); } continue; }
       const b = e.buf; if (!b.length) continue;
       while (b.length > 2 && b[1].t <= rt) b.shift();
       let s;

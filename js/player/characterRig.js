@@ -300,7 +300,7 @@ function build(){
  };
  const armFx=(a,fr,sd)=>{const stl=M(DK?'#17191d':'#aab4bd',.8,.3),gd=M('#d9a441',.8,.3),sv=M('#d5d5d5',.5,.3);
   if(SPK==='selecao')cyl(a,.054*B,.04,[0,-.2,0],M('#1e8e3c',0,.8));
-  if(SPK==='cavaleiro'){cyl(fr,.05*B*wide,.2,[0,-.15,0],stl);if(sd===1&&!DK){bx(fr,[.03,.36,.28],[.075,-.12,.03],M('#2c5aa0',.2,.6));bx(fr,[.01,.28,.045],[.095,-.12,.03],M('#f4f4f1',0,.8));bx(fr,[.01,.045,.2],[.095,-.08,.03],M('#f4f4f1',0,.8))}}
+  if(SPK==='cavaleiro'){cyl(fr,.05*B*wide,.2,[0,-.15,0],stl);if(sd===(S.hs==='L'?1:-1)&&!DK){const X=sd;bx(fr,[.03,.36,.28],[.075*X,-.12,.03],M('#2c5aa0',.2,.6));bx(fr,[.01,.28,.045],[.095*X,-.12,.03],M('#f4f4f1',0,.8));bx(fr,[.01,.045,.2],[.095*X,-.08,.03],M('#f4f4f1',0,.8))}   /* ESCUDO no braço OPOSTO ao da arma: destro (padrão) = escudo no braço direito; canhoto = no esquerdo (S.hs = lado da arma) */}
   if(SPK==='samurai'){cyl(fr,.048*B*wide,.2,[0,-.15,0],M('#2a2f4a',.3,.6));bx(a,[.11,.03,.12],[0,-.05,0],M('#8a1c1c',.2,.5))}
   if(SPK==='viking')cyl(fr,.049*B,.1,[0,-.2,0],M('#7a5a3c',0,1));
   if(SPK==='indio'){mesh(a,new THREE.TorusGeometry(.056*B,.01,6,14),M('#e03a2a',0,.8),[0,-.1,0],[T/2,0,0]);for(let i=0;i<3;i++)bx(fr,[.05,.012,.012],[0,-.08-i*.05,.043*B],M('#c1121f',0,.8))}

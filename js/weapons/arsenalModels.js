@@ -186,11 +186,11 @@ function rpgB(){const g=new THREE.Group();
  P(g,[[-.12,-.08],[.08,-.08],[.02,-.5],[-.2,-.46]],.14,MT.black);P(g,[[.35,-.08],[.52,-.08],[.48,-.42],[.32,-.4]],.14,MT.black);
  mz(g,1.9);sgt(g,'irons',-.55,.9,.3,0,.32);return fin(g)}
 function seekerB(){const g=new THREE.Group();
- const ys=[-.12,.12],zs=[-.17,0,.17];B(g,[1.4,.5,.52],[.2,0,0],MT.navy);
- for(const y of ys)for(const z of zs){C(g,.075,.075,1.5,[.35,y,z],MT.steel,10);C(g,.05,.05,.04,[1.1,y,z],MT.black,8);mz(g,1.15,y,z)}
- add(g,new THREE.SphereGeometry(.09,10,8),MT.glow,[.9,.32,0]);B(g,[.6,.12,.36],[-.35,-.28,0],MT.rubber);
- P(g,[[-.02,-.28],[.18,-.28],[.12,-.7],[-.1,-.65]],.15,MT.black);P(g,[[.55,-.28],[.72,-.28],[.68,-.62],[.52,-.6]],.15,MT.black);
- sgt(g,'holo',-.4,1.0,.45,0,.5);return fin(g)}
+ const ys=[-.085,.085],zs=[-.125,0,.125];B(g,[1.2,.3,.4],[.2,0,0],MT.navy);
+ for(const y of ys)for(const z of zs){C(g,.055,.055,1.4,[.35,y,z],MT.steel,10);C(g,.036,.036,.04,[1.05,y,z],MT.black,8);mz(g,1.1,y,z)}
+ add(g,new THREE.SphereGeometry(.09,10,8),MT.glow,[.9,.2,0]);B(g,[.6,.12,.36],[-.35,-.2,0],MT.rubber);
+ P(g,[[-.02,-.2],[.18,-.2],[.12,-.62],[-.1,-.57]],.15,MT.black);P(g,[[.55,-.2],[.72,-.2],[.68,-.54],[.52,-.52]],.15,MT.black);
+ sgt(g,'irons',-.3,.95,.25,0,.34);return fin(g)}
 function thermoB(){const g=new THREE.Group();
  C(g,.22,.22,1.6,[.2,0,0],MT.black,18);C(g,.32,.2,.4,[-.85,0,0],MT.steel,18);
  const bl=add(g,new THREE.SphereGeometry(.3,16,12),MT.red,[1.2,0,0]);bl.scale.set(1.3,1,1);

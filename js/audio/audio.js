@@ -38,8 +38,10 @@ class AudioEngine {
     const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); s.buffer = this.hsBuf; g.gain.value = 1; s.connect(g); g.connect(this.uiGain); s.start(); this._hsSrc = s;
   }
   setLoadMute(on) { this.loadMute = !!on; if (this.ctx) this.applyVolumes(); }   // tela de carregamento: o jogo fica MUDO até a partida de fato começar
+  // a música é um <audio> comum e NÃO depende do AudioContext (que só nasce no primeiro clique): o volume dela é aplicado sempre, senão ao recarregar a página ela tocava a 100% até o primeiro clique
+  musicVol() { if (this.music) this.music.volume = this._horror ? 0 : this.musicShouldPlay() ? Math.min(1, settings.volMusic * settings.volMaster * 0.55) : 0; }
   applyVolumes() {
-    if (!this.ctx) return;
+    this.musicVol(); if (!this.ctx) return;
     this.master.gain.value = this.loadMute ? 0 : settings.volMaster; this.sfx.gain.value = settings.volSfx; this.voice.gain.value = settings.volVoice; this.uiGain.gain.value = settings.volSfx;
     if (this.music) this.music.volume = this._horror ? 0 : this.musicShouldPlay() ? Math.min(1, settings.volMusic * settings.volMaster * 0.55) : 0;
     if (this.horror && this._horror) this.horror.volume = Math.min(1, 0.33 * settings.volMaster);
@@ -58,7 +60,7 @@ class AudioEngine {
   musicShouldPlay() { return settings.musicOn && (!this.inGame || settings.musicInGame); }
   startMusic() {
     if (!this.music) { this.music = new Audio('/assets/sounds/music.mp3'); this.music.loop = true; }
-    this.applyVolumes();
+    this.music.volume = 0; this.musicVol();   // começa em 0 e já sobe só até o volume configurado (nunca 100%)
     if (this.musicShouldPlay()) this.music.play().catch(() => {});
   }
   refreshMusic() { if (!this.music) return this.startMusic(); this.applyVolumes(); if (this.musicShouldPlay()) this.music.play().catch(() => {}); else this.music.pause(); }
@@ -404,6 +406,17 @@ class AudioEngine {
     else if (nm === 'hum') { this.tn(d, t, { f: 180, f2: 260, dur: 0.5, type: 'sine', g: 0.12 }); this.tn(d, t, { f: 360, f2: 520, dur: 0.5, type: 'triangle', g: 0.05 }); }
   }
   // MOTOSSERRA ligada: motor 2 tempos que fica em ralenti (borbulhando) e ACELERA ao serrar, com a corrente zunindo. list: {id,x,y,z,rev (0..1),own}. Só as 3 mais próximas (até 40 m).
+  // SAIU DA PARTIDA: corta na hora todo som contínuo (motores, motosserras, esteiras de tanque, sirene, trem) — antes ficavam tocando no menu
+  silenceLoops() {
+    if (!this.ctx) return; const t = this.ctx.currentTime;
+    for (const key of ['_eng', '_csw', '_tkE']) {
+      const M = this[key]; if (!M) continue;
+      for (const [, e] of M) { try { e.g.gain.cancelScheduledValues(t); e.g.gain.setTargetAtTime(0, t, 0.03); } catch { /* ok */ } const ns = [e.o1, e.o2, e.o3, e.lf, e.ns, ...(e.nodes || [])], g = e.g, pn = e.pn; setTimeout(() => { for (const n of ns) { try { n?.stop?.(); } catch { /* já parou */ } } try { g.disconnect(); pn?.disconnect(); } catch { /* ok */ } }, 150); }
+      M.clear();
+    }
+    if (this.sir) { try { this.sir.o.stop(); this.sir.lfo.stop(); this.sir.g.disconnect(); } catch { /* ok */ } this.sir = null; }
+    try { this.trainStop(); } catch { /* ok */ }
+  }
   chainsaws(list) {
     if (!this.ctx) return; const t = this.ctx.currentTime, E = (this._csw ||= new Map()), L = this.ctx.listener, cp = L.positionX ? { x: L.positionX.value, y: L.positionY.value, z: L.positionZ.value } : { x: 0, y: 0, z: 0 };
     const want = list.map((v) => [Math.hypot(v.x - cp.x, v.y - cp.y, v.z - cp.z), v]).filter(([d]) => d < 40).sort((a, b) => a[0] - b[0]).slice(0, 3), use = new Set(want.map(([, v]) => v.id));

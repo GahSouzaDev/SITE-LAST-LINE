@@ -67,6 +67,7 @@ export class ViewModel {
     this.dK = inspectKind(id); this.dDur = DRAW_DUR[this.dK] || 0.7; this.dT = 0; this.dLast = -1;   // SACAR: cada categoria tem a sua animação (draw.js)
     const eye = m.eye || new THREE.Vector3(0, 0.06, 0);
     this.hip = new THREE.Vector3(0.2, -0.2, -0.42).divideScalar(this.VM_SCALE).sub(m.grip);
+    if (id === 'seeker') this.hip.add(new THREE.Vector3(0.1, -0.1, -0.3).divideScalar(this.VM_SCALE));   // lançador largo: mais à frente, para baixo e para a direita, para não tampar a mira
     if (m.dual) this.hip.x = 0.0 / this.VM_SCALE - m.grip.x;   // armas duplas: o PAR fica centralizado na tela, uma de cada lado (espelhado), como nos FPS
     this.adsPos = new THREE.Vector3(0, 0, -0.30).divideScalar(this.VM_SCALE).sub(eye);
     if (this.mode === 'knife' || this.mode === 'fists' || this.mode === 'claws') this.hip.set(0.24, -0.2, -0.5);

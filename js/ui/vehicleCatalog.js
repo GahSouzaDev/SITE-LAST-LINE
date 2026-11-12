@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildCar, CAR_TYPES, CAR_HPK } from '../vehicles/cars.js';
 import { TankAv } from '../creatures/tankAv.js';
+import { VEH_SPEED, VEH_NITRO, VEH_STAB, VEH_ARMOR, OPEN_TY } from '../../../shared/vehSeats.js';
 import { TANK_IDS, TANK_INFO, TANK_PTS, tankStats, TANK_CFG } from '../../../shared/tankStats.js';
 // CATÁLOGO DE VEÍCULOS (jogo): carros, tanques e aviões em 3D, com os números de cada um. Usa o mesmo visual do Bestiário (classes bx-*).
 // Veículos novos entram em ENTRIES (um modelo + um texto) e aparecem aqui sozinhos. O site tem o mesmo catálogo (site/js/ui/vehicleCatalog.js).
@@ -18,8 +19,20 @@ const PLANE = [
   { id: 'plane-lastline', name: 'Avião LASTLINE', file: '/assets/planes/lastline.glb', thumb: '/assets/vehicles/plane-lastline.png', desc: 'O cargueiro de quatro motores que leva todo mundo ao mapa no Battle Royale e abre a campanha. Salte, abra o paraquedas com ESPAÇO e escolha onde cair.', info: [['Tipo', 'Cargueiro (4 motores)'], ['Onde aparece', 'Battle Royale e Modo História'], ['Pilotável', 'Ainda não'], ['Paraquedas', 'ESPAÇO para abrir']] },
   { id: 'plane-umbra', name: 'Avião UMBRA', file: '/assets/planes/umbra.glb', thumb: '/assets/vehicles/plane-umbra.png', desc: 'O jato bimotor da UMBRA, usado em algumas missões e partidas. Mais rápido e menor que o cargueiro.', info: [['Tipo', 'Jato (2 motores)'], ['Onde aparece', 'Battle Royale e campanha'], ['Pilotável', 'Ainda não'], ['Paraquedas', 'ESPAÇO para abrir']] }
 ];
+// Números REAIS de cada carro (mesmas tabelas do servidor: shared/vehSeats.js): velocidade, nitro, marchas, estabilidade e blindagem
+const NITRO_COR = { 0: 'laranja', 1: 'amarela', 2: 'roxa', 3: 'laranja-fogo', 4: 'lima', 5: 'azul-claro', 6: 'turquesa', 7: 'âmbar', 8: 'azul-ciano', 9: 'vermelha', 10: 'verde', 12: 'rosa-magenta' };
+const KMH = (ms) => Math.round(ms * 3.6);
+function carInfo(i) {
+  const s = VEH_SPEED[i] ?? 1, N = VEH_NITRO[i], top = KMH(26 * s), gears = [7, 13, 19, 26].map((g) => KMH(g * s));
+  return [['Vida', Math.round(600 * CAR_HPK[i])], ['Lugares', 4 + (OPEN_TY.has(i) ? ' (quem está dentro fica à mostra)' : '')], ['Velocidade máxima', top + ' km/h'],
+    ['Marchas', '5 · trocas a ' + gears.join(' · ') + ' km/h'], ['Nitro', N ? 'Sim — chama ' + (NITRO_COR[i] || '') + ' (Shift)' : 'Não tem'],
+    ...(N ? [['Velocidade com nitro', KMH(26 * s * N.max) + ' km/h (×' + N.max + ')'], ['Duração do nitro', (1 / N.use).toFixed(1) + ' s com a barra cheia'], ['Recarga do nitro', (1 / N.regen).toFixed(0) + ' s do zero ao cheio'], ['Aceleração com nitro', '×' + N.acc]] : []),
+    ['Estabilidade na curva', (VEH_STAB[i] ?? 1) >= 1.1 ? 'Alta (baixo e firme)' : (VEH_STAB[i] ?? 1) >= 0.9 ? 'Normal' : 'Baixa (alto, tomba mais fácil)'], ['Blindagem', (VEH_ARMOR[i] ?? 1) < 1 ? 'Passa só ' + Math.round((VEH_ARMOR[i] ?? 1) * 100) + '% do dano de tiro' : 'Padrão'],
+    ['Combustível', 'Galão de gasolina (+45)'], ['Entrar / sair', 'T perto do carro']];
+}
+const carBars = (i) => { const N = VEH_NITRO[i]; return [['VIDA', Math.round(CAR_HPK[i] * 10)], ['VELOC.', Math.round(Math.min(10, 7.5 * (VEH_SPEED[i] ?? 1)))], ['NITRO', N ? Math.round(Math.min(10, N.max * N.acc * 2.2)) : 0], ['ESTABILIDADE', Math.round(Math.min(10, 7 * (VEH_STAB[i] ?? 1)))], ['PESO', Math.round(5 + CAR_HPK[i] * 3)]]; };
 const ENTRIES = () => [
-  ...CAR_TYPES.map((T, i) => ({ id: 'car-' + i, kind: 'car', cat: 'CARRO', name: T.k ? T.k + ' ' + T.n : T.n, num: i + 1, build: () => { const c = buildCar(i % 6, i); for (const b of c.userData.beams || []) b.visible = false; return c; }, desc: CAR_DESC[T.n] || '', info: [['Vida', Math.round(600 * CAR_HPK[i])], ['Lugares', 4], ['Velocidade máx.', '94 km/h'], ['Combustível', 'Galão de gasolina (+45)'], ['Entrar / sair', 'T perto do carro']], bars: [['VIDA', Math.round(CAR_HPK[i] * 10)], ['VELOC.', 10], ['PESO', Math.round(5 + CAR_HPK[i] * 3)]] })),
+  ...CAR_TYPES.map((T, i) => ({ id: 'car-' + i, kind: 'car', cat: 'CARRO', name: T.k ? T.k + ' ' + T.n : T.n, num: i + 1, build: () => { const c = buildCar(i % 6, i); for (const b of c.userData.beams || []) b.visible = false; return c; }, desc: CAR_DESC[T.n] || '', info: carInfo(i), bars: carBars(i) })),
   ...TANK_IDS.map((id, i) => { const st = tankStats(id, TANK_CFG), p = TANK_PTS[id]; return { id: 'tank-' + id, kind: 'tank', cat: 'TANQUE', name: 'Tanque ' + TANK_INFO[id].name, num: i + 1, build: () => new TankAv(id).group, desc: TANK_INFO[id].desc, info: [['Vida', st.hp], ['Velocidade', st.speed + ' m/s'], ['Canhão', st.shell + ' de dano (área)'], ['Recarga do canhão', (st.reload / 1000).toFixed(1) + ' s'], ['Metralhadora', st.mg + ' por tiro'], ['Modo', 'Batalha de Tanques']], bars: [['VIDA', p.hp], ['VELOC.', p.spd], ['CANHÃO', p.dmg]] }; }),
   ...PLANE.map((p, i) => ({ id: p.id, kind: 'plane', cat: 'AVIÃO', name: p.name, num: i + 1, glb: p.file, thumb: p.thumb, desc: p.desc, info: p.info, bars: [['VELOC.', i ? 10 : 7], ['TAMANHO', i ? 6 : 10]] }))
 ];

@@ -17,7 +17,7 @@ export const ACTIONS = [
   { id: 'mg', name: 'Metralhadora do tanque (Batalha de Tanques; segurar)', cat: 'Combate', def: ['KeyF'] },
   { id: 'melee', name: 'Coronhada / corpo a corpo (clique na rolagem)', cat: 'Combate', def: ['Mouse1'] },
   { id: 'primary', name: 'Primária ↔ Faca (sem tecla; use 1, 2, 3)', cat: 'Armas', def: [] },
-  { id: 'secondary', name: 'Primária ↔ Secundária (Q) · Presa: olhar em volta · Monstro: grito', cat: 'Armas', def: ['KeyQ'] },
+  { id: 'secondary', name: 'Troca rápida: primária ↔ secundária ↔ faca (Q) · Presa: olhar em volta · Monstro: grito', cat: 'Armas', def: ['KeyQ'] },
   { id: 'special', name: 'Bomba especial: fumaça / luz / mina (5: vai e volta)', cat: 'Armas', def: ['Digit5'] },
   { id: 'grenade', name: 'Granada (4: vai e volta) · Caçador: rastreador · Presa: sentido', cat: 'Armas', def: ['Digit4'] },
   { id: 'ping', name: 'Marcar ponto para o esquadrão (ping) · Caçador: plantar SENSOR no chão', cat: 'Equipamento', def: ['KeyZ'] },
