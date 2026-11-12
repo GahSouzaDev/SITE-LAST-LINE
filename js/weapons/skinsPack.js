@@ -55,6 +55,18 @@ SKD.estreia = (s, M) => { s(['steel', 'chrome', 'blued'], M(0xf2c200, .7, .3)); 
 SKD.ferrari65 = (s, M) => { s(['steel', 'chrome', 'blued', 'poly', 'tan', 'od', 'navy', 'camo', 'wood'], M(0xd40000, .45, .22)); s(['black'], M(0x1a0505, .5, .35)); s(['gold', 'red'], M(0xff2a10, .3, .25, { emissive: 0xff2a10, emissiveIntensity: .9 })); };
 SKD.azul54 = (s, M) => { s(['steel', 'chrome', 'blued', 'poly', 'tan', 'od', 'navy', 'camo', 'wood'], M(0x1e5ad6, .45, .3)); s(['black'], M(0x0b1530, .5, .35)); s(['gold', 'red'], M(0x4aa3ff, .3, .25, { emissive: 0x27a8ff, emissiveIntensity: .8 })); };
 SKD.legado7 = (s, M) => { s(['steel', 'chrome', 'blued'], M(0xffc400, .65, .3)); s(['black'], M(0x0e0f12, .5, .35)); s(['poly', 'tan', 'od', 'navy', 'camo', 'wood'], M(0xf5b800, .35, .4)); s(['gold', 'red'], M(0xfff1a0, .3, .25, { emissive: 0xffd400, emissiveIntensity: 1.4 })); };
+// LOJA: Rosa Choque = cor sólida (corpo rosa-choque, peças escuras em rosa mais fechado); Fogo = TEXTURA de fogo estática (sem animação nem partículas) cobrindo a arma inteira.
+// A textura nasce uma vez só (preguiçosa) e é compartilhada pelas 3 armas; os materiais ficam em cache por skin.
+let _fireT; const fireT = () => _fireT || (_fireT = T(256, (x, w) => {
+  const g = x.createLinearGradient(0, w, 0, 0); g.addColorStop(0, '#5a0800'); g.addColorStop(.35, '#d12a00'); g.addColorStop(.7, '#ff7a00'); g.addColorStop(1, '#ffd23a'); x.fillStyle = g; x.fillRect(0, 0, w, w);
+  for (let i = 0; i < 34; i++) { const bx = Math.random() * w, bw = 14 + Math.random() * 30, h = 70 + Math.random() * 150, cols = ['#ff3d00', '#ff8a1a', '#ffc21a', '#fff07a']; x.fillStyle = cols[i % 4]; x.globalAlpha = .55 + Math.random() * .4;
+    x.beginPath(); x.moveTo(bx - bw / 2, w); x.bezierCurveTo(bx - bw, w - h * .4, bx - bw * .2, w - h * .7, bx + (Math.random() - .5) * 10, w - h); x.bezierCurveTo(bx + bw * .3, w - h * .65, bx + bw, w - h * .35, bx + bw / 2, w); x.closePath(); x.fill(); }
+  x.globalAlpha = 1; }));
+const ROSA = (s, M) => { const a = M(0xff2d95, .3, .3), b = M(0xe01a82, .3, .35), c = M(0x8f1052, .3, .5); s(['steel', 'chrome', 'tan', 'camo', 'gold'], a); s(['poly', 'od', 'navy', 'wood'], b); s(['blued', 'black', 'red'], c); };
+const FOGO = (s, M) => { const a = M(0xffffff, .15, .5, { map: fireT() }), b = M(0xb8b8b8, .15, .55, { map: fireT() }), c = M(0x6a2a1a, .2, .6, { map: fireT() }); s(['steel', 'chrome', 'tan', 'camo', 'gold'], a); s(['poly', 'od', 'navy', 'wood'], b); s(['blued', 'black', 'red'], c); };
+const SOLID = (c1, c2, c3) => (s, M) => { const a = M(c1, .3, .3), b = M(c2, .3, .35), c = M(c3, .3, .5); s(['steel', 'chrome', 'tan', 'camo', 'gold'], a); s(['poly', 'od', 'navy', 'wood'], b); s(['blued', 'black', 'red'], c); };
+const ROXO = SOLID(0xb388ff, 0x8c5cf5, 0x4a2a9a), BEBE = SOLID(0x89cff0, 0x5fb5e6, 0x2f7fae);
+for (const k of Object.keys(SKIN_PACK)) if (SKIN_PACK[k].store) SKD[k] = k.startsWith('loja_rosa') ? ROSA : k.startsWith('loja_roxo') ? ROXO : k.startsWith('loja_bebe') ? BEBE : FOGO;
 for (const k of Object.keys(SKIN_PACK)) if (SKIN_PACK[k].evt && !SKD[k]) { const { c1, c2 } = SKIN_PACK[k]; SKD[k] = (s, M) => { s(['steel', 'chrome', 'blued', 'black'], M(c1, .7, .3)); s(['poly', 'tan', 'od', 'navy', 'camo', 'wood'], M(c2, .25, .4)); s(['gold', 'red'], M(c2, .3, .25, { emissive: c2, emissiveIntensity: 1.2 })); }; }
 function skinMapPack(k) { if (SKMAP[k]) return SKMAP[k]; const mp = new Map(), s = (ks, mat) => ks.forEach((x) => { if (MT[x]) mp.set(MT[x], mat); }); if (SKD[k]) SKD[k](s, Mt, mp); return (SKMAP[k] = mp); }
 // animações dos materiais (rolar textura, pulsar, piscar, arco-íris): um relógio global só atualiza as skins em uso

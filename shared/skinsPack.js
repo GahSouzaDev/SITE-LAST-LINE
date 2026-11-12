@@ -47,4 +47,6 @@ SKIN_PACK.estreia = { n: 'Estreia LASTLINE', r: 'mit', sw: '#f2c200', lv: 9999, 
 
 // SKINS DE DIA ESPECIAL (shared/dayskins.js): cada uma vale para UMA arma/arma branca (uni). Só vêm de entrar no jogo no dia ou do Mercado.
 import { DAY_SKINS } from './dayskins.js';
+import { STORE_SKINS } from './storeskins.js';
+for (const d of STORE_SKINS) SKIN_PACK[d.id] = { n: d.n, r: 'rar', sw: d.sw, lv: 9999, fx: [], evt: true, day: true, uni: d.t, c1: d.c1, c2: d.c2, store: true };   // skins de loja (Rosa Choque / Fogo): só da loja ou do admin
 for (const d of DAY_SKINS) if (d.kind !== 'c') SKIN_PACK[d.id] = { n: d.n, r: 'mit', sw: d.sw, lv: 9999, fx: d.fx || [], evt: true, day: true, uni: d.t, c1: d.c1, c2: d.c2 };
