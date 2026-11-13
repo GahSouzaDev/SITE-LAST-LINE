@@ -27,11 +27,11 @@ export const SKIN_PACK = {
   volt: { n: "Voltagem", r: 'len', sw: '#ffe34a', lv: 88, fx: ["elec"] },
   laser: { n: "Tubos de Laser", r: 'len', sw: '#00e5ff', lv: 91, fx: ["tube"] },
   rainbow: { n: "Arco-íris", r: 'len', sw: '#ff9a3d', lv: 94, fx: [] },
-  dragon: { n: "Dragão Ancestral", r: 'mit', sw: '#e0401c', lv: 96, fx: ["ember", "fire"] },
-  galaxy: { n: "Galáxia", r: 'mit', sw: '#9a5cff', lv: 97, fx: ["spark"] },
-  void: { n: "Abismo", r: 'mit', sw: '#8a1fff', lv: 99, fx: ["void"] },
-  prism: { n: "Prismático", r: 'mit', sw: '#ff5fa0', lv: 100, fx: ["spark"] },
-  holo: { n: "Holograma", r: 'mit', sw: '#7fffe8', lv: 100, fx: ["spark"] },
+  dragon: { n: "Dragão Ancestral", r: 'mit', sw: '#e0401c', lv: 110, fx: ["ember", "fire"] },
+  galaxy: { n: "Galáxia", r: 'mit', sw: '#9a5cff', lv: 130, fx: ["spark"] },
+  void: { n: "Abismo", r: 'mit', sw: '#8a1fff', lv: 150, fx: ["void"] },
+  prism: { n: "Prismático", r: 'mit', sw: '#ff5fa0', lv: 175, fx: ["spark"] },
+  holo: { n: "Holograma", r: 'mit', sw: '#7fffe8', lv: 200, fx: ["spark"] },
 };
 // SKINS DE EVENTO MENSAL (shared/events.js): só vêm da missão do mês. Fora das caixas, do loot e do nível.
 import { EVENTS } from './events.js';

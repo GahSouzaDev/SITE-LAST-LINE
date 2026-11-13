@@ -265,6 +265,7 @@ class AudioEngine {
     else if (kind === 'head') { this.tn(d, t, { f: 2600, dur: 0.18, type: 'sine', g: 0.3 }); this.tn(d, t + 0.05, { f: 3900, dur: 0.22, type: 'sine', g: 0.25 }); }
     else if (kind === 'kill') { this.tn(d, t, { f: 520, f2: 880, dur: 0.12, type: 'square', g: 0.14 }); this.tn(d, t + 0.1, { f: 880, f2: 1320, dur: 0.18, type: 'square', g: 0.14 }); }
     else if (kind === 'headpop') { this.nz(d, t, { dur: 0.06, f: 3200, f2: 1400, type: 'bandpass', q: 0.9, g: 0.55 }); this.tn(d, t, { f: 520, f2: 190, dur: 0.1, type: 'triangle', g: 0.6 }); this.tn(d, t, { f: 120, f2: 60, dur: 0.14, type: 'sine', g: 0.5 }); this.tn(d, t + 0.02, { f: 2900, f2: 2500, dur: 0.16, type: 'sine', g: 0.16 }); }   // 'POP' seco na cabeça: estalo agudo + corpo médio (audível até em caixinha de notebook); só a VÍTIMA recebe
+    else if (kind === 'heal') { this.tn(d, t, { f: 523, f2: 659, dur: 0.22, type: 'sine', g: 0.16 }); this.tn(d, t + 0.16, { f: 784, f2: 988, dur: 0.3, type: 'sine', g: 0.14 }); this.tn(d, t + 0.1, { f: 1568, dur: 0.4, type: 'triangle', g: 0.05 }); }
     else if (kind === 'hurt') { this.nz(d, t, { dur: 0.18, f: 600, f2: 120, g: 0.6 }); this.tn(d, t, { f: 90, f2: 50, dur: 0.2, g: 0.5 }); }
     else if (kind === 'streak') { for (let i = 0; i < 4; i++) this.tn(d, t + i * 0.07, { f: 440 * 2 ** (i / 4), dur: 0.2, type: 'sawtooth', g: 0.12 }); }
     else if (kind === 'big') { this.tn(d, t, { f: 110, f2: 55, dur: 0.6, g: 0.5 }); for (let i = 0; i < 5; i++) this.tn(d, t + i * 0.08, { f: 330 * 2 ** (i / 5), dur: 0.3, type: 'sawtooth', g: 0.12 }); }

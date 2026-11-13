@@ -21,8 +21,9 @@ function deriveRaw(id, att = {}) {
   const continuous = s.r >= 2000;
   const rpm = continuous ? 800 : s.r;
   const scope = ['sniper', 'dmr'].includes(id);
-  const hip = (0.006 + (1 - s.ac) * 0.05 + (s.p > 1 ? 0.04 : 0));
-  const ads = (scope ? 0.0003 : 0.0015 + (1 - s.ac) * 0.01) + (s.p > 1 ? 0.03 : 0);
+  const tight = id === 'aa12' ? 0.6 : 1;   /* AA-12: chumbo mais fechado, para os 8 balins acertarem (era a pior escopeta do jogo) */
+  const hip = (0.006 + (1 - s.ac) * 0.05 + (s.p > 1 ? 0.04 : 0)) * tight;
+  const ads = ((scope ? 0.0003 : 0.0015 + (1 - s.ac) * 0.01) + (s.p > 1 ? 0.03 : 0)) * tight;
   const recoilMul = mu.recoil ?? 1;
   const dmgMul = mu.dmg ?? 1;
   const rangeMul = mu.range ?? 1;

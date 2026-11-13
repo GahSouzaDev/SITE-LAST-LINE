@@ -62,6 +62,8 @@ export class ViewModel {
       if (small) this.holder.add(this.arm(m.grip.clone().add(new THREE.Vector3(-0.028, 0.0, -0.012)), new THREE.Vector3(-0.12, -0.3, 0.34), false));
       if (m.dual) { this.holder.add(this.arm(m.grip.clone().add(new THREE.Vector3(-m.length * 0.0, 0, 0)), new THREE.Vector3(-0.1, -0.3, 0.3), false)); }
     }
+    this.fR = this.fL = null;
+    if (id === 'fists') { const u = new THREE.Vector3(1, 0, 0); this.fR = this.fist(new THREE.Vector3(0.3, 0, 0), new THREE.Vector3(0.46, -0.34, 0.55), u); this.fL = this.fist(new THREE.Vector3(-0.3, 0, 0), new THREE.Vector3(-0.46, -0.34, 0.55), u); this.holder.add(this.fR, this.fL); }   /* SOCO: dois punhos em guarda (direito = golpe forte e lento, esquerdo = golpe rápido) */
     this.hideObj = this.model.group.getObjectByName('__hide') || null; if (this.hideObj) this.hideObj.visible = true;
     this.sT = 1; this.rT = -1; this.mT = -1; this.tT = -1; this.iT = -1; this._chain = null;
     this.dK = inspectKind(id); this.dDur = DRAW_DUR[this.dK] || 0.7; this.dT = 0; this.dLast = -1;   // SACAR: cada categoria tem a sua animação (draw.js)
@@ -71,6 +73,7 @@ export class ViewModel {
     if (m.dual) this.hip.x = 0.0 / this.VM_SCALE - m.grip.x;   // armas duplas: o PAR fica centralizado na tela, uma de cada lado (espelhado), como nos FPS
     this.adsPos = new THREE.Vector3(0, 0, -0.30).divideScalar(this.VM_SCALE).sub(eye);
     if (this.mode === 'knife' || this.mode === 'fists' || this.mode === 'claws') this.hip.set(0.24, -0.2, -0.5);
+    if (id === 'fists') this.hip.set(0, -0.2, -0.5);
     // PEGADA da arma branca: descobre para onde a lâmina aponta (do cabo ao centro da caixa do modelo) e gira o conjunto, em torno do cabo, para frente e levemente para cima/dentro
     this.baseQ = null; this.pivot = null;
     if (this.mode === 'knife') {
@@ -114,9 +117,9 @@ export class ViewModel {
   melee(kind) {
     if (this.mT >= 0 && this.mT < 1) return;   // golpe em andamento: só começa outro quando o movimento terminar
     this.mT = 0; this.mN = (this.mN || 0) + 1;
-    this.mK = kind === 'heavy' && this.mode === 'knife' ? 'heavy' : (this.mode === 'gun' || (kind === 'butt' && this.mode === 'knife')) ? 'butt' : (this.mode === 'fists' || this.mode === 'claws') ? 'punch' : (this.mSeq || ['slash', 'slashD', 'stab'])[(this.mN - 1) % (this.mSeq || [1, 2, 3]).length];
+    this.mK = kind === 'heavy' && this.mode === 'knife' ? 'heavy' : (this.mode === 'gun' || (kind === 'butt' && this.mode === 'knife')) ? 'butt' : (this.mode === 'fists' || this.mode === 'claws') ? (kind === 'heavy' && this.mode === 'fists' ? 'punchH' : 'punch') : (this.mSeq || ['slash', 'slashD', 'stab'])[(this.mN - 1) % (this.mSeq || [1, 2, 3]).length];
     const wt = this.mode === 'knife' ? Math.min(1.9, Math.max(0.7, (MELEE[this.id]?.cd || 0.55) / 0.55)) : 1;   // arma pesada = golpe mais lento (e mais forte no servidor)
-    this.mWt = wt; this.mDur = { heavy: 0.82, butt: 0.52, punch: 0.28, slash: 0.34, slashD: 0.37, stab: 0.32, slashU: 0.36, chop: 0.42, saw: 0.5 }[this.mK] * (this.mK === 'heavy' ? Math.max(0.9, wt) : wt);
+    this.mWt = wt; this.mDur = { heavy: 0.82, butt: 0.52, punch: 0.28, punchH: 0.7, slash: 0.34, slashD: 0.37, stab: 0.32, slashU: 0.36, chop: 0.42, saw: 0.5 }[this.mK] * (this.mK === 'heavy' ? Math.max(0.9, wt) : wt);
   }
   // INSPECIONAR (R com a arma cheia): animação da categoria; onInspectSfx(nome, tipo) toca os sons; cancelInspect() corta na hora
   inspect(slow = 1) { if (!this.model || this.iT >= 0 || this.dT >= 0 || this.rT >= 0 || this.mT >= 0 || this.tT >= 0 || this.ads > 0.1) return false; const kind = inspectKind(this.id); this.iK = kind; this.iV = pickVariant(); this.iDur = (INSP_DUR[kind] || 3) * slow; this.iT = 0; this.iLast = 0; return true; }
@@ -159,6 +162,7 @@ export class ViewModel {
       sup = out; supZ = bolt; this._supSlap = slap;
     } }
     if (this.supArm) { this.supArm.position.set(0, -0.2 * sup + 0.02 * (this._supSlap || 0), 0.12 * sup - 0.05 * supZ); this.supArm.rotation.x = 0.5 * sup; }
+    if (this.fR) { this.fR.position.set(0, 0, 0); this.fL.position.set(0, 0, 0); this.fR.rotation.z = 0; this.fL.rotation.z = 0; }
     // corpo a corpo
     if (this.mT >= 0) {
       this.mT += dt / (this.mDur || 0.32); const p = this.mT, k = this.mK || 'slash';
@@ -168,26 +172,31 @@ export class ViewModel {
           const wind = p < 0.36 ? ease(p / 0.36) : 0, strike = p < 0.36 ? 0 : p < 0.62 ? ease((p - 0.36) / 0.26) : 1 - ease((p - 0.62) / 0.38);
           pz += 0.12 * wind - 0.4 * strike; py += 0.06 * wind - 0.07 * strike; px += -0.06 * s * wind + 0.05 * s * strike; rx += 0.6 * wind - 1.0 * strike; ry += 0.3 * s * strike; rz += -0.3 * s * wind + 0.15 * s * strike;
         } else if (k === 'heavy') {                           // GOLPE PESADO: ergue a arma bem alto e para trás (lento), depois desce com tudo e recupera devagar
-          const wind = p < 0.42 ? ease(p / 0.42) : 0, strike = p < 0.42 ? 0 : p < 0.56 ? ease((p - 0.42) / 0.14) : 1 - ease((p - 0.56) / 0.44);
-          px += (0.12 * wind - 0.22 * strike) * s; py += 0.2 * wind - 0.26 * strike; pz += 0.16 * wind - 0.34 * strike; rx += 0.9 * wind - 1.5 * strike; ry += 0.4 * s * strike; rz += (-0.7 * wind + 1.1 * strike) * s;
+          const w1 = ease(Math.min(1, p / 0.42)), kS = p < 0.42 ? 0 : p < 0.56 ? ease((p - 0.42) / 0.14) : 1, kR = p < 0.56 ? 0 : ease((p - 0.56) / 0.44), V = (a2, b2) => (a2 * w1 + (b2 - a2) * kS) * (1 - kR);   /* o golpe forte termina com a LÂMINA apontada para a frente (antes apontava para a câmera: só se via o braço/cabo) */
+          px += s * V(0.12, -0.1); py += V(0.2, -0.3); pz += V(0.16, -0.42); rx += V(0.9, -0.6); ry += s * V(0, 0.2); rz += s * V(-0.7, 0.5);
         } else if (k === 'chop') {                            // GOLPE DE CIMA PARA BAIXO (facão, machado, martelo, espada): ergue por trás do ombro, desce rápido e recupera
-          const wind = p < 0.34 ? ease(p / 0.34) : 0, strike = p < 0.34 ? 0 : p < 0.56 ? ease((p - 0.34) / 0.22) : 1 - ease((p - 0.56) / 0.44);
-          px += s * (0.06 * wind - 0.1 * strike); py += 0.08 * wind - 0.26 * strike; pz += 0.1 * wind - 0.32 * strike; rx += 0.45 * wind - 1.5 * strike; rz += s * (-0.25 * wind + 0.35 * strike); ry += s * 0.15 * strike;
+          const w1 = ease(Math.min(1, p / 0.34)), kS = p < 0.34 ? 0 : p < 0.56 ? ease((p - 0.34) / 0.22) : 1, kR = p < 0.56 ? 0 : ease((p - 0.56) / 0.44), V = (a2, b2) => (a2 * w1 + (b2 - a2) * kS) * (1 - kR);   /* preparação contínua e golpe que termina com a lâmina VISÍVEL (antes apontava para a câmera: só aparecia o braço/cabo) */
+          px += s * V(0.06, -0.1); py += V(0.08, -0.26); pz += V(0.1, -0.3); rx += V(0.45, -0.5); rz += s * V(-0.25, 0.35); ry += s * V(0, 0.5);
         } else if (k === 'saw') {                             // MOTOSSERRA: empurra para a frente e serra de um lado ao outro (vibra)
           const t = Math.sin(Math.PI * Math.min(1, p * 1.2)); pz -= 0.3 * t; py += 0.02 * t; ry += s * 0.35 * Math.sin(p * Math.PI * 3) * t; rx -= 0.1 * t; px += 0.01 * Math.sin(p * 90);
         } else if (k === 'stab') {                            // ESTOCADA: recua e dispara a lâmina para a frente
           const t = p < 0.3 ? -ease(p / 0.3) * 0.4 : p < 0.55 ? -0.4 + 1.4 * ease((p - 0.3) / 0.25) : 1 - ease((p - 0.55) / 0.45);
           pz -= 0.5 * t; py -= 0.03 * t; rx -= 0.25 * t; px += 0.03 * s * t;
         } else if (k === 'slashD') {                          // CORTE DIAGONAL: de cima/esquerda para baixo/direita
-          const e = ease(p); px += (0.24 - 0.5 * e) * s * w * 1.2; py += (0.14 - 0.3 * e) * w; pz -= 0.2 * w; rz += (-0.9 + 1.8 * e) * s * w; rx -= 0.5 * w; ry += 0.6 * w * s;
+          const e = ease(p); px += (0.24 - 0.5 * e) * s * w * 1.2; py += (0.14 - 0.3 * e) * w; pz -= 0.45 * w; rz += (-0.9 + 1.8 * e) * s * w * 0.8; ry += 0.9 * w * s;   /* corte diagonal: a lâmina fica comprida na tela e a mão avança (antes a ponta virava para dentro e só se via o cabo) */
         } else if (k === 'slashU') {                          // CORTE ASCENDENTE (de baixo para cima, costas da mão): recolhe para a direita e sobe cortando para dentro
           const wd = p < 0.25 ? ease(p / 0.25) : 0, up = p < 0.25 ? 0 : p < 0.62 ? ease((p - 0.25) / 0.37) : 1 - ease((p - 0.62) / 0.38);
-          px += s * (0.12 * wd - 0.34 * up); py += -0.12 * wd + 0.2 * up; pz -= 0.18 * up; rx += 0.25 * wd - 0.7 * up; ry += s * (-0.3 * wd + 0.8 * up); rz += s * (0.6 * wd - 1.0 * up);
-        } else if (k === 'punch') {                           // SOCO reto
+          { const w1 = ease(Math.min(1, p / 0.25)), kS = p < 0.25 ? 0 : p < 0.62 ? ease((p - 0.25) / 0.37) : 1, kR = p < 0.62 ? 0 : ease((p - 0.62) / 0.38), V = (a, b) => (a * w1 + (b - a) * kS) * (1 - kR);
+          px += s * V(0.12, -0.34); py += V(-0.12, 0.2); pz -= V(0, 0.4); rx += V(0.25, 0.2); ry += s * V(-0.3, 0.3); rz += s * V(0.6, -0.7); }
+        } else if ((k === 'punch' || k === 'punchH') && this.fR) {   // SOCO com 2 punhos: esquerdo = rápido e curto · direito (botão direito) = ergue, desce com tudo e recupera devagar
+          if (k === 'punch') { const t = Math.sin(Math.PI * Math.min(1, p * 1.5)); this.fL.position.set(0.16 * t, 0.03 * t, -0.62 * t); this.fL.rotation.z = -0.12 * t; pz -= 0.03 * t; }
+          else { const wd = p < 0.35 ? ease(p / 0.35) : 0, st = p < 0.35 ? 0 : p < 0.55 ? ease((p - 0.35) / 0.2) : 1 - ease((p - 0.55) / 0.45), z = p < 0.35 ? 0.3 * wd : p < 0.55 ? 0.3 - 1.25 * st : -0.95 * st, x = p < 0.35 ? 0.1 * wd : -0.2 * st, y = p < 0.35 ? -0.06 * wd : 0.04 * st; if (p >= 0.55) { this.fR.position.set(-0.2 * st, 0.04 * st, -0.95 * st); } else this.fR.position.set(x, y, z); this.fR.rotation.z = 0.15 * st; pz -= 0.08 * st; py -= 0.03 * st; }
+        } else if (k === 'punch' || k === 'punchH') {         // SOCO reto (garras)
           const t = Math.sin(Math.PI * Math.min(1, p * 1.5)); pz -= 0.38 * t; py += 0.03 * t; rx -= 0.15 * t; px += 0.04 * s * t;
         } else {                                              // CORTE HORIZONTAL
           const wd = p < 0.28 ? ease(p / 0.28) : 0, st2 = p < 0.28 ? 0 : p < 0.66 ? ease((p - 0.28) / 0.38) : 1 - ease((p - 0.66) / 0.34);   // arma abre para FORA e corta PARA DENTRO (em direção ao centro)
-          px += s * (0.22 * wd - 0.3 * st2); pz -= 0.2 * st2; py -= 0.03 * st2; rx -= 0.35 * st2; ry += s * (-0.35 * wd + 0.95 * st2); rz += s * (-0.35 * wd + 0.45 * st2);
+          { const w1 = ease(Math.min(1, p / 0.28)), kS = p < 0.28 ? 0 : p < 0.5 ? ease((p - 0.28) / 0.22) : 1, kR = p < 0.5 ? 0 : ease((p - 0.5) / 0.5), V = (a, b) => (a * w1 + (b - a) * kS) * (1 - kR);   /* a preparação (lâmina para trás/fora) CONTINUA no golpe: antes ela 'pulava' de volta ao centro e o corte quase não varria a tela */
+          px += s * V(0.22, -0.3); pz -= V(0, 0.45); py -= V(0, 0.03); rx -= V(0, 0.35); ry += s * V(-0.35, 0.95); rz += s * V(-0.35, 0.45); }
         }
       }
     }
