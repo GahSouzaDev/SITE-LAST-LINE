@@ -53,7 +53,8 @@ function drawDonut(cv, f, col) {   /* col: cor do ALIADO (a mesma do nome); sem 
   g.shadowBlur = 0; g.lineWidth = 2.5; g.strokeStyle = col ? '#fff' : 'rgba(255,225,215,.9)'; g.beginPath(); g.arc(32, 32, 24, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, f)); g.stroke();
 }
 /* altura dos rótulos: humano = PLAYER_HEIGHT; dinossauro = a altura do bicho (nome e vida ficam ACIMA da cabeça, não dentro do corpo) */
-function labelH(info) { if (info?.tank) return 3.4; const f = info?.dino && FAUNA[info.dino]; return f ? Math.max(PLAYER_HEIGHT, (f.hit?.h || 2) * (info.dscale || 1)) : PLAYER_HEIGHT; }
+const TOPH = new Map();   // altura REAL do modelo de cada bicho/tanque (medida do corpo): a vida e o nome ficam acima da cabeça, não dentro do corpo
+function labelH(info) { const real = info?.id != null ? TOPH.get(info.id) || 0 : 0; if (info?.tank) return Math.max(3.4, real); const f = info?.dino && FAUNA[info.dino]; return f ? Math.max(PLAYER_HEIGHT, (f.hit?.h || 2) * (info.dscale || 1), real) : Math.max(PLAYER_HEIGHT, info?.fauna ? real : 0); }
 function nameSprite(text, color, depth = false) {
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const g = cv.getContext('2d');
   g.font = 'bold 30px Segoe UI, Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 6; g.strokeStyle = '#000'; g.strokeText(text, 128, 34); g.fillStyle = color; g.fillText(text, 128, 34);
@@ -125,6 +126,7 @@ export class RemotePlayers {
     const info = this.roster.get(id), av = info?.tank ? new TankAv(info.tank) : info?.dino ? Object.assign(new FaunaAv(info.dino, info.dscale || 1), { animK: 0.46 }) : info?.fauna && info.ztype ? new FaunaAv(info.ztype.slice(2), info.dscale || 1) : (this.takePooled(info) || new Avatar({ ...lookFor(info, this.ffaIndex.get(id)), noAura: true }));
     if (info?.dino) { const ls = []; av.group.traverse((o) => { if (o.isLight) ls.push(o); }); for (const l of ls) l.parent?.remove(l); }   /* junta as luzes ANTES de remover (remover durante o traverse quebrava o quadro: o bicho nunca virava monstro) */   /* a luz vermelha dos monstros vem de um pool fixo (game.js): luz nova no rig travava ao recompilar */
     const group = new THREE.Group(); group.add(av.group);
+    if (info?.id != null && (info.dino || info.fauna || info.tank)) { try { group.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(av.group), t = bb.max.y; if (Number.isFinite(t) && t > 0.3 && t < 30) TOPH.set(info.id, t); } catch { /* sem medida */ } }
     let sprite = null;
     if (info?.team && info.team === this.selfTeam && id !== this.selfId) { sprite = nameSprite(info.username, ALLY_COL); sprite.userData.col = ALLY_COL; sprite.position.y = labelH(info) + ((info?.dino || info?.tank) ? 1.0 : 0.68); if (info?.dino || info?.tank) sprite.scale.multiplyScalar(1.6); group.add(sprite); }
     const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64; const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
