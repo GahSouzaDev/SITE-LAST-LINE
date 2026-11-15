@@ -83,7 +83,7 @@ export class RemotePlayers {
   explode(p, r, power) {
     for (const e of this.entities.values()) {
       if (!e.rd || e.rd.stop === undefined) continue; const g = e.group.position, dx = g.x - p.x, dy = g.y + 0.9 - p.y, dz = g.z - p.z, dist = Math.hypot(dx, dy, dz), R = Math.max(r * 1.25, 4); if (dist > R) continue;
-      const f = Math.pow(1 - dist / R, 1.2), s = Math.min(14, power * f + 0.4), hl = Math.hypot(dx, dz) || 1; e.rd.kick?.(dx / hl, dz / hl, s, e.av.cr ? 0 : 1);
+      const f = Math.pow(1 - dist / R, 1.2), s = Math.min(19, power * f * 1.35 + 0.5), hl = Math.hypot(dx, dz) || 1; e.rd.kick?.(dx / hl, dz / hl, s, e.av.cr ? 0 : 1);
     }
     this.lastBoom = { x: p.x, y: p.y, z: p.z, r, power, t: performance.now() };
   }
