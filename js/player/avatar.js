@@ -66,6 +66,8 @@ export class Avatar {
   get inspecting() { return !!this._in; }
   // TROCA DE ARMA: a arma desce e sobe até a posição de mira (0,6 s)
   draw(dur) { const kind = this.weaponId ? inspectKind(this.weaponId) : 'rifle'; this._dr = { t: 0, dur: dur || DRAW_DUR[kind] || 0.7, kind, last: -1 }; }   // sacar: a animação fixa da CATEGORIA da arma (weapons/draw.js)
+  plant(ms, q0 = 0) { try { this.cancelInspect?.(); this.char.swing('plant', ms / 1000, q0); this._mUntil = performance.now() + ms * (1 - q0); } catch { /* sem rig */ } }   // plantar a bomba: segura com uma mão e digita com a outra pelo tempo todo
+  endPlant() { try { this.char.endSwing('plant'); } catch { /* ok */ } this._mUntil = 0; }
   throwIt() { this.char.swing('chop', 0.42); this._mUntil = performance.now() + 420; }   // arremesso de granada: braço sobe e desce
   pour(sec = 1.8) { this.char.swing('pour', sec); }   // abastecendo: inclina o tronco e estende os braços
   setLook(look) { Object.assign(this.char.S, look, gq()); this.char.rebuild(); const w = this.weaponId, a = this.att; this.weaponId = null; this.weapon = null; this.holder = null; if (w) this.hold(w, a, this.side); }

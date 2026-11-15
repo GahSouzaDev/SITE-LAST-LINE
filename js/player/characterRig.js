@@ -1388,6 +1388,8 @@ function animate(dt,spd,sgn,pitch,air){
      d=cv(hv?-1.5:-1.9,hv?.8:.9);ar.rotation.x+=d;fo.rotation.x+=cv(-.5,.4);t=cv(-.4,.5)*sg;wr=cv(.8,1.6);rig.spine.rotation.x+=cv(-.12,.3);ar.rotation.z+=sg*cv(-.15,.25);}
     else if(k==='slashU'){const cv=(wv,sv)=>q<.25?wv*sm(q/.25):q<.62?wv+(sv-wv)*sm((q-.25)/.37):sv*(1-sm((q-.62)/.38));   // recolhe para baixo/fora e sobe cortando para dentro
      ar.rotation.x+=cv(.55,-1.25);fo.rotation.x+=cv(.3,-.35);ar.rotation.z+=sg*cv(.5,-.9);t=cv(.45,-.6)*sg;wr=cv(.6,2.1);}
+    else if(k==='plant'){const up=sm(q/.14)*(1-sm((q-.86)/.14)),ty=up*Math.max(0,Math.min(1,(q-.14)/.1))*(1-sm((q-.84)/.06)),lo=sm((q-.82)/.18);   // PLANTAR: ergue a bomba, digita o código com a outra mão por todo o tempo e, no fim, abaixa e solta
+     ar.rotation.x+=-.12*up+.9*lo;fo.rotation.x+=-.1*up+.3*lo;oa.rotation.set(-1.18*up+.5*lo,0,-sg*.22*up);of.rotation.set(-1.05*up+.45*lo+.2*ty*Math.sin(q*95),0,0);rig.spine.rotation.x+=.3*lo+.06*up;}
     else if(k==='saw'){const e=Math.sin(Math.PI*Math.min(1,q*1.2)),v=Math.sin(q*Math.PI*14)*e;ar.rotation.x+=-.45*e;fo.rotation.x+=-.25*e+.05*v;ar.rotation.z+=sg*.05*v;t=sg*.35*Math.sin(q*Math.PI*3)*e;rig.spine.rotation.x+=.1*e;}   // motosserra: empurra à frente e serra de lado a lado, vibrando
     else{const dg=k==='slashD'?1:0,a=sm(q/.3),b=sm((q-.3)/.3),c=sm((q-.62)/.38);d=-.75*a+1.55*b*(1-c);ar.rotation.x+=d;fo.rotation.x+=-.3*a*(1-b)+.25*b*(1-c);ar.rotation.z+=sg*(-.55*a+1.1*b*(1-c))*(dg?1.4:.6);t=(-.4*a+.9*b*(1-c))*sg;wr=1.1*b*(1-c);}
     rig.spine.rotation.y+=t;w.g.rotation.x+=wr;}
@@ -1422,7 +1424,8 @@ function hasNeon(){let n=false;root.traverse(o=>{const m=o.isMesh&&o.material;if
 return {
   root, S, D, L, hasNeon, KITS, POSES, WP, WPS,
   get rig() { return rig; }, rebuild() { build(); }, animate, ik,
-  swing(k,dur){SW={t:0,k,dur,n:(SW?SW.n:0)+1};},
+  swing(k,dur,t0){SW={t:(t0||0),k,dur,n:(SW?SW.n:0)+1};},
+  endSwing(k){if(SW&&(!k||SW.k===k))SW=null;},
   setFists(on){rig.fists=!!on;for(const k of ['L','R']){const m=rig.hm&&rig.hm[k];if(!m)continue;m.geometry=on?fistGeom(m.userData.sd):m.userData.open}},   // PUNHOS: mãos fechadas de verdade + guarda de boxe; o soco estica o braço de fato
   setCrouch(v) { crouch = v; }
 };

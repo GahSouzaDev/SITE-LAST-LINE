@@ -83,6 +83,8 @@ export class ViewModel {
         if (this.rArm) { this.holder.remove(this.rArm); const sh0 = new THREE.Vector3(0.1, -0.28, 0.42), shL = gE.clone().add(sh0.clone().sub(m.grip).applyQuaternion(this.baseQ.clone().invert())); this.rArm = this.fist(gE, shL, dir); this.holder.add(this.rArm); } }
     }
     if (this.mode === 'grenade') this.hip.set(0.22, -0.26, -0.5);
+    this.lArm = null; this.pT = -1; this.pDur = 3.2;
+    if (id === 'bomb') { this.lArm = this.arm(new THREE.Vector3(-0.17, 0.03, -0.02), new THREE.Vector3(-0.52, -0.3, 0.45), false); this.lArm.visible = false; this.holder.add(this.lArm); }   // mão que DIGITA (só aparece ao plantar)
     if (id === 'bomb') this.hip.set(0.08, -0.17, -0.46);   // bomba: mais ao centro e mais alta, bem visível
     this.adsPos.x = Math.max(-0.2, Math.min(0.2, this.adsPos.x));
   }
@@ -126,6 +128,8 @@ export class ViewModel {
   cancelInspect() { this.iT = -1; }
   get inspecting() { return this.iT >= 0; }
   throwIt() { this.tT = 0; }
+  plant(ms, q0 = 0) { if (!this.lArm) return; this.pDur = Math.max(0.5, ms / 1000); this.pT = Math.max(0, Math.min(0.99, q0)); }   // PLANTAR: segura a bomba e digita com a outra mão durante TODO o tempo; no fim abaixa e solta
+  endPlant(abort = true) { if (abort) { this.pT = -1; if (this.lArm) this.lArm.visible = false; } }
   muzzleLocal() { this.rig.updateMatrixWorld(true); return this.model.muzzle.getWorldPosition(new THREE.Vector3()); }
   ejectLocal() { return this.model.eject.getWorldPosition(new THREE.Vector3()); }
   get stages() { return this.model?.sight?.fov?.length || 1; }
@@ -198,6 +202,13 @@ export class ViewModel {
           { const w1 = ease(Math.min(1, p / 0.28)), kS = p < 0.28 ? 0 : p < 0.5 ? ease((p - 0.28) / 0.22) : 1, kR = p < 0.5 ? 0 : ease((p - 0.5) / 0.5), V = (a, b) => (a * w1 + (b - a) * kS) * (1 - kR);   /* a preparação (lâmina para trás/fora) CONTINUA no golpe: antes ela 'pulava' de volta ao centro e o corte quase não varria a tela */
           px += s * V(0.22, -0.3); pz -= V(0, 0.45); py -= V(0, 0.03); rx -= V(0, 0.35); ry += s * V(-0.35, 0.95); rz += s * V(-0.35, 0.45); }
         }
+      }
+    }
+    if (this.pT >= 0 && this.lArm) {
+      this.pT += dt / this.pDur; const q = this.pT; if (q >= 1) { this.pT = -1; this.lArm.visible = false; } else {
+        const up = ease(Math.min(1, q / 0.14)) * (1 - ease(Math.max(0, (q - 0.86) / 0.14))), ty = up * Math.min(1, Math.max(0, (q - 0.14) / 0.1)) * (1 - ease(Math.min(1, Math.max(0, (q - 0.84) / 0.06)))), lo = ease(Math.min(1, Math.max(0, (q - 0.82) / 0.18)));
+        this.lArm.visible = up > 0.04; this.lArm.position.set(0.1 * (1 - up), 0.02 * Math.sin(q * 95) * ty - 0.06 * (1 - up), -0.04 * (1 - up));
+        py += 0.1 * up - 0.16 * lo; pz += -0.06 * up + 0.02 * lo; rx += -0.1 * up + 0.5 * lo;
       }
     }
     // INSPECIONAR: gira/levanta a arma, a mão de apoio vai ao pente/ação e a arma branca gira na mão
