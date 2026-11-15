@@ -513,7 +513,7 @@ function build(){
  
  // barba
  if(s.beard!=='none'&&s.mask==='none'&&!f){const bt=s.beard,st=bt==='stubble',k=st?1.05:1.12,bm=M(st?mix(s.skin,'#000',.5):s.hair,0,.9),rb=rndSeed(77),big=bt==='full',lower=bt==='beard'||big;
- if(st||lower)mesh(head,new SphereGeometry(1,28,16,0,T*2,T*.55,T*.45),bm,[0,-RY*.5,RZ*.1],[0,0,0],[RX*.9*k,RY*.62*k,RZ*.9*k]);
+ if(st||lower)mesh(head,new SphereGeometry(1,28,16,T*.08,T*.84,T*.55,T*.45),bm,[0,-RY*.5,RZ*.1],[0,0,0],[RX*.9*k,RY*.62*k,RZ*.9*k]);
  if(lower){
  for(const sd of [1,-1]){const x=sd*RX*.72,y=-RY*.32,x2=sd*RX*.9;ball(head,.03*hs,[x,y,fz(x,y)-.004],bm,[.7,1.1,.7]);ball(head,.02*hs,[x2,-RY*.1,fz(x2,-RY*.1)-.004],bm,[.5,1.2,.7])}   // costeletas e bochechas
  ball(head,(big?.07:.05)*hs,[0,-RY*.95,RZ*.42],bm,[1.25,big?1.5:1.2,.9]);                       // volume sob o queixo
@@ -871,7 +871,9 @@ if(spc){const lea=M('#4a2e1a',.1,.7),gold=M('#d9a441',.8,.3),wh=M('#eef1f3',.1,.
   if(SPK==='bruxa'){const pu=M('#2a1448',0,.85),gr=M('#8dff3f',.5,.3);cyl(head,.2*hs,.025,[0,.1*hs,0],pu);mesh(head,new THREE.ConeGeometry(.12*hs,.34*hs,14),pu,[0,.28*hs,0],[0,0,.18]);cyl(head,.121*hs,.04,[0,.14*hs,0],M('#8dff3f',0,.6));
    ball(head,.02*hs,[-.12*hs,-.0,.08*hs],M('#4f9e2a',0,.9));for(let i=0;i<4;i++)ball(sp,.035,[(i-1.5)*.08,.05*H,.12*B],gr);bx(sp,[.5*B,.08*H,.22*B],[0,.04*H,0],pu)}
   if(SPK==='servidor'){const ti=M('#1c3e8c',0,.7),yl=M('#f2c14e',.3,.5);bx(sp,[.045,.34*H,.012],[0,.3*H,.118*B+.004],ti);bx(sp,[.06,.05,.014],[0,.46*H,.118*B+.004],ti);bx(sp,[.05,.06,.012],[.07,.2*H,.118*B+.004],yl);bx(sp,[.012,.3*H,.01],[0,.34*H,.118*B],M('#ff7a1a',0,.6));
-   bx(head,[.19*hs,.04*hs,.012],[0,.03*hs,.108*hs],M('#111',0,.5))}
+   {const fr=M('#15171b',.3,.45),ln=new THREE.MeshStandardMaterial({color:'#9fc3d9',transparent:true,opacity:.28,metalness:.4,roughness:.08,depthWrite:false});   /* ÓCULOS de armação redonda: dois aros no nível dos olhos, ponte e hastes até as orelhas (antes era uma tarja preta chapada) */
+   for(const sx of[-1,1]){mesh(head,new THREE.TorusGeometry(.03*hs,.0042*hs,6,18),fr,[sx*.05*hs,.022*hs,.112*hs],[0,0,0],[1,1,1]);mesh(head,new THREE.CircleGeometry(.029*hs,16),ln,[sx*.05*hs,.022*hs,.1125*hs],[0,0,0],[1,1,1]);bx(head,[.005*hs,.005*hs,.085*hs],[sx*.1*hs,.026*hs,.07*hs],fr)}
+   bx(head,[.03*hs,.005*hs,.005*hs],[0,.03*hs,.113*hs],fr)}}
   if(SPK==='catrina'){const wh=M('#f6f3ea',0,.7),bk=M('#0d0b10',0,.8),fl=['#ff9f2e','#ff4f8b','#f2c14e','#c1121f'];ball(head,.118*hs,[0,0,.012*hs],wh,[1,1.06,.97]);for(const sx of[-1,1]){ball(head,.034*hs,[sx*.048*hs,.02*hs,.108*hs],bk);ball(head,.012*hs,[sx*.048*hs,.02*hs,.138*hs],M('#ff9f2e',0,.5))}
    mesh(head,new THREE.ConeGeometry(.018*hs,.04*hs,3),bk,[0,-.02*hs,.12*hs],[T,0,0]);for(let i=0;i<7;i++)bx(head,[.008*hs,.03*hs,.01],[(i-3)*.02*hs,-.075*hs,.115*hs],bk);cyl(head,.2*hs,.02,[0,.12*hs,0],bk);cyl(head,.11*hs,.1,[0,.17*hs,0],bk);
    for(let i=0;i<7;i++){const a=i/7*T*2;ball(head,.034*hs,[Math.cos(a)*.1*hs,.22*hs,Math.sin(a)*.1*hs],M(fl[i%4],0,.7))}}
