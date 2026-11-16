@@ -17,7 +17,7 @@ export const TIME_OF_DAY = { MORNING: 'MANHÃ', NOON: 'MEIO-DIA', AFTERNOON: 'TA
 
 export const WS_PATH = '/ws';
 export const USERNAME_RE = /^[a-zA-Z0-9_-]{3,16}$/;   // letras (sem acento), números, _ e -
-export const PASSWORD_MIN = 6;
+export const PASSWORD_MIN = 8;
 export const PASSWORD_MAX = 72; // limite do bcrypt
 
 // Janelas dos mapas (já em escala real) têm só 0,5–0,8 m de altura e peitoril a 1,1–1,35 m: o jogador ESCALA o peitoril e passa se espremendo.
