@@ -161,7 +161,10 @@ export class RemotePlayers {
     if (e.rd) e.rd.step(dt); else { e.group.position.set(pose.x, pose.y, pose.z); e.group.rotation.y = pose.yaw; }
     this.setWeapon(e, idx);
     const fx = -Math.sin(pose.yaw), fz = -Math.cos(pose.yaw), chute = !!(e.fl & 256), spd = chute ? 0 : Math.hypot(vel.x, vel.z);   // de paraquedas: pernas paradas (só mexem quando pisa no chão)
-    e.av.update(dt, { spd, sgn: vel.x * fx + vel.z * fz >= -0.2 ? 1 : -1, pitch, air: !chute && !pose.onGround, crouch: pose.crouch, aiming, sliding: !!pose.sliding, reload: extra.reload || 0, run: !!extra.run });
+    /* ANIMAÇÃO DO PERSONAGEM LOCAL EM PASSOS FIXOS (≤ 1/120 s): braços, mãos, arma e recuo avançam em pequenos passos iguais, qualquer que seja o FPS. Com 1 passo grande por quadro, cada parte (recuo, mãos, balanço) dava um salto diferente
+       quando o FPS caía → a arma e a mão pareciam atualizar em taxas diferentes (fantasma/pulinho). Agora o resultado é o mesmo a 144, 60 ou 25 FPS. */
+    { const arg = { spd, sgn: vel.x * fx + vel.z * fz >= -0.2 ? 1 : -1, pitch, air: !chute && !pose.onGround, crouch: pose.crouch, aiming, sliding: !!pose.sliding, reload: extra.reload || 0, run: !!extra.run }, d = Math.max(0, Math.min(0.1, dt)), steps = Math.max(1, Math.min(8, Math.ceil(d / (1 / 120)))), h = d / steps;
+      for (let i = 0; i < steps; i++) e.av.update(h, arg); }
     e.av.setDead(!!extra.dead);
     return e;
   }

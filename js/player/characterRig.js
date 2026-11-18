@@ -1,6 +1,7 @@
 // PERSONAGEM — extraído de "criador-de-personagem.html" (versão atualizada: mais skins/roupas e correções de modelo).
 // Rig com ossos, IK dos braços, poses, roupas, cabelos e skins especiais. Uma instância por jogador. Metros (1,8 m com height=1).
 import * as THREE from 'three';
+import { dec } from '../core/smooth.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { chromaDef } from '../../../shared/chromas.js';
@@ -1353,7 +1354,7 @@ function animate(dt,spd,sgn,pitch,air){
  if(rig.neon){const tn=performance.now()/1000;rig.neon.forEach((m,i)=>m.opacity=((i===rig.neon.length-1&&rig.neon.length>1?.42:.78)+.2*Math.sin(tn*3+i*1.7))*NEONK)}
  if(rig.aura){const tt=performance.now()/1000;rig.aura.emissiveIntensity=(1.2+Math.sin(tt*3)*.6)*2.5;if(rig.spark){rig.spark.rotation.y=tt*.9;rig.spark.children.forEach((c,i)=>{c.position.y=.25+((i*.13)%1.4)+Math.sin(tt*2+i)*.06})}}
  const key=S.mode==='zombie'?'zombie':S.pose,P=POSES[key];
- for(const k in P){const c=cur[k]||(cur[k]=P[k].slice());for(let i=0;i<3;i++)c[i]+=(P[k][i]-c[i])*Math.min(1,dt*9)}
+ for(const k in P){const c=cur[k]||(cur[k]=P[k].slice());for(let i=0;i<3;i++)c[i]+=(P[k][i]-c[i])*dec(dt, 9)}
  const mv=spd>.1,A=mv?.28+.32*Math.min(1,spd/4.6):0;if(mv)ph+=dt*spd*2.4*sgn;
  const w=Math.sin(ph)*A,armed=key==='armed'||key==='aim'||key==='zombie',aw=armed?.1:.9,br=Math.sin(performance.now()/1000*1.7)*.012;
  const set=(o,v,x=0,y=0,zz=0)=>o.rotation.set(rad(v[0])+x,rad(v[1])+y,rad(v[2])+zz);
@@ -1378,7 +1379,7 @@ function animate(dt,spd,sgn,pitch,air){
  rig.sL.rotation.set(Math.max(0,Math.cos(ph))*A*1.2*cw*(mv?1:0)+crouch*1.75+tuck*1.2,0,0);
  rig.sR.rotation.set(Math.max(0,-Math.cos(ph))*A*1.2*cw*(mv?1:0)+crouch*1.75,0,0);
  rig.hips.position.y=rig.hips.userData.y-crouch*.36*S.height+(mv?Math.abs(Math.sin(ph))*.025*cw:0);
- const act=(key==='armed'||key==='aim')&&rig.weps.length>0;aimT+=((key==='aim'?1:0)-aimT)*Math.min(1,dt*10);
+ const act=(key==='armed'||key==='aim')&&rig.weps.length>0;aimT+=((key==='aim'?1:0)-aimT)*dec(dt, 10);
  const wsw=w;for(const w of rig.weps){w.g.visible=act;if(!act)continue;
   if(w.hand){const sd=w.side==='L'?'L':'R',sg=sd==='R'?1:-1,ar=rig['a'+sd],fo=rig['f'+sd],oa=rig[sd==='R'?'aL':'aR'],of=rig[sd==='R'?'fL':'fR'],sm=(t)=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
    oa.rotation.set(rad(6)+wsw*aw*.5,0,sg*rad(8));of.rotation.set(rad(-14),0,0);                       // a outra mão fica solta, relaxada

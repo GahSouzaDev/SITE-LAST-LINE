@@ -1,5 +1,6 @@
 import { PER_SHELL } from '/shared/weaponStats.js';
 import * as THREE from 'three';
+import { dec } from '../core/smooth.js';
 import { createCharacter } from './characterRig.js';
 import { BUILD, setOV } from '../weapons/arsenalModels.js';
 import { rawWeapon, cloneArs } from '../weapons/weaponProto.js';
@@ -144,7 +145,7 @@ export class Avatar {
   }
   update(dt, { spd = 0, sgn = 1, pitch = 0, air = false, crouch = false, aiming = false, sliding = false, reload = 0, run = false } = {}) {
     if (sliding) { spd = 0; crouch = true; }              // SLIDE: corpo abaixa e as PERNAS FICAM PARADAS (não é corrida agachada)
-    this.crouchV += ((crouch ? 1 : 0) - this.crouchV) * Math.min(1, dt * 12);
+    this.crouchV += ((crouch ? 1 : 0) - this.crouchV) * dec(dt, 12);
     this.char.setCrouch(this.crouchV);
     this.char.S.pose = this.weapon ? (run ? 'armed' : 'aim') : 'idle';       // padrão: SEMPRE mirando · correndo sem atirar: arma em outra posição (abaixada); atirou -> volta à mira       // POSIÇÃO PADRÃO = SEMPRE MIRANDO (como no base.html): arma erguida, encaixada na tela, parado, andando, correndo ou atirando
     if (this._in && (reload > 0 || run || air || sliding || crouch || this.dead)) this.cancelInspect();
