@@ -88,6 +88,25 @@ function build(ci, ty = 0) {
     g.add(bx(0.55, 0.12, 0.7, paint, 0, 0.8, 0.8)); g.add(bx(0.18, 0.5, 0.9, paint, 0, 0.95, 1.5)); g.add(bx(0.3, 0.14, 0.4, dark, 0, 0.7, -0.25));   // entrada de ar (airbox), nadadeira dorsal
     for (const sd of [-1, 1]) { g.add(bx(0.06, 0.05, 1.5, dark, sd * 0.95, 0.46, -1.45)); g.add(bx(0.06, 0.05, 1.4, dark, sd * 0.95, 0.46, 1.35)); }   // braços da suspensão
   }
+  if (T.f1) {   // FÓRMULA 1 DO SENNA (inspirada na McLaren MP4/4, 1988): vermelha e branca, bico cônico, capacete amarelo-verde-azul, número 12 — sem logos de marcas
+    const white = lam(0xf4f4f2, { roughness: 0.35, metalness: 0.25 }), red = paint, blk = lam(0x15171a, { roughness: 0.5, metalness: 0.4 }), hel = lam(0xf5d21a, { roughness: 0.25, metalness: 0.3 });
+    const nose = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.23, 1.55, 12), red); nose.rotation.x = -Math.PI / 2; nose.position.set(0, 0.36, -1.82); g.add(nose);                          // bico cônico fino
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), white); tip.position.set(0, 0.36, -2.6); g.add(tip);                                                              // ponta branca
+    g.add(bx(0.2, 0.05, 1.5, white, 0, 0.6, -1.5));                                                                                                                                       // faixa branca sobre o bico
+    for (const sd of [-1, 1]) { g.add(bx(0.46, 0.05, 1.5, white, sd * 0.62, 0.61, 0.2)); g.add(bx(0.36, 0.2, 0.8, white, sd * 0.62, 0.3, 0.9)); g.add(bx(0.05, 0.36, 0.2, red, sd * 0.84, 0.36, -0.6)); }   // topo dos sidepods brancos, aletas
+    for (let i = 0; i < 3; i++) for (const sd of [-1, 1]) { const st = bx(0.22, 0.025, 0.07, red, sd * 0.62, 0.64, -0.3 + i * 0.28); st.rotation.y = sd * 0.5; g.add(st); }                       // listras vermelhas (chevrons) nos sidepods
+    // pilotinho: capacete amarelo com faixas verde e azul, viseira escura, ombros
+    const hm = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 10), hel); hm.position.set(0, 1.1, -0.32); g.add(hm);
+    g.add(bx(0.34, 0.025, 0.04, lam(0x1a9a44, { roughness: 0.4 }), 0, 1.1 + 0.02, -0.32 - 0.14)); g.add(bx(0.3, 0.025, 0.04, lam(0x1d4fa8, { roughness: 0.4 }), 0, 1.1 - 0.03, -0.32 - 0.14));
+    const vz = bx(0.26, 0.09, 0.06, blk, 0, 1.1 + 0.0, -0.32 - 0.14 - 0.02); g.add(vz); g.add(bx(0.5, 0.18, 0.3, white, 0, 0.9, -0.28)); g.add(bx(0.18, 0.04, 0.24, blk, 0, 0.78, -0.58));   // viseira, ombros (macacão branco), volante
+    // número 12 (disco branco) no bico e nos dois lados da entrada de ar
+    const nt = (() => { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.beginPath(); x.arc(32, 32, 30, 0, 7); x.fill(); x.fillStyle = '#c9141a'; x.font = 'bold 34px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('12', 32, 35); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+    const nm = new THREE.MeshBasicMaterial({ map: nt, transparent: true }); const pn = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.3), nm); pn.rotation.x = -Math.PI / 2; pn.position.set(0, 0.636, -1.1); g.add(pn);
+    for (const sd of [-1, 1]) { const ps = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.3), nm); ps.rotation.y = sd * Math.PI / 2; ps.position.set(sd * 0.103, 1.0, 1.5); g.add(ps); }
+    // escapamentos e tampa do motor
+    for (const sd of [-1, 1]) { const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.065, 0.5, 8), blk); ex.rotation.x = Math.PI / 2; ex.position.set(sd * 0.14, 0.68, 2.15); g.add(ex); }
+    g.add(bx(0.4, 0.16, 1.1, white, 0, 0.92, 0.95));
+  }
   const top = T.cab ? Math.max(...T.cab.map((p) => p[1])) : 1.1;
   if (T.rack) for (const z of [-0.2, 0.7, 1.5]) g.add(bx(1.7, 0.05, 0.07, dark, 0, top + 0.06, z));
   if (T.spoiler) { g.add(bx(1.6, 0.06, 0.38, dark, 0, 1.12, 1.95)); for (const x of [-0.6, 0.6]) g.add(bx(0.06, 0.28, 0.12, dark, x, 0.96, 1.95)); }

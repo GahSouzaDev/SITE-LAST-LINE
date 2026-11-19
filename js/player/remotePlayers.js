@@ -1,7 +1,7 @@
 import { ZT } from '/shared/survival.js';
 import { FaunaAv } from '../creatures/faunaAv.js';
 import { TankAv } from '../creatures/tankAv.js';
-import { lampHex } from '/shared/grenadeColors.js';
+import { lampHex, lampDecode } from '/shared/grenadeColors.js';
 import * as THREE from 'three';
 import { FAUNA } from '/shared/fauna.js';
 import { PLAYER_HEIGHT } from '/shared/constants.js';
@@ -187,7 +187,7 @@ export class RemotePlayers {
       let e = this.entities.get(id); if (!e) { if (now - (this._lastCreate || 0) < 160) continue; this._lastCreate = now; e = this.create(id); }   // no máximo 1 personagem novo a cada ~160 ms: nada de travadinha quando a horda aparece
       e.buf.push({ t: now, x: p[1], y: p[2], z: p[3], yaw: p[4], pitch: p[5], flags: p[6], vx: p[7], vz: p[9], ay: p[12] });
       if (e.buf.length > 20) e.buf.shift();
-      this.setWeapon(e, p[11] ?? -1); e.hp = p[10]; e.alive = !!(p[6] & 8); e.fl = p[6]; e.light = !!(p[6] & 32); e.lampC = (p[6] >> 12) & 7; if (e.lampC !== e._lc) { e._lc = e.lampC; e.lamp.material.color.setHex(lampHex(e.lampC)); } e.aggro = !!(p[6] & 128); if (e.npc && p[10] > e.hpMax) e.hpMax = p[10];
+      this.setWeapon(e, p[11] ?? -1); e.hp = p[10]; e.alive = !!(p[6] & 8); e.fl = p[6]; e.light = !!(p[6] & 32); e.lampC = lampDecode(p[6]); if (e.lampC !== e._lc) { e._lc = e.lampC; e.lamp.material.color.setHex(lampHex(e.lampC)); } e.aggro = !!(p[6] & 128); if (e.npc && p[10] > e.hpMax) e.hpMax = p[10];
     }
   }
 
@@ -203,6 +203,7 @@ export class RemotePlayers {
       if (e.alive === false) { if (!e.deadAt) { e.deadAt = now; try { this.onDeath?.(e); } catch { /* sem som */ } e.group.position.set(s.x, s.y, s.z); e.group.rotation.y = s.yaw; this.startRag(e, s.vx, s.vz); } e.av.setDead(true); e.group.visible = now - e.deadAt < 9000; } else { e.deadAt = 0; if (e.rd) this.endRag(e); e.av.setDead(false); e.group.visible = !(e.fl & 2048); }
       if (e.rd) e.rd.step(dt); else { e.group.position.set(s.x, s.y, s.z); e.group.rotation.y = s.yaw; } e.pitch = s.pitch; if (e.av.isTank) e.av.setTurret(s.ay ?? s.yaw, s.pitch, s.yaw); if (e.av.setUpright) e.av.setUpright(!!(s.flags & 65536), dt);   /* tanque: torre e cano atualizam sempre (a animação por distância só vale para as esteiras) */
       if (e.av.isTank && e.id !== this.selfId) e.av.setLights?.(e.light && e.alive !== false);   // tanque: a lanterna (L) liga os faróis do casco
+      if (e.lampC === 8) e.lamp.material.color.setHSL((performance.now() / 4000) % 1, 0.75, 0.72);   // lanterna espectral: muda de cor sozinha
       e.lamp.visible = e.light && e.alive !== false && !e.av.isTank; if (e.lamp.visible) { const cp = Math.cos(s.pitch); e.lamp.position.set(0, PLAYER_HEIGHT * 0.9, 0).add(new THREE.Vector3(-Math.sin(s.yaw) * cp, Math.sin(s.pitch), -Math.cos(s.yaw) * cp).multiplyScalar(0.3)); e.lamp.position.x -= 0; }
       const fx = -Math.sin(s.yaw), fz = -Math.cos(s.yaw), chute = !!(e.fl & 256), spd = chute ? 0 : Math.hypot(s.vx || 0, s.vz || 0);   // de paraquedas: pernas paradas
       let ddt = dt; { const cp = this._cp, d2 = cp ? (cp.x - s.x) ** 2 + (cp.z - s.z) ** 2 : 0;   // ANIMAÇÃO POR DISTÂNCIA: longe quase não se vê o esqueleto mexer — perto 100%, médio a cada 3 quadros, muito longe congela

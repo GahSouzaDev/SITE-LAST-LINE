@@ -20,6 +20,7 @@ async function call(path, { method = 'GET', body, auth = false } = {}) {
 }
 
 export const api = {
+  setBadgeShow: (show) => call('/me/badge', { method: 'POST', body: { show }, auth: true }),
   setBirth: (date) => call('/me/birth', { method: 'POST', body: { date }, auth: true }),
   nick: (b) => call('/nick', { method: 'POST', body: b, auth: true }),
   market: (q = {}) => call('/market?' + new URLSearchParams({ kind: q.kind || '', q: q.q || '', sort: q.sort || 'new' }), { auth: true }),
