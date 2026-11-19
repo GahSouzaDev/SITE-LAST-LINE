@@ -299,6 +299,8 @@ function voltB(){const g=pist({L:1,c:CS(MT.navy,MT.chrome,MT.black,MT.glow)});B(
 Object.assign(BUILD,{lynx:lynxB,phantom:phantomB,badger:badgerB,coyote:coyoteB,bulldog:bulldogB,ripper:ripperB,longbow:longbowB,volt:voltB,fogos:fogosB,champ:champB,confete:confeteB,tamborim:tamborimB,buzina:buzinaB,cannon:cannonB,coelhas:coelhasB,ovos:ovosB,petala:petalaB,rojao:rojaoB,aguas:aguasB,zarabatana:zarabatanaB,verdeamarelo:verdeamareloB,abobocanhao:abobocanhaoB,assombrado:assombradoB,morcego:morcegoB,mosquete:mosqueteB,santa:santaB,natalina:natalinaB,presente:presenteB});
 import { STORE_BUILD } from './storeModels.js';
 Object.assign(BUILD, STORE_BUILD);   // armas da loja (edição lendária)
+import { STORE_GUNS_BUILD } from './storeGuns.js';
+Object.assign(BUILD, STORE_GUNS_BUILD);   // armas da loja v2 (18/11/2026): kit de peças do arsenal + tema (substituem os modelos antigos de brinquedo)
 // armas novas/temáticas que não tinham onde encaixar mira: a mira escolhida no Arsenal (ferro, red dot, holo, ACOG, lunetas) aparece EM CIMA delas
 for (const id of ['petala', 'boto', 'dragao', 'sucuri', 'berimbau', 'saci', 'iara', 'boitata', 'cuca', 'onca', 'cangaco', 'tamandua', 'cristal', 'lobisomem', 'tucano', 'mula', 'piranha', 'diabo', 'minigun']) {
   const f = BUILD[id]; if (!f) continue;
