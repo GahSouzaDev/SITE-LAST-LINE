@@ -71,6 +71,7 @@ api.putSettings = (b) => call('/settings', { method: 'PUT', body: b, auth: true 
 api.profile = () => call('/profile', { auth: true });
 api.setAvatar = (id) => call('/profile/avatar', { method: 'PUT', body: { id }, auth: true });
 api.backgrounds = () => call('/backgrounds', { auth: true });
+api.bgSeen = () => call('/backgrounds/seen', { method: 'POST', body: {}, auth: true });
 api.setBg = (id) => call('/profile/bg', { method: 'PUT', body: { id }, auth: true });
 
 api.getLook = () => call('/look', { auth: true });
