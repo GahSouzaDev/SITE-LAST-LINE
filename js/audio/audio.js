@@ -2,6 +2,34 @@ import { settings, onSettings } from '../core/settings.js';
 
 // Áudio do jogo (Web Audio): música do menu, sons sintetizados (reserva) e sons POSICIONAIS 3D.
 // Sons padrão de evento: se existir /assets/sounds/events/<nome>.mp4 ele é usado; senão sintetiza.
+// ASSINATURAS DAS ARMAS DA LOJA (som próprio de cada uma, por cima do tiro da categoria): a = áudio, d = destino 3D, t = tempo. Só osciladores/ruído curtos: custo mínimo.
+const SIG = {
+  trovao: (a, d, t) => { a.tn(d, t, { f: 95, f2: 42, dur: 0.38, g: 0.9, wet: 0.2 }); a.nz(d, t, { dur: 0.09, f: 900, type: 'bandpass', q: 2, g: 0.35 }); },                                   // surdo: pancada grave de couro
+  arraia: (a, d, t) => { a.nz(d, t, { dur: 0.3, f: 700, f2: 3200, type: 'bandpass', q: 1.2, g: 0.28, att: 0.04 }); a.tn(d, t, { f: 1500, f2: 2600, dur: 0.12, type: 'triangle', g: 0.1 }); },      // pipa cortando o vento
+  trioel: (a, d, t) => { a.tn(d, t, { f: 58, f2: 50, dur: 0.3, type: 'sawtooth', g: 0.5 }); a.tn(d, t, { f: 440, f2: 440, dur: 0.12, type: 'square', g: 0.12 }); a.tn(d, t + 0.05, { f: 660, f2: 660, dur: 0.1, type: 'square', g: 0.1 }); },   // grave de caixa de som + buzina
+  sucuri: (a, d, t) => { a.nz(d, t, { dur: 0.42, f: 6500, f2: 4200, type: 'highpass', g: 0.28, att: 0.03 }); a.tn(d, t + 0.02, { f: 240, f2: 180, dur: 0.3, type: 'sawtooth', g: 0.08 }); },     // chiado de cobra
+  boitata: (a, d, t) => { a.nz(d, t, { dur: 0.6, f: 1400, f2: 260, g: 0.4, att: 0.02, wet: 0.3 }); for (let i = 0; i < 5; i++) a.nz(d, t + 0.05 + i * 0.07, { dur: 0.025, f: 3500 + i * 400, type: 'highpass', g: 0.14 }); },   // sopro de fogo e estalos
+  cuca: (a, d, t) => { [520, 470, 420, 360].forEach((f, i) => a.tn(d, t + 0.04 + i * 0.07, { f, f2: f * 0.8, dur: 0.07, type: 'square', g: 0.09 })); },                                           // risada de bruxa
+  saci: (a, d, t) => { a.tn(d, t, { f: 1900, f2: 1250, dur: 0.45, g: 0.22 }); a.nz(d, t, { dur: 0.35, f: 1500, f2: 800, type: 'bandpass', q: 2, g: 0.18, att: 0.06 }); },                     // assobio + redemoinho
+  iara: (a, d, t) => { a.tn(d, t, { f: 523, f2: 880, dur: 0.5, g: 0.16, wet: 0.5 }); a.tn(d, t + 0.08, { f: 659, f2: 1046, dur: 0.45, g: 0.1, wet: 0.5 }); for (let i = 0; i < 4; i++) a.tn(d, t + 0.12 + i * 0.07, { f: 900 + i * 260, f2: 400, dur: 0.05, g: 0.06 }); },   // canto + bolhas
+  tucano: (a, d, t) => { a.tn(d, t, { f: 620, f2: 1500, dur: 0.12, type: 'triangle', g: 0.22 }); a.tn(d, t + 0.14, { f: 560, f2: 1300, dur: 0.14, type: 'triangle', g: 0.2 }); },                // grasnado
+  diabo: (a, d, t) => { a.tn(d, t, { f: 62, f2: 38, dur: 0.55, type: 'sawtooth', g: 0.5, wet: 0.3 }); a.nz(d, t, { dur: 0.4, f: 500, f2: 90, g: 0.3 }); },                                    // rosnado demoníaco
+  dragao: (a, d, t) => { a.tn(d, t, { f: 130, f2: 34, dur: 0.7, type: 'sawtooth', g: 0.45, wet: 0.4 }); a.nz(d, t + 0.02, { dur: 0.55, f: 900, f2: 120, type: 'bandpass', q: 0.6, g: 0.32, wet: 0.4 }); },   // rugido
+  onca: (a, d, t) => { a.tn(d, t, { f: 170, f2: 90, dur: 0.35, type: 'sawtooth', g: 0.3 }); a.nz(d, t, { dur: 0.3, f: 700, f2: 200, g: 0.22, att: 0.02 }); },                                  // rosnado de felino
+  cangaco: (a, d, t) => { a.tn(d, t, { f: 3100, f2: 2900, dur: 0.18, type: 'triangle', g: 0.14, wet: 0.3 }); for (let i = 0; i < 3; i++) a.tn(d, t + 0.05 + i * 0.05, { f: 2400 + i * 300, f2: 2200, dur: 0.05, type: 'square', g: 0.05 }); },   // ricochete + esporas
+  mula: (a, d, t) => { a.tn(d, t, { f: 700, f2: 1300, dur: 0.2, type: 'triangle', g: 0.2 }); a.tn(d, t + 0.2, { f: 1300, f2: 600, dur: 0.25, type: 'triangle', g: 0.18 }); a.nz(d, t, { dur: 0.35, f: 1200, f2: 300, g: 0.22 }); },   // relincho + fogo
+  piranha: (a, d, t) => { for (let i = 0; i < 3; i++) { a.nz(d, t + i * 0.06, { dur: 0.03, f: 2200, type: 'bandpass', q: 4, g: 0.3 }); a.tn(d, t + i * 0.06, { f: 320, f2: 200, dur: 0.04, type: 'square', g: 0.1 }); } },   // mordidas: toc-toc-toc
+  vitoria: (a, d, t) => { a.tn(d, t, { f: 1400, f2: 620, dur: 0.12, g: 0.2 }); a.tn(d, t + 0.1, { f: 1700, f2: 800, dur: 0.1, g: 0.14 }); },                                                // gota d'água
+  malandro: (a, d, t) => { a.nz(d, t, { dur: 0.02, f: 4200, type: 'highpass', g: 0.3 }); a.tn(d, t + 0.05, { f: 330, f2: 300, dur: 0.18, type: 'triangle', g: 0.14, wet: 0.3 }); },       // estalo de dedos + sax
+  boibumba: (a, d, t) => { a.tn(d, t, { f: 100, f2: 55, dur: 0.3, g: 0.7 }); a.tn(d, t + 0.06, { f: 1800, f2: 1700, dur: 0.12, type: 'triangle', g: 0.1 }); },                              // zabumba + guizo
+  arara: (a, d, t) => { a.tn(d, t, { f: 1800, f2: 2700, dur: 0.2, type: 'sawtooth', g: 0.12 }); a.tn(d, t + 0.18, { f: 2400, f2: 1500, dur: 0.18, type: 'sawtooth', g: 0.1 }); },          // grito de arara
+  tamandua: (a, d, t) => { a.nz(d, t, { dur: 0.25, f: 400, f2: 120, g: 0.25 }); a.tn(d, t, { f: 80, f2: 50, dur: 0.3, g: 0.3 }); },                                                            // fungada grave
+  cristal: (a, d, t) => { [2093, 2637, 3136].forEach((f, i) => a.tn(d, t + i * 0.04, { f, f2: f, dur: 0.55, g: 0.07, wet: 0.6 })); },                                                           // sino de cristal
+  lobisomem: (a, d, t) => { a.tn(d, t, { f: 300, f2: 580, dur: 0.35, g: 0.18, wet: 0.5 }); a.tn(d, t + 0.33, { f: 580, f2: 360, dur: 0.4, g: 0.16, wet: 0.5 }); a.nz(d, t, { dur: 0.3, f: 500, f2: 150, g: 0.15 }); },   // uivo
+  berimbau: (a, d, t) => { a.tn(d, t, { f: 220, f2: 212, dur: 0.6, type: 'sawtooth', g: 0.14, wet: 0.3 }); a.tn(d, t, { f: 330, f2: 322, dur: 0.5, type: 'triangle', g: 0.1 }); },                // corda de arame
+  boto: (a, d, t) => { for (let i = 0; i < 3; i++) a.tn(d, t + i * 0.05, { f: 2400 + i * 500, f2: 3600, dur: 0.05, type: 'triangle', g: 0.12 }); },                                              // cliques de golfinho
+  rojaosp: (a, d, t) => { a.tn(d, t, { f: 900, f2: 3000, dur: 0.55, g: 0.14, att: 0.05 }); for (let i = 0; i < 6; i++) a.nz(d, t + 0.1 + i * 0.07, { dur: 0.02, f: 5000, type: 'highpass', g: 0.14 }); }   // assobio + estalos de rojão
+};
 class AudioEngine {
   constructor() { this.ctx = null; this.buffers = new Map(); this.filesExt = []; this.files = new Set(); this.music = null; this.inGame = false; }
   init() {
@@ -140,8 +168,9 @@ class AudioEngine {
   }
   overheat() { if (!this.ctx) return; const t = this.ctx.currentTime, d = this.out(null, this.sfx, 2, 1.0); this.nz(d, t, { dur: 0.8, f: 6000, type: 'highpass', g: 0.3, att: 0.03 }); this.tn(d, t, { f: 900, f2: 200, dur: 0.4, type: 'square', g: 0.12 }); }
   // LANÇAMENTO de foguete: estouro surdo + "fuuush" do motor
-  rocket(pos) {
+  rocket(pos, id = null) {
     if (!this.ctx) return; const t = this.ctx.currentTime, d = this.out(pos || null, this.sfx, 6, 0.9);
+    if (id && SIG[id]) { try { SIG[id](this, d, t); } catch { /* sem assinatura */ } }
     this.tn(d, t, { f: 110, f2: 38, dur: 0.35, g: 0.9 }); this.nz(d, t, { dur: 0.08, f: 3000, type: 'highpass', g: 0.35 });
     this.nz(d, t + 0.02, { dur: 1.1, f: 500, f2: 2600, q: 0.7, type: 'bandpass', g: 0.5, att: 0.12 }); this.nz(d, t + 0.05, { dur: 1.3, f: 900, f2: 200, q: 0.4, g: 0.35, att: 0.1 });
   }
@@ -158,8 +187,9 @@ class AudioEngine {
     const cv = c.createConvolver(); cv.buffer = ir; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3800; const g = c.createGain(); g.gain.value = 0.55; cv.connect(lp); lp.connect(g); g.connect(this.sfx); return (this._verb = cv);
   }
   // TIRO em camadas: estalo (supersônico) + corpo + pancada grave + som mecânico + cauda de eco. Cada classe tem a sua "assinatura".
-  shot(cls, pos, { supp = false, big = false, energy = false, noiseScale = 1, dest = null } = {}) {
+  shot(cls, pos, { supp = false, big = false, energy = false, noiseScale = 1, dest = null, id = null } = {}) {
     if (!this.ctx) return; const t = this.ctx.currentTime, d = this.out(pos, dest || this.sfx, supp ? 1.2 : 4, 1.0);
+    if (id && !supp && SIG[id]) { try { SIG[id](this, d, t); } catch { /* sem assinatura */ } }   // cada arma da loja tem a sua voz (piranha morde, boitatá crepita, saci assobia…)
     const R = (a, b) => a + Math.random() * (b - a), j = R(0.94, 1.06);   // pequena variação: dois tiros nunca soam iguais
     if (energy) { this.tn(d, t, { f: 1500 * j, f2: 160, dur: 0.24, type: 'sawtooth', g: 0.2 }); this.tn(d, t, { f: 760 * j, f2: 80, dur: 0.32, type: 'sine', g: 0.34, wet: 0.3 }); this.tn(d, t + 0.01, { f: 3200, f2: 900, dur: 0.12, type: 'triangle', g: 0.1 }); this.nz(d, t, { dur: 0.12, f: 5500, type: 'highpass', g: 0.12 }); this.nz(d, t + 0.02, { dur: 0.5, f: 2400, f2: 300, g: 0.12, wet: 0.5 }); return; }
     const C = { pistol: { cr: 5200, bd: 2600, bl: 0.14, th: 190, tl: 0.1, tail: 0.3, gain: 0.85 }, dual: { cr: 5000, bd: 2500, bl: 0.15, th: 180, tl: 0.1, tail: 0.32, gain: 0.9 }, smg: { cr: 5600, bd: 3000, bl: 0.12, th: 160, tl: 0.09, tail: 0.28, gain: 0.8 },
