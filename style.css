@@ -128,7 +128,7 @@ h2 em{font-style:normal;color:var(--y)}
 .filters{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:20px 0 16px}
 .filters button,.tabs button{font:700 14px var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:7px 16px;border:1px solid var(--line);background:var(--panel2);color:var(--mut);cursor:pointer;transition:.2s}
 .filters button:hover,.tabs button:hover{color:#fff;border-color:#ffffff44}.filters button.on,.tabs button.on{background:var(--y);color:#15110a;border-color:var(--y)}
-.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}@media(max-width:900px){.thumbs{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}}
 .th{position:relative;aspect-ratio:16/10;overflow:hidden;border:2px solid transparent;background:#000;cursor:pointer;padding:0;transition:.2s}.th img{width:100%;height:100%;object-fit:cover;transition:.4s}.th:hover img{transform:scale(1.08)}
 .th span{position:absolute;inset:auto 0 0;padding:16px 8px 5px;background:linear-gradient(transparent,#000d);font:700 12.5px var(--cond);letter-spacing:.08em;text-transform:uppercase;text-align:left}
 .th.sel{border-color:var(--y)}
