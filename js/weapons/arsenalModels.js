@@ -44,7 +44,7 @@ function optic(g,x,yS,t){const [k,fov,n]=OP[t],bk=MT.black;let back;
 function rifle(o){const g=new THREE.Group(),c=o.c,L=o.L||1.1,xF=L/2,xR=-L/2,hg=o.hg,bl=o.bl,x0=o.mx??xF-.45,xh=xF-.05;
  B(g,[L,.27,.17],[0,-.02,0],c.b);B(g,[L*.7,.07,.19],[.02,.15,0],c.m);B(g,[L*.45,.05,.18],[xF*.15,.05,0],c.a);B(g,[.12,.07,.19],[xR*.2,.06,0],MT.black);
  const gx=o.gx||0;P(g,[[xR+.14+gx,-.14],[xR+.34+gx,-.14],[xR+.28+gx,-.6],[xR+.06+gx,-.56]],.15,o.gm||c.p);
- const mm=o.mm||c.p,ex=o.drum?2:OV.mag|0,dy=ex===1?.3:0;if(o.mag==='box')B(g,[.5,.4+ex*.2,.26],[x0+.15,-.36-ex*.1,0],mm);else if(o.mag!=='none'){if(ex===2){P(g,[[x0,-.14],[x0+.2,-.14],[x0+.2,-.3],[x0,-.3]],.15,mm);add(g,new THREE.CylinderGeometry(.27,.27,.17,18),mm,[x0+.1,-.5,0],[Math.PI/2,0,0])}else P(g,o.mag==='curved'?[[x0,-.14],[x0+.22,-.14],[x0+.36+dy*.2,-.68-dy],[x0+.12+dy*.2,-.72-dy]]:[[x0,-.14],[x0+.2,-.14],[x0+.2,-.64-dy],[x0,-.64-dy]],.15,mm)}
+ const mm=o.mm||c.p,ex=o.drum?2:OV.mag|0,dy=ex===1?.3:0,mg=new THREE.Group();mg.userData.role='mag';mg.userData.md=o.mag==='curved'?[.14,-1]:[0,-1];g.add(mg);if(o.mag==='box')B(mg,[.5,.4+ex*.2,.26],[x0+.15,-.36-ex*.1,0],mm);else if(o.mag!=='none'){if(ex===2){P(mg,[[x0,-.14],[x0+.2,-.14],[x0+.2,-.3],[x0,-.3]],.15,mm);add(mg,new THREE.CylinderGeometry(.27,.27,.17,18),mm,[x0+.1,-.5,0],[Math.PI/2,0,0])}else P(mg,o.mag==='curved'?[[x0,-.14],[x0+.22,-.14],[x0+.36+dy*.2,-.68-dy],[x0+.12+dy*.2,-.72-dy]]:[[x0,-.14],[x0+.2,-.14],[x0+.2,-.64-dy],[x0,-.64-dy]],.15,mm)}
  const gl=Math.max(.12,x0-(xR+.34));B(g,[gl,.025,.12],[xR+.34+gl/2,-.28,0],c.m);B(g,[.03,.1,.03],[xR+.46,-.2,0],MT.black);
  if(hg){C(g,.075,.075,hg,[xh+hg/2,0,0],o.hm||c.p,8);for(let i=0;i<3;i++)C(g,.083,.083,.035,[xh+hg*(.2+.3*i),0,0],c.a,8)}
  C(g,.03,.03,hg+bl+.05,[xh+(hg+bl+.05)/2,0,0],c.m,10);const xe=xh+hg+bl;let m=xe;
@@ -54,7 +54,8 @@ function rifle(o){const g=new THREE.Group(),c=o.c,L=o.L||1.1,xF=L/2,xR=-L/2,hg=o
  else if(o.s==='wood'){P(g,[[xR,.1],[xR,-.16],[xR-.75,-.34],[xR-.8,.04]],.15,MT.wood);B(g,[.05,.4,.16],[xR-.79,-.15,0],MT.rubber,[0,0,.12])}
  if(o.bip)for(const s of[-1,1])B(g,[.03,.4,.03],[xh+hg*.75,-.2,s*.08],MT.steel,[0,0,.25]);
  if(o.shield)C(g,.1,.1,hg*.7,[xh+hg*.4,0,0],c.m,10);
- if(o.belt){const S=V(x0+.05,.13,.11),E=V(x0+.2,-.14,.15),Q=V(x0-.15,-.02,.5);for(let i=0;i<16;i++){const t=i/15,a=(1-t)*(1-t),b=2*(1-t)*t,cc=t*t,p=[S.x*a+Q.x*b+E.x*cc,S.y*a+Q.y*b+E.y*cc,S.z*a+Q.z*b+E.z*cc];C(g,.022,.022,.1,p,MT.gold,6,[Math.PI/2,0,0]);B(g,[.07,.035,.03],p,MT.steel)}}
+ if(o.belt){const S=V(x0+.05,.13,.11),E=V(x0+.2,-.14,.15),Q=V(x0-.15,-.02,.5);for(let i=0;i<16;i++){const t=i/15,a=(1-t)*(1-t),b=2*(1-t)*t,cc=t*t,p=[S.x*a+Q.x*b+E.x*cc,S.y*a+Q.y*b+E.y*cc,S.z*a+Q.z*b+E.z*cc];C(mg,.022,.022,.1,p,MT.gold,6,[Math.PI/2,0,0]);B(mg,[.07,.035,.03],p,MT.steel)}}
+ if(!mg.children.length)g.remove(mg);
  if(o.bolt){const bg=new THREE.Group();bg.position.set(xR*.2,.05,.1);bg.userData.role='bolt';bg.userData.bx=xR*.2;g.add(bg);C(bg,.015,.015,.2,[0,0,.02],c.m,8,[Math.PI/2,0,0]);add(bg,new THREE.SphereGeometry(.04,8,6),c.m,[0,0,.14])}
  {const op=OV.op||o.op;if(op==='irons')irons(g,xR+.1,xh+hg+Math.min(bl,.15),.29);else optic(g,o.ox??xR*.1,.33,op)}
  // DETALHES (tudo rente ao corpo e abaixo da linha de mira — nada tapa a visada; fica na mesma malha fundida, custo de desenho zero)
@@ -73,7 +74,7 @@ function ener(k){const a=k==='arc',g=rifle({c:{b:MT.navy,m:MT.steel,p:MT.black,a
  return g}
 // ---------- pistola / revólver / escopeta ----------
 function pist(o){const g=new THREE.Group(),L=o.L||1,c=o.c,r=-.4*L,fr=.6*L;
- B(g,[L,.2,.16],[L*.1,0,0],c.m);B(g,[L*.9,.09,.15],[L*.05,-.14,0],c.p);P(g,[[r+.02,-.09],[r+.28,-.09],[r+.2,-.62],[r-.1,-.58]],.15,c.p);B(g,[.2,.04,.16],[r+.05,-.62,0],c.m);if(OV.mag)B(g,[.22,.3,.16],[r+.02,-.76,0],c.p);
+ B(g,[L,.2,.16],[L*.1,0,0],c.m);B(g,[L*.9,.09,.15],[L*.05,-.14,0],c.p);P(g,[[r+.02,-.09],[r+.28,-.09],[r+.2,-.62],[r-.1,-.58]],.15,c.p);{const mg=new THREE.Group();mg.userData.role='mag';mg.userData.md=[-.12,-1];g.add(mg);B(mg,[.17,.5,.13],[r+.06,-.4,0],MT.steel);B(mg,[.2,.04,.16],[r+.05,-.62,0],c.m);if(OV.mag)B(mg,[.22,.3,.16],[r+.02,-.76,0],c.p)}
  B(g,[.3,.025,.11],[.16*L,-.22,0],c.p);B(g,[.025,.1,.11],[.3*L,-.17,0],c.p);B(g,[.03,.1,.03],[.1,-.2,0],MT.black);
  for(let i=0;i<4;i++)B(g,[.02,.2,.17],[r+.08+i*.045,0,0],c.b);B(g,[.3,.012,.17],[L*.2,.02,0],c.a);
  C(g,.04,.04,.1,[fr+.03,0,0],c.b,10);mz(g,tipFx(g,fr+.07,OV.tip||'none',.04));{const op=OV.op||'irons';if(op==='irons')irons(g,r+.05,fr-.05,.17);else optic(g,L*.05,.3,op)}

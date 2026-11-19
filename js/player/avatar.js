@@ -20,6 +20,9 @@ import { drawSample, DRAW_DUR, DRAW_EVENTS } from '../weapons/draw.js';
 const SCALE = PLAYER_HEIGHT / 1.8;
 // TIPO DE RECARGA de cada arma (cada classe recarrega de um jeito: ver Avatar.update)
 const BOLTS = new Set(['scout', 'amr', 'hunter', 'santa', 'mosquete', 'dragao', 'cangaco']), PUMPS = new Set(['pump', 'spas', 'champ', 'confete', 'tucano', 'piranha', 'mula']), REVS = new Set(['revolver', 'deagle', 'coyote', 'assombrado', 'sawed', 'boibumba']);
+const _mv = new THREE.Vector3();
+// tempos da troca de pente (progresso da recarga 0..1): [pega, pega-fim=começa a puxar, solta, busca-fim, traz-fim, encaixa-fim, mão-volta-fim]
+const MAGT = { mag: [0.1, 0.2, 0.32, 0.42, 0.52, 0.66, 0.78], pistol: [0.08, 0.16, 0.26, 0.34, 0.42, 0.52, 0.6], lmg: [0.1, 0.24, 0.4, 0.5, 0.58, 0.74, 0.86], cell: [0.1, 0.2, 0.3, 0.4, 0.5, 0.62, 0.72] };
 function reloadKind(id) { const c = ARSENAL_BY_ID[id]?.cls; if (REVS.has(id)) return 'revolver'; if (PUMPS.has(id) || PER_SHELL.has(id)) return 'pump'; if (BOLTS.has(id)) return 'bolt'; if (c === 'pistol') return 'pistol'; if (c === 'lmg') return 'lmg'; if (c === 'launcher') return 'launcher'; if (c === 'energy' || c === 'special') return 'cell'; return 'mag'; }
 const wkey = (k) => { const c = ARSENAL_BY_ID[k]?.cls; return /^(pistol|deagle|revolver)$/.test(k) || (c === 'pistol' && !k.startsWith('dual')) ? 'pistol' : /^(smg|pdw|px90|dualsmg|dualpistol|dualrev)$/.test(k) || c === 'smg' ? 'smg' : /^(lmg|m60)$/.test(k) || c === 'lmg' ? 'lmg' : 'rifle'; };   // pela CLASSE da arma: toda pistola/SMG/metralhadora é segurada do jeito certo
 
@@ -87,10 +90,25 @@ export class Avatar {
   weaponUp(out) { return this.model ? out.set(0, 1, 0).transformDirection(this.model.matrixWorld) : null; }
   // recuo do base.html: rec = min(0,3, rec + rc) (decai ×5e-4^dt). Partes móveis: pump (.45 s), ferrolho (.9 s), tambor gira 60°.
   kick(rc = 0.08) { this.cancelInspect?.(); this.rec = Math.min(0.3, this.rec + rc); }
+  // pente arrancado: cópia (mesma geometria e material = mesma skin) sai da arma com a posição/rotação do pente e cai até o chão
+  _dropMag() {
+    const M = this._mag; if (!M) return; let root = this.group; while (root.parent) root = root.parent; if (!root.isScene) return;
+    M.node.updateWorldMatrix(true, false); const m = M.node.clone(true); m.visible = true; M.node.matrixWorld.decompose(m.position, m.quaternion, m.scale);
+    const dw = M.dL.clone().transformDirection(M.node.matrixWorld), fy = this.group.getWorldPosition(new THREE.Vector3()).y + 0.04, rd = (k) => (Math.random() - 0.5) * k;
+    const d = { m, v: dw.multiplyScalar(1.1).add(new THREE.Vector3(rd(0.7), 0.3, rd(0.7))), w: new THREE.Vector3(rd(9), rd(5), rd(9)), fy, t: 0, rest: false };
+    root.add(m); (this._drops ||= []).push(d); while (this._drops.length > 4) this._rmDrop(this._drops.shift());
+  }
+  _rmDrop(d) { d.m.parent?.remove(d.m); }
+  _stepDrops(dt) {
+    const L = this._drops; for (let i = L.length - 1; i >= 0; i--) { const d = L[i]; d.t += dt;
+      if (!d.rest) { d.v.y -= 9.8 * dt; d.m.position.addScaledVector(d.v, dt); d.m.rotation.x += d.w.x * dt; d.m.rotation.y += d.w.y * dt; d.m.rotation.z += d.w.z * dt;
+        if (d.m.position.y < d.fy) { d.m.position.y = d.fy; d.v.y *= -0.25; d.v.x *= 0.5; d.v.z *= 0.5; d.w.multiplyScalar(0.45); if (Math.abs(d.v.y) < 0.5) d.rest = true; } }
+      if (d.t > 8) { this._rmDrop(d); L.splice(i, 1); } }
+  }
   kickParts(mech) { for (const o of this.parts || []) { const u = o.userData; if (u.role === 'drum') u.tr = (u.tr || 0) + Math.PI / 3; else if (u.role === 'pump') { u.t = 0.45; mech?.('pump', o); } else if (u.role === 'bolt') { u.t = 0.9; mech?.('bolt', o); } } }
   // posição do olho da mira (âncora do Arsenal) em coordenadas de mundo: a câmera vai para lá ao mirar (ADS do base.html)
   eyeWorld(out) { if (!this.weapon?.eyeObj || this.weapon.model?.userData?.noads) return null; this.weapon.eyeObj.updateWorldMatrix(true, false); return this.weapon.eyeObj.getWorldPosition(out); }
-  unhold() { if (this.holder) { this.model?.traverse((o) => { if (!o.userData.shared) o.geometry?.dispose?.(); });   /* peças do protótipo são compartilhadas: só descarta o que a cópia criou (laser etc.) */ this.holder.parent?.remove(this.holder); this.holder = null; } this.laser = null; this.weapon = null; this.model = null; this.agroup = null; this.parts = []; this.char.rig.weps = []; }
+  unhold() { if (this.holder) { this.model?.traverse((o) => { if (!o.userData.shared) o.geometry?.dispose?.(); });   /* peças do protótipo são compartilhadas: só descarta o que a cópia criou (laser etc.) */ this.holder.parent?.remove(this.holder); this.holder = null; } this.laser = null; this._mag = null; this.weapon = null; this.model = null; this.agroup = null; this.parts = []; this.char.rig.weps = []; }
   // segura a arma `id`: CÓPIA do attach() do base.html (modelo BRUTO do Arsenal ×0,3, mesmo ponto de empunhadura, mesmas mãos).
   // side: 'R' destro / 'L' canhoto (troca o lado da arma e das mãos)
   hold(id, att = {}, side = 'R', skin = 'base') {
@@ -131,6 +149,10 @@ export class Avatar {
     this.char.rig.weps = [{ g: holder, grips, type: dual ? 'dual' : wkey(id), side }];
     this._rk = reloadKind(id);
     this._sup = !dual && grips.length > 1 ? { g: grips[1], base: grips[1][1].slice() } : null;   // mão de apoio: é ela que puxa o pente na recarga
+    this._mag = null; if (!dual) { let mn = null; model.traverse((o) => { if (!mn && o.userData.role === 'mag') mn = o; }); const bb = mn && new THREE.Box3().setFromObject(mn);   // PENTE REAL: o carregador é um nó próprio da arma (role 'mag'): a recarga arranca ele de verdade, joga no chão e encaixa outro igual
+      if (mn && !bb.isEmpty()) { const md = mn.userData.md || [0, -1], dl = new THREE.Vector3(md[0], md[1], 0).normalize(), a0 = mn.getWorldPosition(new THREE.Vector3()), dh = mn.localToWorld(dl.clone()).sub(a0).normalize(), sz = bb.getSize(new THREE.Vector3());
+        this._mag = { node: mn, lp0: mn.position.clone(), cL: mn.worldToLocal(bb.getCenter(new THREE.Vector3())), dL: dl, DL: (Math.abs(dh.x) * sz.x + Math.abs(dh.y) * sz.y + Math.abs(dh.z) * sz.z) / (0.3 * f), orient, agroup, model, gk: pist ? 0.28 : 0.08 }; } }
+    this._mp = 0;
     this.char.rig.spine.add(holder);
     // âncoras para o jogo (mira, cano, ejeção, partes móveis)
     const mzs = model.userData.mz, g0 = mzs[0].userData.g || model, ejObj = new THREE.Object3D(); if (g0.userData.ej) ejObj.position.copy(g0.userData.ej); g0.add(ejObj);
@@ -161,6 +183,7 @@ export class Avatar {
     if (this._ch) { const hit = this._mUntil && performance.now() < this._mUntil; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._ch, this._cp); this.chainRev = hit ? 1 : 0.3; if (this.holder) this.holder.position.x = Math.sin(performance.now() * 0.09) * (hit ? 0.006 : 0.002); }   // MOTOSSERRA: a corrente corre sempre (mais rápido ao serrar) e a arma vibra
     // === movimento da arma IDÊNTICO ao base.html: group.position.x = -rec · group.rotation.z = rec*.35 - tilt(recarga) · (unidades do Arsenal ×0,3)
     this.rec *= Math.pow(5e-4, dt); if (this.rec < 1e-4) this.rec = 0;
+    if (this._drops?.length) this._stepDrops(dt);
     if (this.agroup) {
       // RECARGA em etapas: inclina a arma → mão de apoio desce e puxa o pente → mão baixa (pente fora) → sobe com o novo → BATE no pente (tranco) → puxa o ferrolho → volta
       const p = reload > 0 ? 1 - reload : 0, seg = (a, b) => Math.min(1, Math.max(0, (p - a) / (b - a))), ez = (x) => x * x * (3 - 2 * x);
@@ -174,7 +197,18 @@ export class Avatar {
       else if (R && K === 'launcher') { tilt = 0.5 * ez(seg(0, 0.14)) * (1 - ez(seg(0.88, 1))); out = 0; supZ = 0.26 * ez(seg(0.14, 0.4)) * (1 - ez(seg(0.62, 0.74))); supY = -0.04 * supZ / 0.26; slap = pu(0.62, 0.8) * 1.2; bolt = 0; lift = 0.02 * ez(seg(0, 0.2)) * (1 - ez(seg(0.85, 1))); }   // lançador: a mão vai à boca do tubo, enfia o projétil e volta com um tranco
       else if (R && K === 'cell') { tilt = 0.5 * ez(seg(0, 0.16)) * (1 - ez(seg(0.84, 1))); out = ez(seg(0.1, 0.26)) * (1 - ez(seg(0.5, 0.66))); supY = 0.0; slap = pu(0.66, 0.78); bolt = 0; lift = 0.015 * tilt; roll = 0.3 * pu(0.2, 0.6); }   // arma de energia: gira e troca a célula
       this.agroup.position.x = -this.rec + (R ? 0.01 * slap : 0); this.agroup.rotation.z = this.rec * 0.35 - 0.42 * tilt + 0.05 * slap - roll; this.agroup.rotation.x = R ? 0.12 * tilt - 0.08 * slap + shake - (K === 'launcher' ? 0.2 * tilt : 0) : 0; this.agroup.position.y = R ? -0.04 * out + lift : 0;
-      if (this._sup) { const b = this._sup.base, g = this._sup.g[1]; g[0] = b[0]; g[1] = (K === 'cell' ? b[1] + 0.12 * out : b[1] - 0.17 * out) + 0.015 * slap + supY; g[2] = b[2] + (K === 'launcher' ? supZ : 0.1 * out - 0.07 * bolt); }
+      const M = this._mag, TB = MAGT[K];
+      if (M) {   // PENTE: mão pega no pente → desliza para fora → solta (cai no chão) → mão busca outro → traz → encaixa (a mão acompanha o pente em qualquer ângulo da arma)
+        let vis = true, ms = 0, mw = 0;
+        if (R && TB) { const [g0, g1, rl, f1, b1, i1, r1] = TB;
+          ms = p < g1 ? 0 : p < rl ? 1.3 * ez(seg(g1, rl)) : p < f1 ? 1.3 + 0.6 * ez(seg(rl, f1)) : p < b1 ? 1.9 - 0.6 * ez(seg(f1, b1)) : p < i1 ? 1.3 * (1 - ez(seg(b1, i1))) : 0;
+          vis = !(p >= rl && p < f1); mw = p < g0 ? 0 : p < g1 ? ez(seg(g0, g1)) : p < i1 ? 1 : 1 - ez(seg(i1, r1));
+          if (this._mp < rl && p >= rl && p < f1) this._dropMag(); }
+        this._mp = R ? p : 0; const nd = M.node; nd.visible = vis; nd.position.copy(M.lp0).addScaledVector(M.dL, ms * M.DL); nd.updateMatrix(); M.agroup.updateMatrix(); this._mw = mw; this._ms = ms;
+      }
+      if (this._sup) { const b = this._sup.base, g = this._sup.g[1]; g[0] = b[0]; g[1] = (K === 'cell' ? b[1] + 0.12 * out : b[1] - 0.17 * out) + 0.015 * slap + supY; g[2] = b[2] + (K === 'launcher' ? supZ : 0.1 * out - 0.07 * bolt);
+        if (M && this._mw > 0) { const pl = _mv.copy(M.cL).addScaledVector(M.dL, M.gk * M.DL).applyMatrix4(M.node.matrix).applyMatrix4(M.model.matrix).applyMatrix4(M.agroup.matrix).applyMatrix4(M.orient.matrix), u = Math.max(0, Math.min(1, (this._ms - 1.3) / 0.6)), w = this._mw, ox = (this._sup.g[0] === 'L' ? -1 : 1) * 0.012;
+          g[0] += (pl.x + ox - 0.05 * u * (this._sup.g[0] === 'L' ? -1 : 1) - g[0]) * w; g[1] += (pl.y - g[1]) * w; g[2] += (pl.z - 0.09 * u - g[2]) * w; } }
     }
     for (const o of this.parts || []) {                                                       // animação das partes móveis (loop do base.html)
       const u = o.userData;
@@ -187,7 +221,7 @@ export class Avatar {
     else { const f = this.fall, d = this.fdir || 'f'; this.group.rotation.x = d === 'f' ? f * 1.5 : d === 'b' ? -f * 1.45 : f * 0.25; this.group.rotation.z = d === 'l' ? f * 1.45 : d === 'r' ? -f * 1.45 : 0; this.group.position.y = -f * (d === 'b' ? 0.1 : 0.04); }
   }
   dispose() {                                            // as geometrias/materiais da ARMA são compartilhados: unhold() antes
-    this.unhold();
+    this.unhold(); for (const d of this._drops || []) this._rmDrop(d); this._drops = null;
     const mats = new Set();
     this.group.traverse((o) => { if (!o.isMesh) return; o.geometry?.dispose?.(); for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (m) mats.add(m); });
     for (const m of mats) { for (const k of Object.keys(m)) if (m[k]?.isTexture && k !== 'envMap') m[k].dispose(); m.dispose(); }
