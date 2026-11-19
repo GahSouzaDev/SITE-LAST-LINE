@@ -13,10 +13,14 @@ export const dashSpeedMul = (u, base) => base * u + (DASH.top / RUN_BASE) * (1 -
 /* DISTÂNCIA (m) → velocidade inicial: com a queda linear até a velocidade normal (~6 m/s) a distância é (topo + 6) / 2 × duração */
 export const dashTopFor = (dist, ms = DASH.ms) => Math.max(8, +(2 * dist / (ms / 1000) - 6).toFixed(2));
 export const DINO_CFG = { hp: 200, speed: 11, fast: 30, strong: 90, step: 3 };   // vida 200 (o DOBRO do jogador) · mordida rápida 30 · forte 90 (por mordida, na vida do alvo)   // speed = m/s CORRENDO (jogador a pé corre a 6,8)
+/* EQUILÍBRIO (18/11/2026): nenhum atributo foge de 9–11 pontos (±3% do padrão), então ninguém é muito mais forte, rápido ou resistente que os outros; a diferença fica no estilo.
+   O ALCANCE e o tamanho da boca também são IGUAIS para todos (DINO_BITE) e os DOIS ataques de todas as espécies são mordidas (esquerdo = rápida, direito = forte): antes quem atacava de
+   garra ou cabeçada acertava bem menos que quem mordia, e o alcance variava de 2,0 a 3,2 m entre as espécies. */
 export const DINO_PTS = {
-  trex: { hp: 11, spd: 8, dmg: 11 }, raptor: { hp: 8, spd: 12, dmg: 10 }, dilo: { hp: 9, spd: 10, dmg: 11 }, carno: { hp: 11, spd: 9, dmg: 10 },
-  spino: { hp: 10, spd: 9, dmg: 11 }, teri: { hp: 12, spd: 8, dmg: 10 }, pachy: { hp: 11, spd: 10, dmg: 9 }, ovi: { hp: 8, spd: 11, dmg: 11 }
+  trex: { hp: 11, spd: 9, dmg: 10 }, raptor: { hp: 9, spd: 11, dmg: 10 }, dilo: { hp: 10, spd: 10, dmg: 10 }, carno: { hp: 10, spd: 9, dmg: 11 },
+  spino: { hp: 11, spd: 9, dmg: 10 }, teri: { hp: 10, spd: 10, dmg: 10 }, pachy: { hp: 10, spd: 11, dmg: 9 }, ovi: { hp: 9, spd: 11, dmg: 10 }
 };
+export const DINO_BITE = { reach: 2.7, r: 0.55 };   // alcance (m, do centro do corpo até a boca) e raio da boca, iguais para todas as espécies do PvP
 export const DINO_IDS = Object.keys(DINO_PTS);
 export const MONSTER_PTS = { mapinguari: { hp: 14, spd: 7, dmg: 12 }, mula: { hp: 9, spd: 14, dmg: 10 } };   // monstros da Caçada: não entram na escolha do PvP
 const RUN = 4.05;   // andar do jogador (walkSpeed): o dinossauro SEMPRE anda na velocidade dele, sem precisar correr   // runSpeed do jogador (shared/balance.js): o speedMul do corpo = velocidade / RUN

@@ -360,7 +360,12 @@ class AudioEngine {
     { b: 23, r: 74, w: [0.5, 0.15, 0.7], f: [340, 1700], tr: [0, 0], d: 2.0, g: 1.05 },                     // 9 Bicho: V8 de luxo, fundo e liso
     { b: 17, r: 40, w: [0.25, 0.3, 0.9], f: [200, 600], tr: [3.2, 0.4], d: 1.51, g: 1.1 },                  // 10 Van Umbra: zumbido sinistro, pulsando
     { b: 15, r: 38, w: [0.3, 0.8, 0.5], f: [190, 560], tr: [7, 0.3], d: 1.97, g: 1.25 },                    // 11 Caveirão: diesel pesadíssimo
-    { b: 36, r: 98, w: [0.75, 0.3, 0.35], f: [480, 2300], tr: [0, 0], d: 2.03, g: 1, pop: 1 }              // 12 OGBB: 4 cilindros envenenado, ronco e estouros
+    { b: 36, r: 98, w: [0.75, 0.3, 0.35], f: [480, 2300], tr: [0, 0], d: 2.03, g: 1, pop: 1 },             // 12 OGBB: 4 cilindros envenenado, ronco e estouros
+    { b: 64, r: 170, w: [0.1, 0.05, 0.95], f: [900, 5200], tr: [0, 0], d: 3.2, g: 0.9 },                    // 13 Fórmula 1: V10 agudo, grito de alta rotação
+    { b: 52, r: 120, w: [0.5, 0.3, 0.4], f: [600, 2200], tr: [0, 0], d: 2.5, g: 0.8 },                      // 14 Lambreta: dois tempos, zumbido de mosquito
+    { b: 42, r: 130, w: [0.7, 0.4, 0.2], f: [520, 2600], tr: [18, 0.25], d: 2.05, g: 0.95 },                // 15 Trilheira: monocilíndrico, batidas secas
+    { b: 60, r: 200, w: [0.6, 0.2, 0.5], f: [800, 4800], tr: [0, 0], d: 2.0, g: 0.95, pop: 1 },             // 16 Relâmpago: 4 cilindros esportivo, agudo com estouros
+    { b: 20, r: 55, w: [0.35, 0.7, 0.4], f: [260, 900], tr: [9, 0.3], d: 2.0, g: 1.1 }                      // 17 Estradeira: V-twin, batida grave e lenta
   ];
   /* MOTOR DOS CARROS (som 3D contínuo, sintetizado): cada carro ligado/andando tem seu motor — os 3 mais próximos (até 90 m) tocam. Tom = RPM (marcha virtual calculada em vehFx: sobe, cai na troca, mais esforço na subida). list: {id,x,y,z,sp,dead,on,ty,rpm,thr,lab,sh,shNow,nit} */
   vehEngines(list) {

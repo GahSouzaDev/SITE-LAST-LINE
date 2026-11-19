@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildBike } from './bikeModels.js';
 import { OPEN_TY, seatPos, VEH_NITRO, VEH_SPEED } from '/shared/vehSeats.js';
 import { fxFor, glowTex, lightPool } from '../effects/particles.js';
 import { mergeStatic } from '../weapons/weaponOpt.js';
@@ -29,7 +30,10 @@ const TYPES = [
   { n: 'Bicho', k: 'Sedã de luxo', tub: [[-2.4, .42], [-2.43, .9], [-1.3, 1.02], [1.7, 1.02], [2.4, .98], [2.4, .42]], cab: [[-1.05, 1.02], [-.5, 1.6], [1.2, 1.6], [1.9, 1.02]], cw: 1.8, fixed: 0x0a0a0c, lux: 1, wb: 1.62, W: 2.06 },
   { n: 'Van Umbra', k: 'Van UMBRA', tub: [[-2.45, .45], [-2.48, 1.05], [-1.9, 1.35], [2.45, 1.35], [2.45, .45]], cab: [[-1.85, 1.35], [-1.5, 2.35], [2.35, 2.35], [2.45, 1.35]], cw: 2.0, fixed: 0x0b0e0d, umbra: 1, wb: 1.65, W: 2.1 },
   { n: 'Caveirão', k: 'Blindado', tub: [[-2.3, .55], [-2.3, 1.45], [2.3, 1.45], [2.3, .55]], cab: [[-1.6, 1.45], [-1.3, 2.2], [1.7, 2.2], [2.1, 1.45]], cw: 2.0, fixed: 0x161c24, armor: 1, big: 1.3, wb: 1.55, W: 2.16, off: 1 },
-  { n: 'OGBB', k: 'Lenda', tub: [[-1.95, .42], [-1.97, .8], [-1.2, .9], [1.15, .9], [1.95, .8], [1.95, .42]], cab: [[-.85, .9], [-.4, 1.42], [1.0, 1.42], [1.55, .9]], cw: 1.56, fixed: 0xf6f8fa, ogbb: 1, spoiler: 1 }
+  { n: 'OGBB', k: 'Lenda', tub: [[-1.95, .42], [-1.97, .8], [-1.2, .9], [1.15, .9], [1.95, .8], [1.95, .42]], cab: [[-.85, .9], [-.4, 1.42], [1.0, 1.42], [1.55, .9]], cw: 1.56, fixed: 0xf6f8fa, ogbb: 1, spoiler: 1 },
+  { n: 'Fórmula', k: 'Fórmula 1', tub: [[-2.35, .3], [-2.38, .42], [-1.4, .56], [-.2, .64], [1.4, .66], [2.25, .62], [2.3, .3]], cab: null, f1: 1, W: 0.98, track: 1.9, wb: 1.5, fixed: 0xd7141a },
+  { n: 'Lambreta', k: 'Scooter', bike: 14, tub: [[-1, .5], [1, .5]] }, { n: 'Trilheira', k: 'Moto de trilha', bike: 15, tub: [[-1, .5], [1, .5]] },
+  { n: 'Relâmpago', k: 'Moto esportiva', bike: 16, tub: [[-1, .5], [1, .5]] }, { n: 'Estradeira', k: 'Cruiser', bike: 17, tub: [[-1, .5], [1, .5]] }
 ];
 function ext(pts, w, mat, dx = 0) {
   const sh = new THREE.Shape(); pts.forEach(([z, y], i) => (i ? sh.lineTo(z, y) : sh.moveTo(z, y))); sh.closePath();
@@ -64,6 +68,7 @@ const POOLM = () => lightPool(), GLOWT = glowTex;
 let poolGeo = null, poolMat = null;
 const spokeGeo = new THREE.BoxGeometry(0.035, 0.36, 0.07), treadGeo = new THREE.BoxGeometry(0.3, 0.1, 0.12), treadRoad = new THREE.BoxGeometry(0.27, 0.035, 0.14), archGeo = new THREE.TorusGeometry(0.5, 0.045, 5, 14, Math.PI), hubGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.36, 8);
 function build(ci, ty = 0) {
+  if (TYPES[ty % TYPES.length]?.bike) return buildBike({ lam, bx, G: geos(), glowTex: GLOWT, lightPool }, TYPES[ty % TYPES.length].bike, ci);   // MOTOS
   const G = geos(), T = TYPES[ty % TYPES.length], g = new THREE.Group(), paint = lam(T.fixed ?? (T.mil ? 0x4f5d2f : COLORS[ci % COLORS.length]), { roughness: T.mil ? 0.8 : T.armor ? 0.7 : T.ogbb ? 0.55 : T.silver ? 0.3 : T.lux ? 0.2 : 0.32, metalness: T.mil ? 0.15 : T.armor ? 0.3 : T.ogbb ? 0.05 : T.silver ? 0.6 : T.lux ? 0.7 : 0.6 }), dark = lam(0x20242a, { roughness: 0.6, metalness: 0.4 }), chrome = lam(0xc9d0d8, { roughness: 0.2, metalness: 0.95 });
   const head = new THREE.MeshStandardMaterial({ color: 0xfff2c0, emissive: 0xfff2c0, emissiveIntensity: 0.12, roughness: 0.2, metalness: 0.1 }), tail = new THREE.MeshStandardMaterial({ color: 0x7a0c0c, emissive: 0xff1a1a, emissiveIntensity: 0.25, roughness: 0.3 }), rev = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, emissive: 0xffffff, emissiveIntensity: 0, roughness: 0.3 }), plate = lam(0xeeeeee, { roughness: 0.6, metalness: 0.1 }), red = lam(0xc02020, { roughness: 0.4 });
   const W = T.W || (T.big ? 2.05 : 1.98);
@@ -73,7 +78,16 @@ function build(ci, ty = 0) {
   else if (T.cab) { cab = ext(T.cab, T.cw, paint); g.add(cab); if (!T.armor) { const gl = ext(T.cab.map(([z, y]) => [z * 0.98, y * 0.985 + 0.01]), T.cw + 0.03, G.glassM); gl.scale.set(1, 0.74, 1); gl.position.y = T.cab[0][1] * 0.26 + 0.04; g.add(gl);
       const wsM = (G.wsM ||= new THREE.MeshStandardMaterial({ color: 0x3a5d78, roughness: 0.08, metalness: 0.65, side: THREE.DoubleSide })), n = T.cab.length;   // PARA-BRISA e VIDRO TRASEIRO: uma placa de vidro em cada face inclinada da cabine (antes ficavam escondidos dentro da lataria)
       for (const [i0, i1] of [[0, 1], [n - 2, n - 1]]) { const [z0, y0] = T.cab[i0], [z1, y1] = T.cab[i1], dz = z1 - z0, dy = y1 - y0, L = Math.hypot(dz, dy) || 1, n3 = new THREE.Vector3(0, dz / L, -dy / L), pl = new THREE.Mesh(new THREE.PlaneGeometry(T.cw * 0.84, L * 0.78), wsM); pl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n3); pl.position.set(0, (y0 + y1) / 2 + n3.y * 0.016, (z0 + z1) / 2 + n3.z * 0.016); g.add(pl); } } }
-  else if (!T.open) { const ws = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.06), G.glassM); ws.position.set(0, 1.35, -0.55); ws.rotation.x = -0.25; g.add(ws); }
+  else if (!T.open && !T.f1) { const ws = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.06), G.glassM); ws.position.set(0, 1.35, -0.55); ws.rotation.x = -0.25; g.add(ws); }
+  if (T.f1) {   // FÓRMULA 1: bico fino, asa dianteira e traseira, aerofólio, santantônio (halo), cockpit aberto e laterais (sidepods)
+    const wing = lam(0x15171a, { roughness: 0.4, metalness: 0.5 }), acc = lam(0xf2f2f2, { roughness: 0.4, metalness: 0.3 });
+    g.add(bx(1.9, 0.05, 0.42, wing, 0, 0.17, -2.5)); for (const sd of [-1, 1]) { g.add(bx(0.05, 0.22, 0.46, acc, sd * 0.95, 0.27, -2.5)); g.add(bx(0.05, 0.1, 0.5, wing, sd * 0.28, 0.2, -2.3)); }   // asa dianteira
+    g.add(bx(1.35, 0.06, 0.5, wing, 0, 1.12, 2.2)); g.add(bx(1.35, 0.05, 0.35, acc, 0, 0.96, 2.28)); for (const sd of [-1, 1]) { g.add(bx(0.05, 0.42, 0.55, acc, sd * 0.68, 0.95, 2.2)); g.add(bx(0.06, 0.78, 0.1, wing, sd * 0.1, 0.72, 2.12)); }   // asa traseira
+    for (const sd of [-1, 1]) g.add(bx(0.42, 0.34, 1.7, paint, sd * 0.62, 0.42, 0.2));      // sidepods
+    g.add(bx(0.5, 0.52, 0.3, dark, 0, 0.78, -0.5)); const halo = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.025, 6, 14, Math.PI), dark); halo.position.set(0, 0.86, -0.12); halo.rotation.set(0, Math.PI, 0); g.add(halo); g.add(bx(0.05, 0.28, 0.05, dark, 0, 0.78, -0.6));   // cockpit, halo
+    g.add(bx(0.55, 0.12, 0.7, paint, 0, 0.8, 0.8)); g.add(bx(0.18, 0.5, 0.9, paint, 0, 0.95, 1.5)); g.add(bx(0.3, 0.14, 0.4, dark, 0, 0.7, -0.25));   // entrada de ar (airbox), nadadeira dorsal
+    for (const sd of [-1, 1]) { g.add(bx(0.06, 0.05, 1.5, dark, sd * 0.95, 0.46, -1.45)); g.add(bx(0.06, 0.05, 1.4, dark, sd * 0.95, 0.46, 1.35)); }   // braços da suspensão
+  }
   const top = T.cab ? Math.max(...T.cab.map((p) => p[1])) : 1.1;
   if (T.rack) for (const z of [-0.2, 0.7, 1.5]) g.add(bx(1.7, 0.05, 0.07, dark, 0, top + 0.06, z));
   if (T.spoiler) { g.add(bx(1.6, 0.06, 0.38, dark, 0, 1.12, 1.95)); for (const x of [-0.6, 0.6]) g.add(bx(0.06, 0.28, 0.12, dark, x, 0.96, 1.95)); }
@@ -84,7 +98,7 @@ function build(ci, ty = 0) {
   g.add(bx(1.1, 0.18, 0.05, dark, 0, T.tub[1][1] - 0.22, zF - 0.03));
   for (let i = 0; i < 3; i++) g.add(bx(1.0, 0.018, 0.03, chrome, 0, T.tub[1][1] - 0.27 + i * 0.05, zF - 0.06));   // ripas da grade
   // ---- rodas: pivô (esterça) > grupo que GIRA (pneu com blocos de banda, aro, cubo e 5 raios — dá para ver girar); freio e para-lama ficam parados
-  const off = !!(T.big || T.off), wheels = [], spins = [], steers = [], wr = (T.big || (off ? 1.08 : 0.93)) * (T.wide || 1), wb = T.wb || 1.38, zf = -wb, zr = wb, wx = W / 2 + 0.01;   // pneu de ESTRADA (baixo, banda lisa) nos carros de rua; OFF-ROAD (alto, banda grossa) só nos jipes, buggy, picape, SUV e blindado
+  const off = !!(T.big || T.off), wheels = [], spins = [], steers = [], wr = T.f1 ? 0.92 : (T.big || (off ? 1.08 : 0.93)) * (T.wide || 1), wb = T.wb || 1.38, zf = -wb, zr = wb, wx = (T.track || W) / 2 + 0.01;   // pneu de ESTRADA (baixo, banda lisa) nos carros de rua; OFF-ROAD (alto, banda grossa) só nos jipes, buggy, picape, SUV e blindado
   for (const [x, z] of [[-wx, zf], [wx, zf], [-wx, zr], [wx, zr]]) {
     const w = new THREE.Mesh(G.wheel, G.tyre); w.rotation.z = Math.PI / 2; w.scale.set(wr, 1, wr);
     const rim = new THREE.Mesh(G.rim, G.rimM); rim.rotation.z = Math.PI / 2; rim.position.x = x > 0 ? 0.04 : -0.04; rim.scale.set(wr * (off ? 1 : 1.12), 1, wr * (off ? 1 : 1.12));
@@ -93,7 +107,7 @@ function build(ci, ty = 0) {
     const hub = new THREE.Mesh(hubGeo, G.rimM); hub.rotation.z = Math.PI / 2; hub.position.x = o * 1.1; hub.scale.set(wr, 0.5, wr); sg.add(hub);
     if (off) for (let k = 0; k < 16; k++) { const a = k * Math.PI * 2 / 16, t = new THREE.Mesh(off ? treadGeo : treadRoad, G.tyre); t.position.set(0, Math.cos(a) * (0.4 * wr + (off ? 0.03 : 0.008)), Math.sin(a) * (0.4 * wr + (off ? 0.03 : 0.008))); t.rotation.x = -a; sg.add(t); }
     const dsk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * wr, 0.2 * wr, 0.03, 12), dark); dsk.rotation.z = Math.PI / 2; dsk.position.x = x > 0 ? -0.1 : 0.1; pv.add(dsk); pv.add(bx(0.07, 0.12, 0.1, red, x > 0 ? -0.1 : 0.1, 0.06 * wr, 0.12));   // disco e pinça de freio
-    const arch = new THREE.Mesh(archGeo, dark); arch.rotation.y = Math.PI / 2; arch.scale.set(wr * 1.12, wr * 1.12, 1.2); arch.position.set(x + (x > 0 ? 0.04 : -0.04), 0.4 * wr, z); g.add(arch);   // moldura do para-lama
+    const arch = new THREE.Mesh(archGeo, dark); arch.rotation.y = Math.PI / 2; arch.scale.set(wr * 1.12, wr * 1.12, 1.2); arch.position.set(x + (x > 0 ? 0.04 : -0.04), 0.4 * wr, z); if (!T.f1) g.add(arch);   // moldura do para-lama (o F1 tem as rodas à mostra)
     g.add(pv); wheels.push(w); spins.push(sg); if (z < 0) steers.push(pv);
   }
   if (T.ogbb) {   // OGBB: o Grande Búfalo Branco — letras pretas com contorno dourado nas portas e atrás, faixa dourada
@@ -125,7 +139,7 @@ function build(ci, ty = 0) {
     for (const sd of [-1, 1]) { const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 0.85), sk); pl.rotation.y = sd * Math.PI / 2; pl.position.set(sd * (W / 2 + 0.065), 1.12, 0.35); g.add(pl); }
   }
   const rz = zR + 0.01;
-  for (const x of [-0.7, 0.7]) {
+  for (const x of (T.f1 ? [-0.2, 0.2] : [-0.7, 0.7])) {
     g.add(bx(0.5, 0.24, 0.07, dark, x, lampY, zF - 0.01)); g.add(bx(0.4, 0.16, 0.05, head, x, lampY, zF - 0.035)); g.add(bx(0.5, 0.24, 0.07, dark, x, lampY, rz - 0.01)); g.add(bx(0.4, 0.16, 0.05, tail, x, lampY, rz + 0.02));
     g.add(bx(0.14, 0.08, 0.04, rev, x * 1.15, lampY - 0.17, rz + 0.01)); g.add(bx(0.12, 0.06, 0.04, head, x * 1.05, lampY - 0.16, zF - 0.02));   // luz de ré e farol de milha
     if (T.cab) { const mr = new THREE.Mesh(G.mirror, paint); mr.position.set(x > 0 ? 1.02 : -1.02, top > 1.4 ? 1.2 : 1.05, -0.55); g.add(mr); }
@@ -133,7 +147,7 @@ function build(ci, ty = 0) {
   g.add(bx(1.2, 0.05, 0.04, tail, 0, lampY, rz + 0.012));   // faixa de luz traseira ligando as lanternas
   g.add(bx(0.52, 0.14, 0.02, plate, 0, lampY - 0.12, rz + 0.025)); g.add(bx(0.52, 0.14, 0.02, plate, 0, lampY - 0.28, zF - 0.045));   // placas
   g.add(bx(2.05, 0.16, 0.2, dark, 0, 0.42, zF - 0.02)); g.add(bx(2.05, 0.16, 0.2, dark, 0, 0.42, zR));   // para-choques
-  if (!T.open) {
+  if (!T.open && !T.f1) {
     const sh = th - 0.12; for (const sd of [-1, 1]) { g.add(bx(0.03, sh - 0.55, 0.012, dark, sd * (W / 2 + 0.01), (sh + 0.55) / 2, -0.2)); g.add(bx(0.03, sh - 0.55, 0.012, dark, sd * (W / 2 + 0.01), (sh + 0.55) / 2, 0.8)); g.add(bx(0.03, 0.04, 0.14, chrome, sd * (W / 2 + 0.02), sh - 0.1, 0.0)); g.add(bx(0.06, 0.1, 2.4, dark, sd * (W / 2 + 0.01), 0.5, 0.2)); }   // portas, maçanetas e soleira
     if (T.cab) { const an = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, 0.5, 4), dark); an.position.set(0.6, top + 0.25, 1.1); g.add(an); }
   }
