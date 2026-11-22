@@ -42,6 +42,8 @@ import { effective, onGfx } from '../core/graphics.js';
 const gq = () => { const e = effective(); return { noTex: e.ctex === false, noNeon: e.cneon === false }; };
 const LIVE = new Set();
 onGfx(() => { for (const r of [...LIVE]) { const a = r.deref(); if (!a) { LIVE.delete(r); continue; } try { a.setLook({}); } catch { /* sem personagem */ } } });
+/* onde a mão de APOIO segura (fração do comprimento da arma, a partir da coronha): em cima do guarda-mão / da frente da arma, não atrás dele */
+const SUPZ = { rifle: 0.72, smg: 0.7, lmg: 0.7, shotgun: 0.72, sniper: 0.67, energy: 0.66 };
 const _rq = new THREE.Matrix4(), _ri = new THREE.Matrix4(), _fv = new THREE.Vector3(), _fd = new THREE.Vector3();
 export class Avatar {
   static env = null;                                   // mapa de ambiente (RoomEnvironment) para os metais, como o scene.environment do base.html
@@ -139,7 +141,7 @@ export class Avatar {
     orient.scale.setScalar(0.3 * f); orient.rotation.set(0, -T / 2, 0); orient.add(agroup); orient.position.set(0, -mz.y * 0.3 * f, z0 + len / 2);
     const tmp = new THREE.Group(); tmp.add(holder); holder.position.set(0, 0, 0); holder.rotation.set(0, 0, 0); tmp.updateMatrixWorld(true);
     const gr = (c, two) => { const bb = new THREE.Box3().setFromObject(c), cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2, zl = bb.max.z - bb.min.z, zn = bb.min.z;
-      return two ? [['R', [cx, cy - 0.08, zn + zl * 0.27]], ['L', [cx, cy - 0.03, zn + zl * 0.62]]] : [[cx > 0 ? 'L' : 'R', [cx, cy - 0.07, zn + zl * (pist ? 0.22 : 0.3)]]]; };
+      return two ? [['R', [cx, cy - 0.08, zn + zl * 0.27]], ['L', [cx, cy - 0.012, zn + zl * (SUPZ[ARSENAL_BY_ID[id]?.cls] ?? 0.62)]]] : [[cx > 0 ? 'L' : 'R', [cx, cy - 0.07, zn + zl * (pist ? 0.22 : 0.3)]]]; };
     let grips = [];
     if (dual) model.children.filter((c) => c.userData.mz).forEach((c) => grips.push(...gr(c, false))); else grips = gr(model, !pist);
     if (pist) { const [sd, p] = grips[0]; grips = [[sd, p], [sd === 'R' ? 'L' : 'R', [p[0] + (sd === 'R' ? 0.04 : -0.04), p[1] + 0.012, p[2] + 0.01]]]; }   // PISTOLA SIMPLES: a outra mão fica JUNTO da que segura (empunhadura de duas mãos)
