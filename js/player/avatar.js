@@ -43,7 +43,8 @@ const gq = () => { const e = effective(); return { noTex: e.ctex === false, noNe
 const LIVE = new Set();
 onGfx(() => { for (const r of [...LIVE]) { const a = r.deref(); if (!a) { LIVE.delete(r); continue; } try { a.setLook({}); } catch { /* sem personagem */ } } });
 /* onde a mão de APOIO segura (fração do comprimento da arma, a partir da coronha): em cima do guarda-mão / da frente da arma, não atrás dele */
-const SUPZ = { rifle: 0.72, smg: 0.7, lmg: 0.7, shotgun: 0.72, sniper: 0.67, energy: 0.66 };
+const SUPZ = { rifle: 0.72, smg: 0.7, lmg: 0.7, shotgun: 0.66, sniper: 0.67, energy: 0.66 };
+const _uq = new THREE.Quaternion();
 const _rq = new THREE.Matrix4(), _ri = new THREE.Matrix4(), _fv = new THREE.Vector3(), _fd = new THREE.Vector3();
 export class Avatar {
   static env = null;                                   // mapa de ambiente (RoomEnvironment) para os metais, como o scene.environment do base.html
@@ -119,10 +120,10 @@ export class Avatar {
     if (key === this.attKey && this.holder) return;
     if (this.char.S.special === 'cavaleiro' && this.char.S.hs !== side) { this.char.S.hs = side; try { this.char.rebuild(); } catch { /* sem rig */ } }   // cavaleiro: o escudo troca de braço conforme o lado da arma
     this.attKey = key; this.weaponId = id; this.att = att; this.side = side;
-    this.unhold(); try { this.char.setFists?.(id === 'fists'); } catch { /* sem punhos */ }   // punhos: mãos fechadas + guarda de boxe
+    this.unhold(); this._gup = null; try { this.char.setFists?.(id === 'fists'); } catch { /* sem punhos */ }   // punhos: mãos fechadas + guarda de boxe
     if ((ITEMS[id]?.cls === 'melee' && !['fists', 'claws', 'train'].includes(id)) || id === 'bomb' || ITEMS[id]?.slot === 'grenade') {            // arma branca na mão direita
       try { const info = buildWeapon(id), holder = new THREE.Group(); try { applySkin(info.group, skin, id); } catch { /* sem skin */ } {   // ARMA BRANCA / GRANADA / BOMBA: tudo na MÃO (a bomba ia para o pé): cabo na mão e lâmina SEMPRE para a frente (cada modelo vem com a lâmina para um lado), levemente erguida
-          const bb = new THREE.Box3().setFromObject(info.group), fwd = false /* todos os modelos de arma branca são feitos com a lâmina/cabeça para -Z e o cabo para +Z (a detecção por tamanho errava lanças e martelos) */, hz = Math.max(0.06, bb.max.z), GZ = Math.min(0.4, Math.max(0.05, hz * (GRIP[id]?.g ?? 0.52))), pivot = new THREE.Group();   /* a MÃO fica no CENTRO DO CABO (não na guarda nem na ponta): cabo = do fim do modelo até a guarda (z ≈ 0) */ const gren = id === 'bomb' || ITEMS[id]?.slot === 'grenade'; if (gren) { info.group.position.sub(bb.getCenter(new THREE.Vector3())); pivot.rotation.set(0, 0, 0); } else { pivot.rotation.set(-0.32, fwd ? 0 : Math.PI, 0); info.group.rotation.z = GRIP[id]?.r || 0; info.group.position.z -= GZ; } pivot.add(info.group); holder.add(pivot); }   /* GRANADA/BOMBA: o CENTRO do modelo fica na palma da mão (antes saía por cima do punho) */
+          const bb = new THREE.Box3().setFromObject(info.group), fwd = false /* todos os modelos de arma branca são feitos com a lâmina/cabeça para -Z e o cabo para +Z (a detecção por tamanho errava lanças e martelos) */, hz = Math.max(0.06, bb.max.z), GZ = Math.min(0.4, Math.max(0.05, hz * (GRIP[id]?.g ?? 0.52))), pivot = new THREE.Group();   /* a MÃO fica no CENTRO DO CABO (não na guarda nem na ponta): cabo = do fim do modelo até a guarda (z ≈ 0) */ const gren = id === 'bomb' || ITEMS[id]?.slot === 'grenade'; if (gren) { info.group.position.sub(bb.getCenter(new THREE.Vector3())); pivot.rotation.set(0, 0, 0); } else { pivot.rotation.set(-0.32, fwd ? 0 : Math.PI, 0); info.group.rotation.z = GRIP[id]?.r || 0; info.group.position.z -= GZ; } pivot.add(info.group); holder.add(pivot); this._gup = gren ? pivot : null; }   /* granada/mina: o modelo é feito com o 'em pé' = +Y; o pivô é desfeito a cada quadro (uprightGrenade) para ela ficar SEMPRE na vertical: a redonda com o topo vermelho para cima e a cilíndrica em pé, qualquer que seja o giro da mão */   /* GRANADA/BOMBA: o CENTRO do modelo fica na palma da mão (antes saía por cima do punho) */
         const nm = info.muzzle;
         { const sd = side === 'L' ? 'L' : 'R'; { const P = POSE[id] || POSE.knife, t = P.t; this.char.rig.weps = [{ g: holder, grips: [], type: 'melee', side: sd, hand: true, elev: Math.atan2(t[1], -t[2]), bx: (id === 'bomb' || ITEMS[id]?.slot === 'grenade') ? 0.15 : (GRIP[id]?.bx ?? BLADE_X[id] ?? (BLADE_CLASS[id] ?? 0.62)), pa: GRIP[id]?.pa, two: ['chainsaw', 'hammer', 'axe', 'foice', 'katana', 'bat'].includes(id), twoAt: TWO_AT[id], ikT: GRIP[id]?.ik, ikP: GRIP[id]?.ikP }]; }   /* postura 3ª pessoa = a da 1ª: inclinação da lâmina e, nas armas longas/pesadas, a outra mão segura o cabo */ this.char.rig['f' + sd].add(holder); holder.position.set(sd === 'L' ? -0.022 : 0.022, -0.31, 0);   /* o cabo passa pelo MEIO do punho fechado (os dedos enrolam para dentro) */ holder.rotation.set(this.char.rig.weps[0].bx, 0, 0); }   // ARMA BRANCA: presa à MÃO (antebraço), não flutuando perto do corpo; os golpes movem o braço e a arma vai junto
         this._ch = id === 'chainsaw' ? chainOf(info.group) : null; this._cp = 0;   // corrente da motosserra
@@ -148,6 +149,8 @@ export class Avatar {
     if (side === 'L') grips = grips.map(([sd, p]) => [sd === 'R' ? 'L' : 'R', p]);
     const big = !dual && !pist;   // fuzil/metralhadora/escopeta/sniper: mão de trás um pouco mais à frente e para fora; pistola e duais ficam como eram
     grips = grips.map(([sd, p], i) => (dual || i === 0) ? [sd, [p[0] + (sd === 'R' ? (big ? -0.06 : -0.03) : 0.03), p[1], p[2] + (sd === 'R' && big ? 0.05 : 0)]] : [sd, p]);   // mão do gatilho um pouco PARA FORA: segura a arma em vez de ficar enterrada nela
+    /* A MÃO DE APOIO TOCA A ARMA: o ponto de empunhadura da mão de apoio é posto na ALTURA REAL do guarda-mão naquele ponto (dois raios, de cima e de baixo, medem a superfície da arma; o meio dela é o centro do guarda-mão). Antes a altura vinha do centro da caixa da arma e a mão ficava solta embaixo, sem encostar. */
+    if (!dual && !pist && grips.length > 1) { try { tmp.updateMatrixWorld(true); const g1 = grips[1][1], rc = new THREE.Raycaster(), bb2 = new THREE.Box3().setFromObject(model), hits = (y0, dy) => { rc.set(new THREE.Vector3(g1[0], y0, g1[2]), new THREE.Vector3(0, dy, 0)); rc.far = 2; const h = rc.intersectObject(model, true); return h.length ? h[0].point.y : null; }, top = hits(bb2.max.y + 0.5, -1), bot = hits(bb2.min.y - 0.5, 1); if (top != null && bot != null && top > bot && top - bot < 0.3) g1[1] = (top + bot) / 2 - 0.012; } catch { /* mantém a altura padrão */ } }
     this.char.WP.dual = [[0, 0.35, 0.34], [0, 0.55, 0.34]];
     this.char.rig.weps = [{ g: holder, grips, type: dual ? 'dual' : wkey(id), side }];
     /* PONTOS DE EMPUNHADURA NA PRÓPRIA ARMA: um nó por empunhadura, filho do modelo (agroup). A mão é resolvida DE NOVO, no último instante antes de desenhar (finalizeHands), em cima da matriz mundial REAL desses nós: o que quer que mova a arma (recuo, recarga, giro, balanço, câmera, queda de FPS), a mão vai junto no mesmo quadro. */
@@ -172,7 +175,9 @@ export class Avatar {
     if (this.fp) this.applyFP();
     this.char.S.pose = 'aim';
   }
+  uprightGrenade() { const p = this._gup; if (!p || !p.parent) return; p.parent.updateWorldMatrix(true, false); p.parent.getWorldQuaternion(_uq); p.quaternion.copy(_uq).invert(); }
   finalizeHands() {
+    if (this._gup) { this.group.updateMatrixWorld(true); this.uprightGrenade(); return; }
     const rig = this.char.rig, w = rig.weps[0], pose = this.char.S.pose; if (!this._gn || !w || !w.g.visible || (pose !== 'aim' && pose !== 'armed')) return;
     this.group.updateMatrixWorld(true);
     for (const { sd, n, g, b } of this._gn) { n.getWorldPosition(_fv); rig.spine.worldToLocal(_fv); _fd.set(g[0] - b[0], g[1] - b[1], g[2] - b[2]).applyQuaternion(w.g.quaternion); _fv.add(_fd); this.char.ik(rig['a' + sd], rig['f' + sd], sd === 'L' ? 1 : -1, _fv); }
@@ -223,7 +228,7 @@ export class Avatar {
         for (const [t, nm] of DRAW_EVENTS[D.kind] || []) if (D.last < t && D.t >= t) this.onInspectSfx?.(nm, D.kind); D.last = D.t; } }
     /* AS MÃOS SEGUEM A ARMA EXATAMENTE: primeiro a arma recebe a pose FINAL deste passo (recuo, inclinação da recarga, giro, balanço...); só então os braços são resolvidos por IK em cima do ponto de empunhadura JÁ transformado por essa mesma pose (matriz inteira do modelo). Uma única fonte de verdade: a mão nunca fica um passo atrás nem 'solta' da arma, em nenhum FPS ou modo. */
     { const w0 = this.char.rig.weps[0]; if (w0) { if (this.orient && this.agroup) { this.agroup.updateMatrix(); (w0.recM ||= new THREE.Matrix4()).copy(this.orient.matrix).multiply(this.agroup.matrix).multiply(_ri.copy(this.orient.matrix).invert()); } else w0.recM = null; } }
-    this.char.animate(dt, spd, sgn, pitch, air);
+    this.char.animate(dt, spd, sgn, pitch, air); if (this._gup) this.uprightGrenade();
     if (this._ch) { const hit = this._mUntil && performance.now() < this._mUntil; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._ch, this._cp); this.chainRev = hit ? 1 : 0.3; if (this.holder) this.holder.position.x = Math.sin(performance.now() * 0.09) * (hit ? 0.006 : 0.002); }   // MOTOSSERRA: a corrente corre sempre (mais rápido ao serrar) e a arma vibra
     for (const o of this.parts || []) {                                                       // animação das partes móveis (loop do base.html)
       const u = o.userData;

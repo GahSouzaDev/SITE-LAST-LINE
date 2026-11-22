@@ -1340,6 +1340,7 @@ function mergeStatic(){
 const _o=new THREE.Vector3(),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3(),_v4=new THREE.Vector3(),_v5=new THREE.Vector3(),_g2=new THREE.Quaternion(),_g=new THREE.Quaternion(),_eu=new THREE.Euler(),AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
 const WP={rifle:WR,lmg:[[-.1,.32,.2],[-.07,.56,.16]],shotgun:WR,sniper:WR,melee:[[-.17,.5,.3],[-.15,.56,.34]],pistol:[[-.12,.36,.38],[-.06,.585,.38]],smg:[[-.12,.35,.36],[-.06,.575,.36]]};
 let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_hd=new THREE.Vector3(),_h2=new THREE.Vector3(),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
+const HROLL={L:0,R:0},_rq2=new THREE.Quaternion(),_ay=new THREE.Vector3(0,1,0);
 const HAND_OFF=.065;   // medido na malha: o osso do antebraço termina no PULSO (0,29 m) e a MÃO vai até ~0,43 m: o centro da palma fica ~6,5 cm além do pulso
 function ik(arm,fore,sd,T3){ // a PALMA (não o pulso) é que vai ao ponto de empunhadura: resolve uma vez, mede a direção do antebraço e recua o alvo do pulso pelo tamanho da mão
  ik0(arm,fore,sd,T3);
@@ -1356,6 +1357,7 @@ function ik0(arm,fore,sd,T3){ // braço de 2 ossos: leva o PULSO até o ponto da
  _e.copy(S0).addScaledVector(u,a).addScaledVector(_p,h);
  arm.quaternion.setFromUnitVectors(Y_DN,_t.copy(_e).sub(S0).normalize());
  fore.quaternion.setFromUnitVectors(Y_DN,_t.copy(T3).sub(_e).normalize().applyQuaternion(_q.copy(arm.quaternion).invert()));
+ {const k=sd>0?'L':'R',r=(globalThis.__HR&&globalThis.__HR[k]!=null)?globalThis.__HR[k]:HROLL[k];if(r)fore.quaternion.multiply(_rq2.setFromAxisAngle(_ay,r))}   /* GIRO DA MÃO em torno do antebraço: o IK só aponta o antebraço; sem isto a palma ficava virada para qualquer lado em vez de abraçar a arma */
 }
 const cur={};let ph=0,crouch=0,lkS=0,lkP=0;
 function animate(dt,spd,sgn,pitch,air){
