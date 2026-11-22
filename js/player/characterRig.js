@@ -1340,6 +1340,7 @@ function mergeStatic(){
 const _o=new THREE.Vector3(),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3(),_v4=new THREE.Vector3(),_v5=new THREE.Vector3(),_g2=new THREE.Quaternion(),_g=new THREE.Quaternion(),_eu=new THREE.Euler(),AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
 const WP={rifle:WR,lmg:[[-.1,.32,.2],[-.07,.56,.16]],shotgun:WR,sniper:WR,melee:[[-.17,.5,.3],[-.15,.56,.34]],pistol:[[-.12,.36,.38],[-.06,.585,.38]],smg:[[-.12,.35,.36],[-.06,.575,.36]]};
 let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
+const _gx=new THREE.Vector3(),_bp=new THREE.Vector3(),REACH_G=.55;
 function ik(arm,fore,sd,T3){ // braço de 2 ossos: leva a mão até o ponto de empunhadura
  const S0=arm.position,l1=.29,l2=.29,d0=_d.copy(T3).sub(S0),d=clamp(d0.length(),.12,l1+l2-.005),u=d0.normalize();
  const a=(l1*l1-l2*l2+d*d)/(2*d),h=Math.sqrt(Math.max(0,l1*l1-a*a));
@@ -1404,6 +1405,7 @@ function animate(dt,spd,sgn,pitch,air){
    continue;}
   const pz=WP[w.type],m=(w.side==='L'?-1:1)*(rig.weps.length>1?1.45:1),Hh=S.height;
   w.g.position.set(m*(pz[0][0]+(pz[1][0]-pz[0][0])*aimT),Hh*(pz[0][1]+(pz[1][1]-pz[0][1])*aimT)+(mv?Math.sin(ph*2)*A*.012:br),pz[0][2]+(pz[1][2]-pz[0][2])*aimT);
+  _bp.copy(w.g.position);
   _t.copy(w.g.position);_t.y-=.6*Hh;_t.applyAxisAngle(AX,-pitch);w.g.position.set(_t.x,_t.y+.6*Hh,_t.z);w.g.rotation.set(-pitch,0,0);
   if(swp>=0&&swk==='pour'){const e=Math.sin(Math.PI*Math.min(1,swp*5))*(swp<.9?1:Math.max(0,(1-swp)*10));w.g.position.y-=.25*Hh*e;w.g.position.z+=.12*Hh*e;w.g.rotation.x+=.5*e}
   else if(swp>=0){const k=swk,q=swp,z=Hh;let ox=0,oy=0,oz=0,rx=0,rz=0;
@@ -1414,7 +1416,11 @@ function animate(dt,spd,sgn,pitch,air){
    else{oz=.3*sws*z;oy=.1*sws*z;rx=-.5*sws}
    w.g.position.x+=ox;w.g.position.y+=oy;w.g.position.z+=oz;w.g.rotation.x+=rx;w.g.rotation.z+=rz}
   if(w.ix){const q=w.ix;w.g.position.y+=q[0];w.g.position.z+=q[1];w.g.rotation.x+=q[2];w.g.rotation.y+=q[3];w.g.rotation.z+=q[4]}   // INSPECIONAR (arma de fogo): a arma inteira (e as mãos junto) sobe, gira e vai para perto do rosto
-  for(const [sd,gp] of w.grips)ik(rig['a'+sd],rig['f'+sd],sd==='L'?1:-1,_t.set(gp[0],gp[1],gp[2]).applyQuaternion(w.g.quaternion).add(w.g.position).clone());
+  /* A MÃO DE APOIO NÃO ESCORREGA NA ARMA. O ponto de apoio da arma fica mais longe do ombro do que o braço alcança, e a falta mudava com a inclinação (2 cm olhando para baixo, 27 cm para cima): a mão parava no meio do caminho e parecia deslizar pela arma.
+     1) uma vez por arma, a mão de apoio recua um valor FIXO pela arma (o que falta com a arma reta): ela segura sempre o mesmo ponto; 2) o que ainda faltar ao inclinar, a arma inteira chega mais perto do corpo (a mão continua no mesmo ponto) */
+  if(w._gs===undefined){w._gs=0;if(w.grips.length>1){const sh=rig['a'+w.grips[1][0]].position,gp=w.grips[1][1];for(let k=0;k<40;k++){_gx.set(gp[0],gp[1],gp[2]-w._gs).add(_bp).sub(sh);if(_gx.length()<=REACH_G)break;w._gs+=.01}}}
+  w._pull=0;for(let it=0;it<3;it++)w.grips.forEach(([sd,gp],i)=>{const sh=rig['a'+sd].position;_gx.set(gp[0],gp[1],gp[2]-(i===1?w._gs:0)).applyQuaternion(w.g.quaternion).add(w.g.position).sub(sh);const L=_gx.length();if(L>REACH_G){_gx.multiplyScalar((L-REACH_G)/L);w._pull=(w._pull||0)+_gx.length();w.g.position.sub(_gx)}});
+  w.grips.forEach(([sd,gp],i)=>ik(rig['a'+sd],rig['f'+sd],sd==='L'?1:-1,_t.set(gp[0],gp[1],gp[2]-(i===1?w._gs:0)).applyQuaternion(w.g.quaternion).add(w.g.position).clone()));
  }
 }
 
