@@ -1357,7 +1357,7 @@ function ik0(arm,fore,sd,T3){ // braço de 2 ossos: leva o PULSO até o ponto da
  _e.copy(S0).addScaledVector(u,a).addScaledVector(_p,h);
  arm.quaternion.setFromUnitVectors(Y_DN,_t.copy(_e).sub(S0).normalize());
  fore.quaternion.setFromUnitVectors(Y_DN,_t.copy(T3).sub(_e).normalize().applyQuaternion(_q.copy(arm.quaternion).invert()));
- {const k=sd>0?'L':'R',r=(globalThis.__HR&&globalThis.__HR[k]!=null)?globalThis.__HR[k]:HROLL[k];if(r)fore.quaternion.multiply(_rq2.setFromAxisAngle(_ay,r));const wb=rig['w'+k];if(wb){const t=(globalThis.__WR&&globalThis.__WR[k])||WRIST[k];wb.rotation.set(t[0],t[1],t[2])}}   /* GIRO DA MÃO em torno do antebraço: o IK só aponta o antebraço; sem isto a palma ficava virada para qualquer lado em vez de abraçar a arma */
+ {const k=sd>0?'L':'R',W=rig.weps&&rig.weps[0],hs=W&&W.hs,body=!!(hs&&hs.mode==='body'&&W.supSd===k),kk2=body?hs.k:0,r=(globalThis.__HR&&globalThis.__HR[k]!=null)?globalThis.__HR[k]:HROLL.L*kk2;if(r)fore.quaternion.multiply(_rq2.setFromAxisAngle(_ay,r));const wb=rig['w'+k];if(wb){const t=(globalThis.__WR&&globalThis.__WR[k])||[WRIST.L[0]*kk2,WRIST.L[1]*kk2,WRIST.L[2]*kk2];wb.rotation.set(t[0],t[1],t[2])}}   /* estilo da mão por arma: 'body' (sem pente) = palma para cima + inclinada; 'mag' (segura o pente), pistola e duplas = mão normal */   /* GIRO DA MÃO em torno do antebraço: o IK só aponta o antebraço; sem isto a palma ficava virada para qualquer lado em vez de abraçar a arma */
 }
 const cur={};let ph=0,crouch=0,lkS=0,lkP=0;
 function animate(dt,spd,sgn,pitch,air){
