@@ -159,13 +159,18 @@ class AudioEngine {
     this.nz(d, t, { dur: 0.35, f: 3200, f2: 900, type: 'bandpass', q: 1.2, g: 0.55 }); this.nz(d, t + 0.06, { dur: 0.6, f: 700, f2: 120, g: 0.35, wet: 0.4 });
     if (left === 0) { this.tn(d, t, { f: 90, f2: 35, dur: 0.8, type: 'sine', g: 0.7 }); this.nz(d, t + 0.02, { dur: 0.7, f: 1800, f2: 200, g: 0.4, wet: 0.5 }); }
   }
+  // OURO GANHO (Cerco): moedinhas 'cling-cling'; quanto maior o prêmio, mais moedas e mais agudo (placa, abate, torre...)
+  goldGain(n = 50) {
+    if (!this.ctx) return; const t = this.ctx.currentTime, d = this.out(null, this.sfx, 2, 1.0), c = n >= 400 ? 5 : n >= 200 ? 4 : n >= 100 ? 3 : 2, k = n >= 300 ? 1.2 : 1;
+    for (let i = 0; i < c; i++) { const f = (1760 + i * 220) * k; this.tn(d, t + i * 0.055, { f, f2: f, dur: 0.16, type: 'triangle', g: 0.13 }); this.tn(d, t + i * 0.055, { f: f * 1.5, f2: f * 1.5, dur: 0.1, type: 'sine', g: 0.05 }); }
+  }
   // ALERTA DE MIRA (Cerco): a torre travou em VOCÊ — três bips rápidos e agudos
   towerLock() { if (!this.ctx) return; const t = this.ctx.currentTime, d = this.out(null, this.sfx, 2, 1.0); for (const k of [0, 0.14, 0.28]) this.tn(d, t + k, { f: 1250, f2: 1250, dur: 0.07, type: 'square', g: 0.16 }); }
   // CARREGANDO: zumbido que sobe de tom até o tiro
   chargeStart() {
     if (!this.ctx || this._ch) return; const ctx = this.ctx, t = ctx.currentTime, o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sawtooth'; o2.type = 'sine'; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(1100, t + 1.1); o2.frequency.setValueAtTime(240, t); o2.frequency.exponentialRampToValueAtTime(2400, t + 1.1);
-    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.16, t + 1.0); o.connect(g); o2.connect(g); g.connect(this.sfx); o.start(t); o2.start(t); this._ch = { o, o2, g };
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.16, t + 1.0); o.connect(g); o2.connect(g); g.connect(this.sfx); o.start(t); o2.start(t); this._ch = { o, o2, g }; clearTimeout(this._chT); this._chT = setTimeout(() => this.chargeStop(), 1500);   /* nunca fica tocando: a carga dura ~1 s */
   }
   chargeStop() {
     const c = this._ch; if (!c || !this.ctx) return; this._ch = null; const t = this.ctx.currentTime; c.g.gain.cancelScheduledValues(t); c.g.gain.setTargetAtTime(0.0001, t, 0.03); try { c.o.stop(t + 0.15); c.o2.stop(t + 0.15); } catch { /* ok */ }

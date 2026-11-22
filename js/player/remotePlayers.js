@@ -237,7 +237,7 @@ export class RemotePlayers {
         { const p = e.group.position, dd = camera.position.distanceToSquared(p), Z = ZLOD[this.zq ?? 1]; if (e.alive !== false) { let v = dd < Z[3]; if (v && dd > 625) { sph.center.set(p.x, p.y + 1, p.z); sph.radius = 2 + Math.sqrt(dd) * 0.07; v = fr.intersectsSphere(sph); sph.radius = 1.1; } e.group.visible = v; } setLod(e, dd > Z[2] ? 3 : dd > Z[1] ? 2 : dd > Z[0] ? 1 : 0); }   // zumbi longe demais nem é desenhado
         const alive = e.alive !== false && e.group.visible, near = camera.position.distanceToSquared(e.group.position) < 55 * 55;
         e.bar.visible = alive && diff <= 1 && near && !this.huntMode; if (e.alertSp) e.alertSp.visible = alive && !!e.aggro && near && !this.huntMode;   /* Caçada: bicho do mapa não tem barra de vida nem '!' (senão entregaria quem é jogador) */
-        if (e.bar.visible && e.lastHp !== e.hp) { e.lastHp = e.hp; drawDonut(e.barCv, Math.max(0, Math.min(1, (e.hp ?? 1) / Math.max(1, e.hpMax)))); e.barTex.needsUpdate = true; }
+        if (e.bar.visible && e.lastHp !== e.hp) { e.lastHp = e.hp; { const ni = this.roster.get(id); drawDonut(e.barCv, Math.max(0, Math.min(1, (e.hp ?? 1) / Math.max(1, e.hpMax))), teams && ni?.team && ni.team === selfTeam ? ALLY_COL : undefined); }   /* zumbi/bicho do MEU time: vida AZUL, como os outros aliados */ e.barTex.needsUpdate = true; }
         e.vis = false; if (e.outline) e.outline.forEach((o) => { o.visible = false; }); continue;
       }
       const info = this.roster.get(id), enemy = !info?.companion && !this.huntAllies?.has(id) && !(teams && info?.team && info.team === selfTeam) && !(info?.squad && info.squad === this.roster.get(this.selfId)?.squad), alive = e.alive !== false && e.group.visible, show = enemy && alive && level === 2;
