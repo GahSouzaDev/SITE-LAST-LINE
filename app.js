@@ -101,7 +101,7 @@ function renderSeason() {
 renderSeason();
 
 /* ============ MODOS / GALERIA ============ */
-$('#modes').innerHTML = MODES.map(([id, n, s, d, hot, subs]) => `<article class="mode ${hot ? 'hot' : ''} ${subs ? 'has-sub' : ''}"${subs ? ' tabindex="0" role="button"' : ''}><div class="im">${img('img/modes/' + id + '.jpg', n, 'loading="lazy"')}</div><div class="mi"><small>${s}</small><h4>${n}</h4><p>${d}</p>${subs ? `<div class="msub">${subs.map(([sid, sn, ss, sd]) => `<div class="ms">${img('img/modes/' + sid + '.jpg', sn, 'loading="lazy"')}<div><small>${ss}</small><b>${sn}</b><p>${sd}</p></div></div>`).join('')}</div>` : ''}</div></article>`).join('');
+$('#modes').innerHTML = MODES.map(([id, n, s, d, hot, subs]) => `<article class="mode ${hot ? 'hot' : ''} ${subs ? 'has-sub' : ''}"${subs ? ' tabindex="0" role="button"' : ''}><div class="im">${img('img/modes/' + id + (id === 'cerco' ? '.webp' : '.jpg'), n, 'loading="lazy"')}</div><div class="mi"><small>${s}</small><h4>${n}</h4><p>${d}</p>${subs ? `<div class="msub">${subs.map(([sid, sn, ss, sd]) => `<div class="ms">${img('img/modes/' + sid + '.jpg', sn, 'loading="lazy"')}<div><small>${ss}</small><b>${sn}</b><p>${sd}</p></div></div>`).join('')}</div>` : ''}</div></article>`).join('');
 /* SUBMODOS: ao tocar num modo com variações, elas abrem LADO A LADO num painel logo ABAIXO da fileira de cartões (não mais espremidas dentro do cartão) */
 function closeSub() { $$('#modes .mode.open').forEach((m) => m.classList.remove('open')); $('#modes .subpanel')?.remove(); }
 $('#modes').addEventListener('click', (e) => {
