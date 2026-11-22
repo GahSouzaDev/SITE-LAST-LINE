@@ -23,7 +23,7 @@ const glowTex = (() => { const c = document.createElement('canvas'); c.width = c
 const outlineMat = new THREE.MeshBasicMaterial({ color: 0xff2a2a, side: THREE.BackSide, depthTest: true, depthWrite: false });
 
 /* CROMA DE TIME dos bichos (Cerco): o dinossauro é o mesmo, mas a cor puxa para o azul (time A) ou o vermelho (time B); materiais clonados para não pintar os outros bichos */
-function tintTeam(group, team) { const col = new THREE.Color(team === 'A' ? 0x3f7dff : 0xff4a3a); group.traverse((o) => { if (!o.isMesh || !o.material) return; const arr = Array.isArray(o.material), out = (arr ? o.material : [o.material]).map((m) => { if (!m.color || m.userData.tinted) return m; const k = m.clone(); k.color.lerp(col, 0.5); k.userData.tinted = 1; return k; }); o.material = arr ? out : out[0]; }); }
+export function tintTeam(group, team) { const col = new THREE.Color(team === 'A' ? 0x3f7dff : 0xff4a3a); group.traverse((o) => { if (!o.isMesh || !o.material) return; const arr = Array.isArray(o.material), out = (arr ? o.material : [o.material]).map((m) => { if (!m.color || m.userData.tinted) return m; const k = m.clone(); k.color.lerp(col, 0.5); k.userData.tinted = 1; return k; }); o.material = arr ? out : out[0]; }); }
 function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 // Aparência: a do jogador (criador) se existir; senão uma combinação estável pelo nome. A camisa segue o time (leitura rápida).
 // SUPER ZUMBI (Monstro): pele esverdeada, olhos vermelhos, roupa rasgada e escura, pose de zumbi (braços à frente)
@@ -109,22 +109,24 @@ export class RemotePlayers {
   // POOL DE ZUMBIS: montar um personagem (~200 malhas) custa 20–80 ms e travava o quadro quando a horda aparecia (principalmente dirigindo, que revela zumbis novos o tempo todo).
   // Eles são montados ANTES (aos poucos, no começo da partida) e reaproveitados quando um zumbi some.
   // lista de tarefas (uma por zumbi) para o aquecimento da tela de carregamento: monta o pool inteiro ANTES da partida
-  poolJobs(plan = { walker: 17, runner: 6, brute: 3, tank: 2 }) {
-    const jobs = []; for (const [t, n] of Object.entries(plan)) for (let i = 0; i < n; i++) jobs.push(() => { if (this.disposed) return; const k = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, av: new Avatar({ ...lookFor({ username: 'pool' + k, zombie: true, ztype: t, id: 9100 + k * 7, look: {} }, k), noAura: true }) }); });
+  poolJobs(plan = { walker: 17, runner: 6, brute: 3, tank: 2 }, team = null) {
+    const jobs = []; for (const [t, n] of Object.entries(plan)) for (let i = 0; i < n; i++) jobs.push(() => { if (this.disposed) return; const k = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, team, av: new Avatar({ ...lookFor({ username: 'pool' + k, zombie: true, ztype: t, id: 9100 + k * 7, look: {}, team }, k), noAura: true }) }); });
     return jobs;
   }
+  /* CERCO: pool de tropas de zumbi JÁ vestidas de azul e de vermelho (montadas atrás da tela de carregamento, não no meio da partida) */
+  teamPoolJobs() { this.teamPool = true; return [...this.poolJobs({ walker: 9, tank: 1 }, 'A'), ...this.poolJobs({ walker: 9, tank: 1 }, 'B')]; }
   fillPool(plan = { walker: 18, runner: 6, brute: 3, tank: 2 }) {
     const todo = []; for (const [t, n] of Object.entries(plan)) for (let i = 0; i < n; i++) todo.push(t);
     const step = () => { const t = todo.pop(); if (!t || this.disposed) return; try { const i = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, av: new Avatar({ ...lookFor({ username: 'pool' + i, zombie: true, ztype: t, id: 9100 + i * 7, look: {} }, i), noAura: true }) }); } catch { /* sem pool */ } setTimeout(step, 40); };
     setTimeout(step, 200);
   }
   // reposição do pool: cada zumbi tirado do pool manda montar outro em segundo plano (um por vez, com folga entre eles) — assim a próxima horda também encontra zumbis prontos e não monta 20 personagens de uma vez no meio do tiroteio
-  topUp(type) {
-    (this._tq ||= []).push(type); if (this._tt) return;
-    const run = () => { this._tt = 0; const t = this._tq.shift(); if (!t || this.disposed) return; if (this.zpool.length < 40) { try { const i = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, av: new Avatar({ ...lookFor({ username: 'pool' + i, zombie: true, ztype: t, id: 9100 + i * 7, look: {} }, i), noAura: true }) }); } catch { /* sem pool */ } } if (this._tq.length) this._tt = setTimeout(run, 140); };
+  topUp(type, team = null) {
+    (this._tq ||= []).push([type, team]); if (this._tt) return;
+    const run = () => { this._tt = 0; const q = this._tq.shift(); if (!q || this.disposed) return; const [t, tm] = q; if (this.zpool.length < 40) { try { const i = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, team: tm, av: new Avatar({ ...lookFor({ username: 'pool' + i, zombie: true, ztype: t, id: 9100 + i * 7, look: {}, team: tm }, i), noAura: true }) }); } catch { /* sem pool */ } } if (this._tq.length) this._tt = setTimeout(run, 140); };
     this._tt = setTimeout(run, 160);
   }
-  takePooled(info) { if (!info?.npc || !info.ztype || info.zalien || info.fauna || info.team) return null;   /* tropa de time (Cerco) não vem do pool: precisa da cor do time */ const i = this.zpool.findIndex((p) => p.type === info.ztype); if (i < 0) { this.topUp(info.ztype); return null; } const av = this.zpool.splice(i, 1)[0].av; if (this.zpool.length < 8) this.topUp(info.ztype); return av; }   // só repõe quando o pool está acabando (montar um zumbi custa dezenas de ms)
+  takePooled(info) { if (!info?.npc || !info.ztype || info.zalien || info.fauna) return null; if (info.team && !this.teamPool) return null;   /* tropa de time só vem do pool de TIME (Cerco): precisa da cor certa */ const tm = this.teamPool ? info.team || null : null, i = this.zpool.findIndex((p) => p.type === info.ztype && (p.team || null) === tm); if (i < 0) { this.topUp(info.ztype, tm); return null; } const av = this.zpool.splice(i, 1)[0].av; if (this.zpool.filter((p) => p.type === info.ztype && (p.team || null) === tm).length < 4) this.topUp(info.ztype, tm); return av; }   // só repõe quando o pool está acabando (montar um zumbi custa dezenas de ms)
   create(id) {
     const info = this.roster.get(id), av = info?.tank ? new TankAv(info.tank) : info?.dino ? Object.assign(new FaunaAv(info.dino, info.dscale || 1), { animK: 0.46 }) : info?.fauna && info.ztype ? new FaunaAv(info.ztype.slice(2), info.dscale || 1) : (this.takePooled(info) || new Avatar({ ...lookFor(info, this.ffaIndex.get(id)), noAura: true }));
     if (info?.dino) { const ls = []; av.group.traverse((o) => { if (o.isLight) ls.push(o); }); for (const l of ls) l.parent?.remove(l); }   /* junta as luzes ANTES de remover (remover durante o traverse quebrava o quadro: o bicho nunca virava monstro) */   /* a luz vermelha dos monstros vem de um pool fixo (game.js): luz nova no rig travava ao recompilar */
