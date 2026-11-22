@@ -182,10 +182,6 @@ export class Avatar {
     if (this._dr && !this._in) { const D = this._dr; D.t += dt / D.dur; const w = this.char.rig.weps[0]; if (D.t >= 1) { this._dr = null; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } } else if (w) { const s = drawSample(D.kind, D.t), sg = this.side === 'L' ? -1 : 1;
         if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
         for (const [t, nm] of DRAW_EVENTS[D.kind] || []) if (D.last < t && D.t >= t) this.onInspectSfx?.(nm, D.kind); D.last = D.t; } }
-    /* AS MÃOS ACOMPANHAM O RECUO: o tiro empurra só o modelo da arma (agroup); as mãos eram postas por IK em pontos fixos do suporte e ficavam PARADAS enquanto a arma recuava (a mão 'saía' da arma e pulava a cada tiro). Agora o ponto de empunhadura recebe o mesmo deslocamento do recuo, no espaço do suporte. */
-    { const w0 = this.char.rig.weps[0]; if (w0) { if (this.orient && this.rec > 1e-4) { const r = this.rec * Math.pow(5e-4, dt);   /* o MESMO recuo que a arma terá neste passo (ela decai logo depois) */ _rq.makeRotationZ(r * 0.35); _rq.setPosition(-r, 0, 0); (w0.recM ||= new THREE.Matrix4()).copy(this.orient.matrix).multiply(_rq).multiply(_ri.copy(this.orient.matrix).invert()); } else w0.recM = null; } }
-    this.char.animate(dt, spd, sgn, pitch, air);
-    if (this._ch) { const hit = this._mUntil && performance.now() < this._mUntil; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._ch, this._cp); this.chainRev = hit ? 1 : 0.3; if (this.holder) this.holder.position.x = Math.sin(performance.now() * 0.09) * (hit ? 0.006 : 0.002); }   // MOTOSSERRA: a corrente corre sempre (mais rápido ao serrar) e a arma vibra
     // === movimento da arma IDÊNTICO ao base.html: group.position.x = -rec · group.rotation.z = rec*.35 - tilt(recarga) · (unidades do Arsenal ×0,3)
     this.rec *= Math.pow(5e-4, dt); if (this.rec < 1e-4) this.rec = 0;
     if (this._drops?.length) this._stepDrops(dt);
@@ -215,6 +211,10 @@ export class Avatar {
         if (M && this._mw > 0) { const pl = _mv.copy(M.cL).addScaledVector(M.dL, M.gk * M.DL).applyMatrix4(M.node.matrix).applyMatrix4(M.model.matrix).applyMatrix4(M.agroup.matrix).applyMatrix4(M.orient.matrix), u = Math.max(0, Math.min(1, (this._ms - 1.3) / 0.6)), w = this._mw, ox = (this._sup.g[0] === 'L' ? -1 : 1) * 0.012;
           g[0] += (pl.x + ox - 0.05 * u * (this._sup.g[0] === 'L' ? -1 : 1) - g[0]) * w; g[1] += (pl.y - g[1]) * w; g[2] += (pl.z - 0.09 * u - g[2]) * w; } }
     }
+    /* AS MÃOS SEGUEM A ARMA EXATAMENTE: primeiro a arma recebe a pose FINAL deste passo (recuo, inclinação da recarga, giro, balanço...); só então os braços são resolvidos por IK em cima do ponto de empunhadura JÁ transformado por essa mesma pose (matriz inteira do modelo). Uma única fonte de verdade: a mão nunca fica um passo atrás nem 'solta' da arma, em nenhum FPS ou modo. */
+    { const w0 = this.char.rig.weps[0]; if (w0) { if (this.orient && this.agroup) { this.agroup.updateMatrix(); (w0.recM ||= new THREE.Matrix4()).copy(this.orient.matrix).multiply(this.agroup.matrix).multiply(_ri.copy(this.orient.matrix).invert()); } else w0.recM = null; } }
+    this.char.animate(dt, spd, sgn, pitch, air);
+    if (this._ch) { const hit = this._mUntil && performance.now() < this._mUntil; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._ch, this._cp); this.chainRev = hit ? 1 : 0.3; if (this.holder) this.holder.position.x = Math.sin(performance.now() * 0.09) * (hit ? 0.006 : 0.002); }   // MOTOSSERRA: a corrente corre sempre (mais rápido ao serrar) e a arma vibra
     for (const o of this.parts || []) {                                                       // animação das partes móveis (loop do base.html)
       const u = o.userData;
       if (u.role === 'drum') o.rotation.x += ((u.tr || 0) - o.rotation.x) * (1 - Math.exp(-dt * 16));
