@@ -47,7 +47,13 @@ export const MONSTROS = {
   mapinguari: { id: 'mapinguari', name: 'Mapinguari', kind: 'monstro', rig: 'biped', temper: 'agressivo', colors: { sk: '#7b3a24', bl: '#b9805a', ac: '#2e140c' }, legL: 1.7, bodyL: 2.4, bodyH: 2.4, w: 1.7, neckL: 0.5, headL: 0.8, tailL: 0.5, armL: 2.3, armK: 1.2,
     hp: 900, walk: 2.4, run: 6.6, dmg: 22, reach: 3.6, cd: 2.3, hear: 100, sight: 95, atk: ['claw', 'bite'], hit: { r: 1.5, h: 3.6 }, power: 'fedor' },
   mula: { id: 'mula', name: 'Mula sem Cabeça', kind: 'monstro', rig: 'quad', temper: 'agressivo', colors: { sk: '#2e2420', bl: '#5a4639', ac: '#ff7a1a' }, legL: 1.95, bodyL: 3.1, bodyH: 1.35, bodyW: 1.1, neckL: 1.3, headL: 0.2, tailL: 2.4,
-    hp: 620, walk: 3.4, run: 12.5, dmg: 19, reach: 2.6, cd: 1.7, hear: 90, sight: 85, atk: ['pounce', 'swat'], hit: { r: 1.15, h: 3.4 }, power: 'fogo' }
+    hp: 620, walk: 3.4, run: 12.5, dmg: 19, reach: 2.6, cd: 1.7, hear: 90, sight: 85, atk: ['pounce', 'swat'], hit: { r: 1.15, h: 3.4 }, power: 'fogo' },
+  // CAPELOBO (Pará e Maranhão): homem-lobo de focinho enorme, como o de um tamanduá; só morre com um golpe no umbigo. Serve de 'monstro pequeno' da selva do Cerco (força parecida com a da Mula)
+  capelobo: { id: 'capelobo', name: 'Capelobo', kind: 'monstro', rig: 'biped', temper: 'agressivo', colors: { sk: '#4b3a30', bl: '#9a8068', ac: '#1c1511' }, legL: 1.35, bodyL: 1.9, bodyH: 1.7, w: 1.15, neckL: 0.55, headL: 1.45, tailL: 1.0, armL: 1.7, armK: 1.0,
+    hp: 620, walk: 3.2, run: 9.5, dmg: 19, reach: 2.8, cd: 1.6, hear: 95, sight: 90, atk: ['claw', 'bite'], hit: { r: 1.1, h: 3.1 }, power: null },
+  // JURUPARI (nome tupi): espírito dos pesadelos e das leis proibidas, alto, de pele arroxeada, chifres e olhos verdes. 'Monstro grande' do Cerco (força parecida com a do Mapinguari)
+  jurupari: { id: 'jurupari', name: 'Jurupari', kind: 'monstro', rig: 'biped', temper: 'agressivo', colors: { sk: '#3d2b57', bl: '#6e4f93', ac: '#b6ff4a' }, legL: 1.8, bodyL: 2.0, bodyH: 2.2, w: 1.3, neckL: 0.65, headL: 0.95, tailL: 0.5, armL: 2.2, armK: 1.1,
+    hp: 900, walk: 2.6, run: 6.4, dmg: 22, reach: 3.4, cd: 2.2, hear: 100, sight: 95, atk: ['claw', 'bite'], hit: { r: 1.4, h: 3.8 }, power: null }
 };
 export const FAUNA = { ...DINOS, ...MAMMALS, ...MONSTROS };
 export const hunts = (sp) => sp?.kind === 'dino' || sp?.kind === 'monstro';   // quem caça (dinossauros e monstros) × quem foge (mamíferos)
@@ -60,7 +66,7 @@ export const HUNT_SPEED = { pct: 100 };   // admin: velocidade dos bichos da Ca�
 export const huntRun = (id) => { const f = FAUNA[id]; return +((f ? Math.max(5.3, Math.min(8.2, f.run * 0.75)) : 5.3) * HUNT_SPEED.pct / 100).toFixed(2); };
 export const huntWalk = (id) => +(huntRun(id) * 4.05 / 6.83).toFixed(2);
 /* TAMANHO na Caçada: o bicho fica só um pouco MAIOR que o jogador (1,8 m): mamífero com ~2,1 m e os monstros (Mapinguari/Mula) com ~2,5 m, sempre reduzindo (nunca aumenta) */
-const VISUAL_H = { mamute: 4.46, smilo: 1.76, pregui: 3.19, glipto: 2.88, elasmo: 4.47, mega: 5.61, gigan: 3.43, macro: 3.51, mapinguari: 3.86, mula: 5.12 };   // altura REAL do modelo 3D (medida do caixote do Creature; a hit.h é só a esfera de acerto)
+const VISUAL_H = { mamute: 4.46, smilo: 1.76, pregui: 3.19, glipto: 2.88, elasmo: 4.47, mega: 5.61, gigan: 3.43, macro: 3.51, mapinguari: 3.86, mula: 5.12, capelobo: 3.3, jurupari: 4.1 };   // altura REAL do modelo 3D (medida do caixote do Creature; a hit.h é só a esfera de acerto)
 export const huntScale = (id) => { const h = VISUAL_H[id] || FAUNA[id]?.hit?.h; if (!h) return 1; return +Math.max(0.3, Math.min(1, (FAUNA[id]?.kind === 'monstro' ? 2.5 : 2.1) / h)).toFixed(3); };
 export const isMammal = (id) => FAUNA[id]?.kind === 'mamifero';
 // animações que o modelo sabe tocar (nomes usados pelo servidor/cliente)

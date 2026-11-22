@@ -22,7 +22,7 @@ export const DINO_PTS = {
 };
 export const DINO_BITE = { reach: 2.7, r: 0.55 };   // alcance (m, do centro do corpo até a boca) e raio da boca, iguais para todas as espécies do PvP
 export const DINO_IDS = Object.keys(DINO_PTS);
-export const MONSTER_PTS = { mapinguari: { hp: 14, spd: 7, dmg: 12 }, mula: { hp: 9, spd: 14, dmg: 10 } };   // monstros da Caçada: não entram na escolha do PvP
+export const MONSTER_PTS = { mapinguari: { hp: 14, spd: 7, dmg: 12 }, mula: { hp: 9, spd: 14, dmg: 10 }, capelobo: { hp: 9, spd: 12, dmg: 10 }, jurupari: { hp: 14, spd: 8, dmg: 12 } };   // monstros da Caçada: não entram na escolha do PvP
 const RUN = 4.05;   // andar do jogador (walkSpeed): o dinossauro SEMPRE anda na velocidade dele, sem precisar correr   // runSpeed do jogador (shared/balance.js): o speedMul do corpo = velocidade / RUN
 export const DINO_TIMING = { fastMs: [240, 200], strongMs: [360, 260], fastCd: 560, strongCd: 1050 };   // [espera até a boca fechar, janela em que o dano pode acontecer] e recarga
 export function dinoStats(id, c = DINO_CFG) {

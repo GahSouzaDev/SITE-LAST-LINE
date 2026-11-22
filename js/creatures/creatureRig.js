@@ -257,6 +257,25 @@ const FEATURES = {
     { const red = new THREE.PointLight(0xff1a1a, 7, 24, 1.5); red.position.set(0, sp.bodyH * 0.9, 0.3); c.body.add(red); c.fx.push(() => { red.intensity = 7; }); }   /* luz VERMELHA de terror: o Mapinguari clareia o chão em volta */
     c.fx.push((t) => { gas.begin(); for (let i = 0; i < 4; i++) { const a = t * 0.6 + i * 1.57; gas.set(i, c.root, Math.cos(a) * 1.4, 0.8 + 0.5 * Math.sin(t * 1.3 + i), Math.sin(a) * 1.4, 0x8fd35a, 0.22 + 0.06 * Math.sin(t * 2 + i)); } gas.flush(); });   // nuvem fedorenta em volta (pontos)
   },
+  // CAPELOBO: lobisomem de pelo escuro, FOCINHO COMPRIDO de tamanduá, orelhas em pé, crista de pelos nas costas, garras claras e olhos amarelos
+  capelobo(c) {
+    const m = c.mats, sp = c.sp, fur = M(sp.colors.ac), eye = M('#ffd21a', { emissive: '#ffb400', emissiveIntensity: 1.4 }), claw = M('#e9e2cf');
+    cn(c.head, c.headW * 0.34, sp.headL * 1.05, 0, -c.headW * 0.05, sp.headL * 0.78, m.sk, Math.PI / 2, 0, 0);   // focinho comprido
+    cn(c.head, c.headW * 0.12, sp.headL * 0.22, 0, -c.headW * 0.05, sp.headL * 1.32, M('#120c09'), Math.PI / 2, 0, 0);   // ponta escura do focinho
+    for (const sd of [-1, 1]) { cn(c.head, c.headW * 0.14, c.headW * 0.5, sd * c.headW * 0.3, c.headW * 0.55, sp.headL * 0.1, fur, 0, 0, sd * 0.2); put(c.head, new THREE.SphereGeometry(c.headW * 0.08, 6, 5), eye, sd * c.headW * 0.26, c.headW * 0.22, sp.headL * 0.42); }
+    for (let i = 0; i < 10; i++) cn(c.body, 0.1, 0.5 + (i % 3) * 0.12, 0, sp.bodyH * 0.55, -sp.bodyL * 0.42 + i * (sp.bodyL * 0.84 / 9), fur, 0.15, 0, 0);   // crista de pelos eriçados
+    for (const a of c.arms) for (let i = 0; i < 4; i++) cn(a.el, 0.04, 0.34, (i - 1.5) * 0.09, -sp.armL * 0.17, -0.12, claw, Math.PI, 0, 0);   // garras
+  },
+  // JURUPARI: espírito alto de pele roxa, CHIFRES curvos, olhos verdes brilhantes, listras tribais que brilham e brasas verdes flutuando em volta (pontos, sem luz)
+  jurupari(c) {
+    const m = c.mats, sp = c.sp, horn = M('#e6dcc4'), glow = M('#b6ff4a', { emissive: '#8fff2a', emissiveIntensity: 1.8 }), eye = M('#7dff3a', { emissive: '#5aff1a', emissiveIntensity: 2 });
+    for (const sd of [-1, 1]) { cn(c.head, c.headW * 0.1, c.headW * 0.9, sd * c.headW * 0.28, c.headW * 0.5, sp.headL * 0.1, horn, 0, 0, -sd * 0.55); cn(c.head, c.headW * 0.07, c.headW * 0.5, sd * c.headW * 0.62, c.headW * 0.98, sp.headL * 0.1, horn, 0, 0, -sd * 1.0); put(c.head, new THREE.SphereGeometry(c.headW * 0.09, 6, 5), eye, sd * c.headW * 0.22, c.headW * 0.18, sp.headL * 0.45); }
+    for (let i = 0; i < 6; i++) bx(c.body, sp.w * 0.78, 0.07, 0.08, 0, sp.bodyH * (0.1 + i * 0.1), sp.bodyL * 0.1 - i * 0.05, glow, 0, 0, (i % 2 ? 0.12 : -0.12));   // listras tribais brilhantes
+    for (const a of c.arms) for (let i = 0; i < 3; i++) bx(a.el, 0.28, 0.05, 0.28, 0, -sp.armL * (0.1 + i * 0.1), 0, glow);
+    for (let i = 0; i < 7; i++) cn(c.body, 0.09, 0.45, 0, sp.bodyH * 0.55, -sp.bodyL * 0.42 + i * (sp.bodyL * 0.84 / 6), M(sp.colors.sk), 0.1, 0, 0);   // espinhos nas costas
+    const em = fxPoints(c, 10, 2.2, true);
+    c.fx.push((t) => { em.begin(); for (let i = 0; i < 10; i++) { const a = t * 0.5 + i * 0.63, r = 1.1 + 0.4 * Math.sin(t + i); em.set(i, c.root, Math.cos(a) * r, 0.4 + ((t * 0.5 + i * 0.37) % 1) * 2.6, Math.sin(a) * r, 0x9dff4a, 0.5 + 0.3 * Math.sin(t * 2 + i)); } em.flush(); });   // brasas verdes subindo em espiral
+  },
   // MULA SEM CABEÇA (versão assustadora): égua carbonizada e enorme, costelas à mostra, rachaduras de brasa no corpo, coto de pescoço com osso e uma FOGUEIRA no lugar da cabeça,
   // crina e cauda em chamas, ferraduras em brasa que soltam fogo a cada passada, brasas subindo e luz laranja pulsando
   mula(c) {

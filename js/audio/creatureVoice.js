@@ -31,6 +31,8 @@ const SIG = {
   mega:  { f0: 70, wave: 'sawtooth', rasp: 0.5, form: [[320, 3], [760, 4]], am: [20, 0.4], roar: [1.6, 0.9, 1.1], call: [0.9, 0.9, 0.9], big: 1.1 },
   gigan: { f0: 130, wave: 'sawtooth', rasp: 0.4, form: [[700, 5], [1300, 5]], vib: [6, 0.06], roar: [1.5, 1.4, 1.1], call: [0.9, 1.3, 0.9], big: 1.0 },
   macro: { f0: 240, wave: 'sawtooth', rasp: 0.2, form: [[650, 6], [1500, 5]], vib: [18, 0.1], roar: [1.1, 1.1, 0.8], call: [0.7, 1.2, 0.9], big: 0.8 },
+  capelobo: { f0: 95, wave: 'sawtooth', rasp: 0.7, form: [[420, 4], [980, 4], [2100, 5]], am: [14, 0.35], roar: [1.8, 0.8, 1.2], call: [1.6, 0.9, 1.3], big: 1.1 },   // uivo e rosnado de lobo
+  jurupari: { f0: 64, wave: 'sawtooth', rasp: 0.85, form: [[300, 3], [820, 4], [1900, 4]], vib: [6, 0.1], roar: [2.2, 0.7, 1.2], call: [1.4, 0.8, 1.1], big: 1.3 },   // voz grave e rouca
   mapinguari: { f0: 52, wave: 'sawtooth', rasp: 0.9, form: [[280, 3], [700, 3], [1600, 4]], am: [22, 0.5], roar: [2.4, 0.7, 1.3], call: [1.2, 0.8, 1.1], big: 1.4 },
   mula:  { f0: 640, wave: 'sawtooth', rasp: 0.5, form: [[900, 5], [2200, 5]], vib: [14, 0.07], roar: [1.4, 0.6, 1.1], call: [0.9, 0.7, 1.0], neigh: true, big: 1.0 },
   walker:{ f0: 110, wave: 'sawtooth', rasp: 0.6, form: [[700, 6], [1200, 6]], vib: [5, 0.12], roar: [1.5, 0.8, 0.7], call: [1.0, 0.85, 0.7], human: true, big: 0.5 },
