@@ -1,6 +1,7 @@
 import { PER_SHELL } from '/shared/weaponStats.js';
 import * as THREE from 'three';
 import { dec } from '../core/smooth.js';
+import { HC, getHC } from './handCfg.js';
 import { createCharacter } from './characterRig.js';
 import { BUILD, setOV } from '../weapons/arsenalModels.js';
 import { rawWeapon, cloneArs } from '../weapons/weaponProto.js';
@@ -186,12 +187,17 @@ export class Avatar {
     if (this.fp) this.applyFP();
     this.char.S.pose = 'aim';
   }
+  /* AJUSTE DAS MÃOS (Configurações › MÃOS): lê o ajuste salvo desta arma e entrega ao rig por mão (trás = gatilho, frente = apoio) */
+  applyHandCfg() {
+    this._hcv = HC.ver; this._hcw = this.weaponId; const w = this.char.rig.weps[0]; if (!w || w.hand || !w.grips) return; const c = getHC(this.weaponId), D = Math.PI / 180, mk = (o) => (o ? { p: [o.x / 100, o.y / 100, o.z / 100], r: o.r * D, w: [o.a * D, o.b * D, o.c * D] } : null);
+    w.cfg = {}; if (c) { if (w.grips[0] && c.t) w.cfg[w.grips[0][0]] = mk(c.t); if (w.grips[1] && c.s) w.cfg[w.grips[1][0]] = mk(c.s); }
+  }
   uprightGrenade() { const p = this._gup; if (!p || !p.parent) return; p.parent.updateWorldMatrix(true, false); p.parent.getWorldQuaternion(_uq); p.quaternion.copy(_uq).invert(); }
   finalizeHands() {
     if (this._gup) { this.group.updateMatrixWorld(true); this.uprightGrenade(); return; }
     const rig = this.char.rig, w = rig.weps[0], pose = this.char.S.pose; if (!this._gn || !w || !w.g.visible || (pose !== 'aim' && pose !== 'armed')) return;
     this.group.updateMatrixWorld(true);
-    for (const { sd, n, g, b } of this._gn) { n.getWorldPosition(_fv); rig.spine.worldToLocal(_fv); _fd.set(g[0] - b[0], g[1] - b[1], g[2] - b[2]).applyQuaternion(w.g.quaternion); _fv.add(_fd); this.char.ik(rig['a' + sd], rig['f' + sd], sd === 'L' ? 1 : -1, _fv); }
+    for (const { sd, n, g, b } of this._gn) { n.getWorldPosition(_fv); rig.spine.worldToLocal(_fv); _fd.set(g[0] - b[0], g[1] - b[1], g[2] - b[2]); { const cf = w.cfg && w.cfg[sd]; if (cf) _fd.x += cf.p[0], _fd.y += cf.p[1], _fd.z += cf.p[2]; } _fd.applyQuaternion(w.g.quaternion); _fv.add(_fd); this.char.ik(rig['a' + sd], rig['f' + sd], sd === 'L' ? 1 : -1, _fv); }
   }
   update(dt, { spd = 0, sgn = 1, pitch = 0, air = false, crouch = false, aiming = false, sliding = false, reload = 0, run = false } = {}) {
     if (sliding) { spd = 0; crouch = true; }              // SLIDE: corpo abaixa e as PERNAS FICAM PARADAS (não é corrida agachada)
@@ -239,6 +245,7 @@ export class Avatar {
         for (const [t, nm] of DRAW_EVENTS[D.kind] || []) if (D.last < t && D.t >= t) this.onInspectSfx?.(nm, D.kind); D.last = D.t; } }
     /* AS MÃOS SEGUEM A ARMA EXATAMENTE: primeiro a arma recebe a pose FINAL deste passo (recuo, inclinação da recarga, giro, balanço...); só então os braços são resolvidos por IK em cima do ponto de empunhadura JÁ transformado por essa mesma pose (matriz inteira do modelo). Uma única fonte de verdade: a mão nunca fica um passo atrás nem 'solta' da arma, em nenhum FPS ou modo. */
     { const w0 = this.char.rig.weps[0]; if (w0) { if (this.orient && this.agroup) { this.agroup.updateMatrix(); (w0.recM ||= new THREE.Matrix4()).copy(this.orient.matrix).multiply(this.agroup.matrix).multiply(_ri.copy(this.orient.matrix).invert()); } else w0.recM = null; } }
+    if (this._hcv !== HC.ver || this._hcw !== this.weaponId) this.applyHandCfg();
     { const wp0 = this.char.rig.weps[0]; if (wp0 && !wp0.hand) { wp0.pull = this.fp ? 0 : PULL_TP; if (wp0.hs) wp0.hs.k += (((reload > 0 || this._in || this._dr) ? 0 : 1) - wp0.hs.k) * dec(dt, 14); } }   /* mão virada/inclinada volta ao NORMAL durante recarga, inspeção e saque, e depois retoma */   /* em 3ª pessoa (eu de fora e os outros jogadores) a arma vem mais perto do corpo; na 1ª pessoa fica como sempre */
     this.char.animate(dt, spd, sgn, pitch, air); if (this._gup) this.uprightGrenade();
     if (this._ch) { const hit = this._mUntil && performance.now() < this._mUntil; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._ch, this._cp); this.chainRev = hit ? 1 : 0.3; if (this.holder) this.holder.position.x = Math.sin(performance.now() * 0.09) * (hit ? 0.006 : 0.002); }   // MOTOSSERRA: a corrente corre sempre (mais rápido ao serrar) e a arma vibra
