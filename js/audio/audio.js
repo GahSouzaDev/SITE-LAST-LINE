@@ -152,6 +152,8 @@ class AudioEngine {
     if (t < h.until - 0.001) { h.to = setTimeout(() => this._holdEnd(kind), 60); return; }
     h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0.0001, t, 0.05); const nodes = h.nodes; delete this._hold[kind]; setTimeout(() => { for (const n of nodes) { try { n.stop(); } catch { /* já parou */ } } try { h.g.disconnect(); } catch { /* ok */ } }, 400);
   }
+  // ALERTA DE MIRA (Cerco): a torre travou em VOCÊ — três bips rápidos e agudos
+  towerLock() { if (!this.ctx) return; const t = this.ctx.currentTime, d = this.out(null, this.sfx, 2, 1.0); for (const k of [0, 0.14, 0.28]) this.tn(d, t + k, { f: 1250, f2: 1250, dur: 0.07, type: 'square', g: 0.16 }); }
   // CARREGANDO: zumbido que sobe de tom até o tiro
   chargeStart() {
     if (!this.ctx || this._ch) return; const ctx = this.ctx, t = ctx.currentTime, o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();

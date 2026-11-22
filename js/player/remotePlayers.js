@@ -22,6 +22,8 @@ const HAIRCOL = ['#2a1d18', '#111111', '#6b3a1e', '#c9a24a', '#8b2d1a', '#3a3a3a
 const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,248,215,1)'); r.addColorStop(0.3, 'rgba(255,240,190,.55)'); r.addColorStop(1, 'rgba(255,240,190,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const outlineMat = new THREE.MeshBasicMaterial({ color: 0xff2a2a, side: THREE.BackSide, depthTest: true, depthWrite: false });
 
+/* CROMA DE TIME dos bichos (Cerco): o dinossauro é o mesmo, mas a cor puxa para o azul (time A) ou o vermelho (time B); materiais clonados para não pintar os outros bichos */
+function tintTeam(group, team) { const col = new THREE.Color(team === 'A' ? 0x3f7dff : 0xff4a3a); group.traverse((o) => { if (!o.isMesh || !o.material) return; const arr = Array.isArray(o.material), out = (arr ? o.material : [o.material]).map((m) => { if (!m.color || m.userData.tinted) return m; const k = m.clone(); k.color.lerp(col, 0.5); k.userData.tinted = 1; return k; }); o.material = arr ? out : out[0]; }); }
 function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 // Aparência: a do jogador (criador) se existir; senão uma combinação estável pelo nome. A camisa segue o time (leitura rápida).
 // SUPER ZUMBI (Monstro): pele esverdeada, olhos vermelhos, roupa rasgada e escura, pose de zumbi (braços à frente)
@@ -34,6 +36,7 @@ export function lookFor(info, idx) {
   const look = { ...base, ...(info?.look || {}) };
   if (info?.zombie) Object.assign(look, info.zalien ? { special: 'alien', chroma: 'vermelho', mode: 'player' } : zombieLook(info.id), { lowDetail: true });   // infectado/alien da horda: visual simples (sem relevo nem rosto detalhado)   // na Lua os infectados são ALIENÍGENAS
   look.shirt = info?.team ? TEAM_SHIRT[info.team] : FFA_SHIRTS[(idx ?? 0) % FFA_SHIRTS.length];
+  if (info?.zombie && info?.team) look.pants = info.team === 'A' ? '#1b3a82' : '#7c1d18';   /* Cerco: tropa de zumbis azul de um lado e vermelha do outro (camisa e calça) */
   return look;
 }
 // vida do inimigo: ROSQUINHA vermelha que vai diminuindo; sem nenhuma outra cor no lado vazio (transparente)
@@ -121,11 +124,11 @@ export class RemotePlayers {
     const run = () => { this._tt = 0; const t = this._tq.shift(); if (!t || this.disposed) return; if (this.zpool.length < 40) { try { const i = (this._pi = (this._pi || 0) + 1); this.zpool.push({ type: t, av: new Avatar({ ...lookFor({ username: 'pool' + i, zombie: true, ztype: t, id: 9100 + i * 7, look: {} }, i), noAura: true }) }); } catch { /* sem pool */ } } if (this._tq.length) this._tt = setTimeout(run, 140); };
     this._tt = setTimeout(run, 160);
   }
-  takePooled(info) { if (!info?.npc || !info.ztype || info.zalien || info.fauna) return null; const i = this.zpool.findIndex((p) => p.type === info.ztype); if (i < 0) { this.topUp(info.ztype); return null; } const av = this.zpool.splice(i, 1)[0].av; if (this.zpool.length < 8) this.topUp(info.ztype); return av; }   // só repõe quando o pool está acabando (montar um zumbi custa dezenas de ms)
+  takePooled(info) { if (!info?.npc || !info.ztype || info.zalien || info.fauna || info.team) return null;   /* tropa de time (Cerco) não vem do pool: precisa da cor do time */ const i = this.zpool.findIndex((p) => p.type === info.ztype); if (i < 0) { this.topUp(info.ztype); return null; } const av = this.zpool.splice(i, 1)[0].av; if (this.zpool.length < 8) this.topUp(info.ztype); return av; }   // só repõe quando o pool está acabando (montar um zumbi custa dezenas de ms)
   create(id) {
     const info = this.roster.get(id), av = info?.tank ? new TankAv(info.tank) : info?.dino ? Object.assign(new FaunaAv(info.dino, info.dscale || 1), { animK: 0.46 }) : info?.fauna && info.ztype ? new FaunaAv(info.ztype.slice(2), info.dscale || 1) : (this.takePooled(info) || new Avatar({ ...lookFor(info, this.ffaIndex.get(id)), noAura: true }));
     if (info?.dino) { const ls = []; av.group.traverse((o) => { if (o.isLight) ls.push(o); }); for (const l of ls) l.parent?.remove(l); }   /* junta as luzes ANTES de remover (remover durante o traverse quebrava o quadro: o bicho nunca virava monstro) */   /* a luz vermelha dos monstros vem de um pool fixo (game.js): luz nova no rig travava ao recompilar */
-    const group = new THREE.Group(); group.add(av.group);
+    const group = new THREE.Group(); group.add(av.group); if (info?.fauna && info?.team) tintTeam(av.group, info.team);
     if (info?.id != null && (info.dino || info.fauna || info.tank)) { try { group.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(av.group), t = bb.max.y; if (Number.isFinite(t) && t > 0.3 && t < 30) TOPH.set(info.id, t); } catch { /* sem medida */ } }
     let sprite = null;
     if (info?.team && info.team === this.selfTeam && id !== this.selfId) { sprite = nameSprite(info.username, ALLY_COL); sprite.userData.col = ALLY_COL; sprite.position.y = labelH(info) + ((info?.dino || info?.tank) ? 1.0 : 0.68); if (info?.dino || info?.tank) sprite.scale.multiplyScalar(1.6); group.add(sprite); }
