@@ -1342,7 +1342,10 @@ const WP={rifle:WR,lmg:[[-.1,.32,.2],[-.07,.56,.16]],shotgun:WR,sniper:WR,melee:
 let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
 function ik(arm,fore,sd,T3){ // braço de 2 ossos: leva a mão até o ponto de empunhadura
  /* ALCANCE ELÁSTICO: com o ponto de empunhadura além do alcance do braço (a mão de apoio nas armas longas estava ~9 cm longe da arma, e no recuo/balanço entrava e saía do alcance = a mão 'pulava' e saía da arma), o braço cresce o MÍNIMO necessário (contínuo, até +50%) para a mão sempre alcançar a arma; dentro do alcance nada muda. */
- const S0=arm.position,d0=_d.copy(T3).sub(S0),R0=d0.length(),kk=Math.min(1.5,Math.max(1,R0/.57)),l1=.29*kk,l2=.29*kk,d=clamp(R0,.12,l1+l2-.005),u=d0.normalize();arm.scale.setScalar(kk);
+ if(!arm.userData.p0)arm.userData.p0=arm.position.clone();arm.position.copy(arm.userData.p0);   /* ombro na posição de repouso */
+ const S0=arm.position;let d0=_d.copy(T3).sub(S0),R0=d0.length(),kk=Math.min(1.3,Math.max(1,R0/.57));
+ if(R0>.57*kk+.002){S0.addScaledVector(d0.normalize(),Math.min(.25,R0-.57*kk));d0=_d.copy(T3).sub(S0);R0=d0.length();}   /* ainda longe (arma pesada, olhando para baixo): o OMBRO acompanha uns centímetros (até 25 cm), nada de mão solta */
+ const l1=.29*kk,l2=.29*kk,d=clamp(R0,.12,l1+l2-.005),u=d0.normalize();arm.scale.setScalar(kk);
  const a=(l1*l1-l2*l2+d*d)/(2*d),h=Math.sqrt(Math.max(0,l1*l1-a*a));
  _p.set(sd*.6,-1,-.2);_p.addScaledVector(u,-_p.dot(u)).normalize();
  _e.copy(S0).addScaledVector(u,a).addScaledVector(_p,h);
@@ -1365,7 +1368,7 @@ function animate(dt,spd,sgn,pitch,air){
  set(rig.head,cur.head,-pitch*.85+lkP,lkS);
  if(rig.tail)rig.tail.rotation.x=.56+Math.sin(tb*1.8)*.04+(mv?Math.sin(ph*2)*A*.25:0);
  set(rig.spine,cur.spine,br+crouch*.38,mv?-w*.12*(1-.5*crouch):0);rig.spine.scale.set(1+br*.5,1,1+br*.9);
- set(rig.aL,cur.aL,w*aw*1.3);set(rig.aR,cur.aR,-w*aw*1.3);rig.aL.scale.setScalar(1);rig.aR.scale.setScalar(1);
+ set(rig.aL,cur.aL,w*aw*1.3);set(rig.aR,cur.aR,-w*aw*1.3);for(const A of [rig.aL,rig.aR]){A.scale.setScalar(1);if(A.userData.p0)A.position.copy(A.userData.p0)}
  set(rig.fL,cur.fL,-Math.abs(w)*.5*aw);set(rig.fR,cur.fR,-Math.abs(w)*.5*aw);
  // golpe corpo a corpo (soco/facada/coronhada): progresso 0..1 e deslocamento da mão em 3ª pessoa (frente do rig = +Z)
  let swp=-1,swk='';if(SW){SW.t+=dt/SW.dur;if(SW.t>=1)SW=null;else{swp=SW.t;swk=SW.k}}
