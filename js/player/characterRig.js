@@ -1414,7 +1414,7 @@ function animate(dt,spd,sgn,pitch,air){
    else{oz=.3*sws*z;oy=.1*sws*z;rx=-.5*sws}
    w.g.position.x+=ox;w.g.position.y+=oy;w.g.position.z+=oz;w.g.rotation.x+=rx;w.g.rotation.z+=rz}
   if(w.ix){const q=w.ix;w.g.position.y+=q[0];w.g.position.z+=q[1];w.g.rotation.x+=q[2];w.g.rotation.y+=q[3];w.g.rotation.z+=q[4]}   // INSPECIONAR (arma de fogo): a arma inteira (e as mãos junto) sobe, gira e vai para perto do rosto
-  for(const [sd,gp] of w.grips)ik(rig['a'+sd],rig['f'+sd],sd==='L'?1:-1,_t.set(gp[0],gp[1],gp[2]).applyQuaternion(w.g.quaternion).add(w.g.position).clone());
+  for(const [sd,gp] of w.grips)ik(rig['a'+sd],rig['f'+sd],sd==='L'?1:-1,(w.recM?_t.set(gp[0],gp[1],gp[2]).applyMatrix4(w.recM):_t.set(gp[0],gp[1],gp[2])).applyQuaternion(w.g.quaternion).add(w.g.position).clone());
  }
 }
 

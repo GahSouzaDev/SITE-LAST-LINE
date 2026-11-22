@@ -42,6 +42,7 @@ import { effective, onGfx } from '../core/graphics.js';
 const gq = () => { const e = effective(); return { noTex: e.ctex === false, noNeon: e.cneon === false }; };
 const LIVE = new Set();
 onGfx(() => { for (const r of [...LIVE]) { const a = r.deref(); if (!a) { LIVE.delete(r); continue; } try { a.setLook({}); } catch { /* sem personagem */ } } });
+const _rq = new THREE.Matrix4(), _ri = new THREE.Matrix4();
 export class Avatar {
   static env = null;                                   // mapa de ambiente (RoomEnvironment) para os metais, como o scene.environment do base.html
   constructor(look = {}) {
@@ -158,7 +159,7 @@ export class Avatar {
     // âncoras para o jogo (mira, cano, ejeção, partes móveis)
     const mzs = model.userData.mz, g0 = mzs[0].userData.g || model, ejObj = new THREE.Object3D(); if (g0.userData.ej) ejObj.position.copy(g0.userData.ej); g0.add(ejObj);
     const ejs = [ejObj]; if (dual) for (let i = 1; i < mzs.length; i++) { const gi = mzs[i].userData.g || model, o = new THREE.Object3D(); if (gi.userData.ej) o.position.copy(gi.userData.ej); gi.add(o); ejs.push(o); }   // cada arma ejeta os cartuchos do próprio lado
-    this.holder = holder; this.model = model; this.agroup = agroup; this.shotN = 0;
+    this.holder = holder; this.model = model; this.agroup = agroup; this.orient = orient; orient.updateMatrix(); this.shotN = 0;
     this.parts = []; model.traverse((o) => { if (o.userData.role) { o.userData.bx = o.userData.bx ?? o.position.x; this.parts.push(o); } });
     if (Avatar.env) model.traverse((o) => { if (o.isMesh) for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (m?.isMeshStandardMaterial && m.envMap !== Avatar.env) { m.envMap = Avatar.env; m.envMapIntensity = 0.6; m.needsUpdate = true; } });   // metais iluminados como no base.html (scene.environment)
     const self = this;
@@ -181,6 +182,8 @@ export class Avatar {
     if (this._dr && !this._in) { const D = this._dr; D.t += dt / D.dur; const w = this.char.rig.weps[0]; if (D.t >= 1) { this._dr = null; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } } else if (w) { const s = drawSample(D.kind, D.t), sg = this.side === 'L' ? -1 : 1;
         if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
         for (const [t, nm] of DRAW_EVENTS[D.kind] || []) if (D.last < t && D.t >= t) this.onInspectSfx?.(nm, D.kind); D.last = D.t; } }
+    /* AS MÃOS ACOMPANHAM O RECUO: o tiro empurra só o modelo da arma (agroup); as mãos eram postas por IK em pontos fixos do suporte e ficavam PARADAS enquanto a arma recuava (a mão 'saía' da arma e pulava a cada tiro). Agora o ponto de empunhadura recebe o mesmo deslocamento do recuo, no espaço do suporte. */
+    { const w0 = this.char.rig.weps[0]; if (w0) { if (this.orient && this.rec > 1e-4) { const r = this.rec; _rq.makeRotationZ(r * 0.35); _rq.setPosition(-r, 0, 0); (w0.recM ||= new THREE.Matrix4()).copy(this.orient.matrix).multiply(_rq).multiply(_ri.copy(this.orient.matrix).invert()); } else w0.recM = null; } }
     this.char.animate(dt, spd, sgn, pitch, air);
     if (this._ch) { const hit = this._mUntil && performance.now() < this._mUntil; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._ch, this._cp); this.chainRev = hit ? 1 : 0.3; if (this.holder) this.holder.position.x = Math.sin(performance.now() * 0.09) * (hit ? 0.006 : 0.002); }   // MOTOSSERRA: a corrente corre sempre (mais rápido ao serrar) e a arma vibra
     // === movimento da arma IDÊNTICO ao base.html: group.position.x = -rec · group.rotation.z = rec*.35 - tilt(recarga) · (unidades do Arsenal ×0,3)
