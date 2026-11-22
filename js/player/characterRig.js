@@ -1340,7 +1340,7 @@ function mergeStatic(){
 const _o=new THREE.Vector3(),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3(),_v4=new THREE.Vector3(),_v5=new THREE.Vector3(),_g2=new THREE.Quaternion(),_g=new THREE.Quaternion(),_eu=new THREE.Euler(),AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
 const WP={rifle:WR,lmg:[[-.1,.32,.2],[-.07,.56,.16]],shotgun:WR,sniper:WR,melee:[[-.17,.5,.3],[-.15,.56,.34]],pistol:[[-.12,.36,.38],[-.06,.585,.38]],smg:[[-.12,.35,.36],[-.06,.575,.36]]};
 let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_hd=new THREE.Vector3(),_h2=new THREE.Vector3(),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
-const WRIST={L:[0,0,.35],R:[0,0,0]},HROLL={L:0,R:0},_rq2=new THREE.Quaternion(),_ay=new THREE.Vector3(0,1,0);
+const WRIST={L:[.35,0,0],R:[0,0,0]},HROLL={L:Math.PI/2,R:0},_rq2=new THREE.Quaternion(),_ay=new THREE.Vector3(0,1,0);
 const HAND_OFF=.065;   // medido na malha: o osso do antebraço termina no PULSO (0,29 m) e a MÃO vai até ~0,43 m: o centro da palma fica ~6,5 cm além do pulso
 function ik(arm,fore,sd,T3){ // a PALMA (não o pulso) é que vai ao ponto de empunhadura: resolve uma vez, mede a direção do antebraço e recua o alvo do pulso pelo tamanho da mão
  ik0(arm,fore,sd,T3);
@@ -1414,7 +1414,7 @@ function animate(dt,spd,sgn,pitch,air){
    if(w.two&&w.twoAt!=null){ar.updateMatrixWorld(true);_o.set(0,0,w.twoAt);w.g.localToWorld(_o);rig.spine.worldToLocal(_o);ik(oa,of,sd==='R'?1:-1,_o)}   // OUTRA MÃO NO CABO de verdade (IK até um ponto do cabo, certo para cada arma), não num ângulo fixo
    continue;}
   const pz=WP[w.type],m=(w.side==='L'?-1:1)*(rig.weps.length>1?1.45:1),Hh=S.height;
-  w.g.position.set(m*(pz[0][0]+(pz[1][0]-pz[0][0])*aimT),Hh*(pz[0][1]+(pz[1][1]-pz[0][1])*aimT)+(mv?Math.sin(ph*2)*A*.012:br),pz[0][2]+(pz[1][2]-pz[0][2])*aimT);
+  w.g.position.set(m*(pz[0][0]+(pz[1][0]-pz[0][0])*aimT),Hh*(pz[0][1]+(pz[1][1]-pz[0][1])*aimT)+(mv?Math.sin(ph*2)*A*.012:br),pz[0][2]+(pz[1][2]-pz[0][2])*aimT-(w.pull||0));   /* 3ª pessoa: a arma fica mais perto do corpo (cotovelos dobrados, como na vida real) */
   _t.copy(w.g.position);_t.y-=.6*Hh;_t.applyAxisAngle(AX,-pitch);w.g.position.set(_t.x,_t.y+.6*Hh,_t.z);w.g.rotation.set(-pitch,0,0);
   if(swp>=0&&swk==='pour'){const e=Math.sin(Math.PI*Math.min(1,swp*5))*(swp<.9?1:Math.max(0,(1-swp)*10));w.g.position.y-=.25*Hh*e;w.g.position.z+=.12*Hh*e;w.g.rotation.x+=.5*e}
   else if(swp>=0){const k=swk,q=swp,z=Hh;let ox=0,oy=0,oz=0,rx=0,rz=0;
