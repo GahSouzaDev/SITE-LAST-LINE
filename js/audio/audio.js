@@ -152,6 +152,13 @@ class AudioEngine {
     if (t < h.until - 0.001) { h.to = setTimeout(() => this._holdEnd(kind), 60); return; }
     h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0.0001, t, 0.05); const nodes = h.nodes; delete this._hold[kind]; setTimeout(() => { for (const n of nodes) { try { n.stop(); } catch { /* já parou */ } } try { h.g.disconnect(); } catch { /* ok */ } }, 400);
   }
+  // PLACA DE TORRE QUEBRADA (Cerco): estalo grave de metal + 'tink' agudo + chuva de lascas; o tom sobe a cada placa (a última é a mais aguda e vem com um estrondo)
+  towerPlate(pos, left = 4) {
+    if (!this.ctx) return; const t = this.ctx.currentTime, d = this.out(pos || null, this.sfx, 10, 0.9), k = 1 + (4 - left) * 0.07;
+    this.tn(d, t, { f: 170, f2: 55, dur: 0.5, type: 'sawtooth', g: 0.5 }); this.tn(d, t, { f: 2300 * k, f2: 950, dur: 0.4, type: 'triangle', g: 0.2, wet: 0.35 }); this.tn(d, t + 0.03, { f: 3400 * k, f2: 1500, dur: 0.18, type: 'square', g: 0.07 });
+    this.nz(d, t, { dur: 0.35, f: 3200, f2: 900, type: 'bandpass', q: 1.2, g: 0.55 }); this.nz(d, t + 0.06, { dur: 0.6, f: 700, f2: 120, g: 0.35, wet: 0.4 });
+    if (left === 0) { this.tn(d, t, { f: 90, f2: 35, dur: 0.8, type: 'sine', g: 0.7 }); this.nz(d, t + 0.02, { dur: 0.7, f: 1800, f2: 200, g: 0.4, wet: 0.5 }); }
+  }
   // ALERTA DE MIRA (Cerco): a torre travou em VOCÊ — três bips rápidos e agudos
   towerLock() { if (!this.ctx) return; const t = this.ctx.currentTime, d = this.out(null, this.sfx, 2, 1.0); for (const k of [0, 0.14, 0.28]) this.tn(d, t + k, { f: 1250, f2: 1250, dur: 0.07, type: 'square', g: 0.16 }); }
   // CARREGANDO: zumbido que sobe de tom até o tiro
