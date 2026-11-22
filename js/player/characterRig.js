@@ -1339,8 +1339,13 @@ function mergeStatic(){
 // ---------- animação (esqueleto fixo, sem reconstruir) ----------
 const _o=new THREE.Vector3(),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3(),_v4=new THREE.Vector3(),_v5=new THREE.Vector3(),_g2=new THREE.Quaternion(),_g=new THREE.Quaternion(),_eu=new THREE.Euler(),AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
 const WP={rifle:WR,lmg:[[-.1,.32,.2],[-.07,.56,.16]],shotgun:WR,sniper:WR,melee:[[-.17,.5,.3],[-.15,.56,.34]],pistol:[[-.12,.36,.38],[-.06,.585,.38]],smg:[[-.12,.35,.36],[-.06,.575,.36]]};
-let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
-function ik(arm,fore,sd,T3){ // braço de 2 ossos: leva a mão até o ponto de empunhadura
+let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_hd=new THREE.Vector3(),_h2=new THREE.Vector3(),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
+const HAND_OFF=.065;   // medido na malha: o osso do antebraço termina no PULSO (0,29 m) e a MÃO vai até ~0,43 m: o centro da palma fica ~6,5 cm além do pulso
+function ik(arm,fore,sd,T3){ // a PALMA (não o pulso) é que vai ao ponto de empunhadura: resolve uma vez, mede a direção do antebraço e recua o alvo do pulso pelo tamanho da mão
+ ik0(arm,fore,sd,T3);
+ _hd.copy(T3).sub(_e);const L=_hd.length();if(L>1e-4){_hd.multiplyScalar(HAND_OFF/L);_h2.copy(T3).sub(_hd);ik0(arm,fore,sd,_h2)}
+}
+function ik0(arm,fore,sd,T3){ // braço de 2 ossos: leva o PULSO até o ponto dado
  /* ALCANCE ELÁSTICO: com o ponto de empunhadura além do alcance do braço (a mão de apoio nas armas longas estava ~9 cm longe da arma, e no recuo/balanço entrava e saía do alcance = a mão 'pulava' e saía da arma), o braço cresce o MÍNIMO necessário (contínuo, até +50%) para a mão sempre alcançar a arma; dentro do alcance nada muda. */
  if(!arm.userData.p0)arm.userData.p0=arm.position.clone();arm.position.copy(arm.userData.p0);   /* ombro na posição de repouso */
  const S0=arm.position;let d0=_d.copy(T3).sub(S0),R0=d0.length(),kk=Math.min(1.3,Math.max(1,R0/.57));

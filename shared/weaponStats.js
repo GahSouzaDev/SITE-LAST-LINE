@@ -11,7 +11,7 @@ export const MAG_OPTS = { 0: { cap: 1, reload: 1, mob: 0 }, 1: { cap: 1.3, reloa
 export const MUZZLE_OPTS = { def: {}, supp: { noise: 0.3, dmg: 0.95, range: 0.95, recoil: 0.9 }, brake: { recoil: 0.8, noise: 1.1 }, comp: { recoil: 0.7 } };
 export const SWAP_MS = { sniper: 650, lmg: 700, shotgun: 550, rifle: 450, energy: 450, smg: 350, pistol: 250, dual: 400, special: 500 };
 // TROCA RÁPIDA: as armas de FERROLHO (as mesmas de BOLT_MS) cortam o ciclo do ferrolho trocando de arma e voltando (Q, Q). O custo é o tempo de troca (swapMs).
-export const SWAP_CANCEL = new Set(['sniper', 'scout', 'amr', 'hunter', 'santa', 'mosquete', 'dragao', 'cangaco', 'longbow', 'petala', 'zarabatana', 'boto', 'dmr']);
+export const SWAP_CANCEL = new Set(['sniper', 'scout', 'amr', 'hunter', 'santa', 'mosquete', 'dragao', 'cangaco']);
 
 function deriveRaw(id, att = {}) {
   const w = ARSENAL_BY_ID[id];
