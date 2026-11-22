@@ -229,7 +229,7 @@ const cap=(p,len,r,m)=>LOW?mesh(p,new CapsuleGeometry(r,Math.max(.01,len-r),4,12
 const tatCap=(p,len,r,kind,sd)=>{const o=mesh(p,limbGeo(len,r+.0012),tatMat(kind,sd),[0,0,0]);o.rotation.y=-T/2;o.castShadow=false;o.renderOrder=2;return o};
 // mão com dedos (palma + 4 dedos de 2 falanges + polegar), levemente fechada para segurar a arma.
 // Orientação: a palma fica virada para o centro do corpo, com o polegar do lado certo (sd=+1 mão esquerda, sd=-1 mão direita).
-function hand(fr,sd,gm,B){const hg=new THREE.Group();hg.rotation.y=-sd*Math.PI/2;fr.add(hg);   // giro da mão em torno do antebraço
+function hand(fr,sd,gm,B){const hg=new THREE.Group();hg.rotation.y=-sd*Math.PI/2;if(fr.name&&fr.name[0]==='w')hg.position.y=.29;fr.add(hg);   // giro da mão em torno do antebraço
  const m=mesh(hg,handGeoT(sd,B,LOW),gm);m.castShadow=false;(rig.hm||(rig.hm={}))[sd>0?'L':'R']=m;m.userData.open=m.geometry;m.userData.sd=sd;if(rig.fists)m.geometry=fistGeom(sd)}
 function ribbon(p,pts,w,m){const n=pts.length,pos=[],ix=[];for(let i=0;i<n;i++){const h=(typeof w==='function'?w(i/(n-1)):w)/2,q=pts[i];pos.push(q[0],q[1]+h,q[2],q[0],q[1]-h,q[2]);if(i<n-1){const a=i*2;ix.push(a,a+1,a+2,a+1,a+3,a+2)}}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(n*4),2));g.setIndex(ix);g.computeVertexNormals();return mesh(p,g,m)}
@@ -1157,7 +1157,7 @@ if(spc){const lea=M('#4a2e1a',.1,.7),gold=M('#d9a441',.8,.3),wh=M('#eef1f3',.1,.
   if(SPK==='ze'){const go=M('#d9a441',.9,.25);tatCap(a,.29,.05*B,'up',sd);tatCap(fr,.26,.042*B,'fo',sd);cyl(fr,(sd===1?.047:.046)*B,sd===1?.03:.012,[0,-.215,0],go)}
   if((SPK==='futuro'||SPK==='legado7'||SPK==='c54')){bx(fr,[.012,.2,.012],[0,-.13,.046*B],neon);bx(a,[.012,.2,.012],[0,-.15,.056*B],neon)}
   armFx(a,fr,sd);
-  hand(fr,sd,glove,B);
+  { const wr = J(fr, 'w' + n, [0, -.29, 0]); hand(wr, sd, glove, B); }   /* OSSO DE PULSO: a mão gira/inclina sozinha em cima do antebraço (segurar a bomba da escopeta, o guarda-mão...) */
  }
 
  // ---------- infectado: sangue, ferimentos, ossos, cabeça ----------
@@ -1340,7 +1340,7 @@ function mergeStatic(){
 const _o=new THREE.Vector3(),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3(),_v4=new THREE.Vector3(),_v5=new THREE.Vector3(),_g2=new THREE.Quaternion(),_g=new THREE.Quaternion(),_eu=new THREE.Euler(),AX=new THREE.Vector3(1,0,0),WR=[[-.1,.34,.2],[-.07,.575,.17]];
 const WP={rifle:WR,lmg:[[-.1,.32,.2],[-.07,.56,.16]],shotgun:WR,sniper:WR,melee:[[-.17,.5,.3],[-.15,.56,.34]],pistol:[[-.12,.36,.38],[-.06,.585,.38]],smg:[[-.12,.35,.36],[-.06,.575,.36]]};
 let aimT=0,SW=null;const Y_DN=new THREE.Vector3(0,-1,0),_hd=new THREE.Vector3(),_h2=new THREE.Vector3(),_d=new THREE.Vector3(),_p=new THREE.Vector3(),_e=new THREE.Vector3(),_t=new THREE.Vector3(),_q=new THREE.Quaternion();
-const HROLL={L:0,R:0},_rq2=new THREE.Quaternion(),_ay=new THREE.Vector3(0,1,0);
+const WRIST={L:[0,0,.35],R:[0,0,0]},HROLL={L:0,R:0},_rq2=new THREE.Quaternion(),_ay=new THREE.Vector3(0,1,0);
 const HAND_OFF=.065;   // medido na malha: o osso do antebraço termina no PULSO (0,29 m) e a MÃO vai até ~0,43 m: o centro da palma fica ~6,5 cm além do pulso
 function ik(arm,fore,sd,T3){ // a PALMA (não o pulso) é que vai ao ponto de empunhadura: resolve uma vez, mede a direção do antebraço e recua o alvo do pulso pelo tamanho da mão
  ik0(arm,fore,sd,T3);
@@ -1357,7 +1357,7 @@ function ik0(arm,fore,sd,T3){ // braço de 2 ossos: leva o PULSO até o ponto da
  _e.copy(S0).addScaledVector(u,a).addScaledVector(_p,h);
  arm.quaternion.setFromUnitVectors(Y_DN,_t.copy(_e).sub(S0).normalize());
  fore.quaternion.setFromUnitVectors(Y_DN,_t.copy(T3).sub(_e).normalize().applyQuaternion(_q.copy(arm.quaternion).invert()));
- {const k=sd>0?'L':'R',r=(globalThis.__HR&&globalThis.__HR[k]!=null)?globalThis.__HR[k]:HROLL[k];if(r)fore.quaternion.multiply(_rq2.setFromAxisAngle(_ay,r))}   /* GIRO DA MÃO em torno do antebraço: o IK só aponta o antebraço; sem isto a palma ficava virada para qualquer lado em vez de abraçar a arma */
+ {const k=sd>0?'L':'R',r=(globalThis.__HR&&globalThis.__HR[k]!=null)?globalThis.__HR[k]:HROLL[k];if(r)fore.quaternion.multiply(_rq2.setFromAxisAngle(_ay,r));const wb=rig['w'+k];if(wb){const t=(globalThis.__WR&&globalThis.__WR[k])||WRIST[k];wb.rotation.set(t[0],t[1],t[2])}}   /* GIRO DA MÃO em torno do antebraço: o IK só aponta o antebraço; sem isto a palma ficava virada para qualquer lado em vez de abraçar a arma */
 }
 const cur={};let ph=0,crouch=0,lkS=0,lkP=0;
 function animate(dt,spd,sgn,pitch,air){
@@ -1375,7 +1375,7 @@ function animate(dt,spd,sgn,pitch,air){
  set(rig.head,cur.head,-pitch*.85+lkP,lkS);
  if(rig.tail)rig.tail.rotation.x=.56+Math.sin(tb*1.8)*.04+(mv?Math.sin(ph*2)*A*.25:0);
  set(rig.spine,cur.spine,br+crouch*.38,mv?-w*.12*(1-.5*crouch):0);rig.spine.scale.set(1+br*.5,1,1+br*.9);
- set(rig.aL,cur.aL,w*aw*1.3);set(rig.aR,cur.aR,-w*aw*1.3);for(const A of [rig.aL,rig.aR]){A.scale.setScalar(1);if(A.userData.p0)A.position.copy(A.userData.p0)}
+ set(rig.aL,cur.aL,w*aw*1.3);set(rig.aR,cur.aR,-w*aw*1.3);for(const A of [rig.aL,rig.aR]){A.scale.setScalar(1);if(A.userData.p0)A.position.copy(A.userData.p0)}for(const k of ['wL','wR'])if(rig[k])rig[k].rotation.set(0,0,0);
  set(rig.fL,cur.fL,-Math.abs(w)*.5*aw);set(rig.fR,cur.fR,-Math.abs(w)*.5*aw);
  // golpe corpo a corpo (soco/facada/coronhada): progresso 0..1 e deslocamento da mão em 3ª pessoa (frente do rig = +Z)
  let swp=-1,swk='';if(SW){SW.t+=dt/SW.dur;if(SW.t>=1)SW=null;else{swp=SW.t;swk=SW.k}}
