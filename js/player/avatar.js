@@ -42,7 +42,7 @@ import { effective, onGfx } from '../core/graphics.js';
 const gq = () => { const e = effective(); return { noTex: e.ctex === false, noNeon: e.cneon === false }; };
 const LIVE = new Set();
 onGfx(() => { for (const r of [...LIVE]) { const a = r.deref(); if (!a) { LIVE.delete(r); continue; } try { a.setLook({}); } catch { /* sem personagem */ } } });
-const _rq = new THREE.Matrix4(), _ri = new THREE.Matrix4();
+const _rq = new THREE.Matrix4(), _ri = new THREE.Matrix4(), _fv = new THREE.Vector3(), _fd = new THREE.Vector3();
 export class Avatar {
   static env = null;                                   // mapa de ambiente (RoomEnvironment) para os metais, como o scene.environment do base.html
   constructor(look = {}) {
@@ -148,6 +148,8 @@ export class Avatar {
     grips = grips.map(([sd, p], i) => (dual || i === 0) ? [sd, [p[0] + (sd === 'R' ? (big ? -0.06 : -0.03) : 0.03), p[1], p[2] + (sd === 'R' && big ? 0.05 : 0)]] : [sd, p]);   // mão do gatilho um pouco PARA FORA: segura a arma em vez de ficar enterrada nela
     this.char.WP.dual = [[0, 0.35, 0.34], [0, 0.55, 0.34]];
     this.char.rig.weps = [{ g: holder, grips, type: dual ? 'dual' : wkey(id), side }];
+    /* PONTOS DE EMPUNHADURA NA PRÓPRIA ARMA: um nó por empunhadura, filho do modelo (agroup). A mão é resolvida DE NOVO, no último instante antes de desenhar (finalizeHands), em cima da matriz mundial REAL desses nós: o que quer que mova a arma (recuo, recarga, giro, balanço, câmera, queda de FPS), a mão vai junto no mesmo quadro. */
+    tmp.updateMatrixWorld(true); this._gn = grips.map(([sd, p]) => { const n = new THREE.Object3D(); n.position.copy(agroup.worldToLocal(new THREE.Vector3(p[0], p[1], p[2]))); agroup.add(n); return { sd, n, g: p, b: p.slice() }; });
     this._rk = reloadKind(id);
     this._sup = !dual && grips.length > 1 ? { g: grips[1], base: grips[1][1].slice() } : null;   // mão de apoio: é ela que puxa o pente na recarga
     this._mag = null; if (!dual) { let mn = null; model.traverse((o) => { if (!mn && o.userData.role === 'mag') mn = o; }); const bb = mn && new THREE.Box3().setFromObject(mn);   // PENTE REAL: o carregador é um nó próprio da arma (role 'mag'): a recarga arranca ele de verdade, joga no chão e encaixa outro igual
@@ -168,20 +170,18 @@ export class Avatar {
     if (this.fp) this.applyFP();
     this.char.S.pose = 'aim';
   }
+  finalizeHands() {
+    const rig = this.char.rig, w = rig.weps[0], pose = this.char.S.pose; if (!this._gn || !w || !w.g.visible || (pose !== 'aim' && pose !== 'armed')) return;
+    this.group.updateMatrixWorld(true);
+    for (const { sd, n, g, b } of this._gn) { n.getWorldPosition(_fv); rig.spine.worldToLocal(_fv); _fd.set(g[0] - b[0], g[1] - b[1], g[2] - b[2]).applyQuaternion(w.g.quaternion); _fv.add(_fd); this.char.ik(rig['a' + sd], rig['f' + sd], sd === 'L' ? 1 : -1, _fv); }
+  }
   update(dt, { spd = 0, sgn = 1, pitch = 0, air = false, crouch = false, aiming = false, sliding = false, reload = 0, run = false } = {}) {
     if (sliding) { spd = 0; crouch = true; }              // SLIDE: corpo abaixa e as PERNAS FICAM PARADAS (não é corrida agachada)
     this.crouchV += ((crouch ? 1 : 0) - this.crouchV) * dec(dt, 12);
     this.char.setCrouch(this.crouchV);
     this.char.S.pose = this.weapon ? (run ? 'armed' : 'aim') : 'idle';       // padrão: SEMPRE mirando · correndo sem atirar: arma em outra posição (abaixada); atirou -> volta à mira       // POSIÇÃO PADRÃO = SEMPRE MIRANDO (como no base.html): arma erguida, encaixada na tela, parado, andando, correndo ou atirando
     if (this._in && (reload > 0 || run || air || sliding || crouch || this.dead)) this.cancelInspect();
-    if (this._in) {   // INSPECIONAR em curso: calcula os deslocamentos e entrega ao rig (as mãos acompanham a arma)
-      const I = this._in; I.t += dt / I.dur; const w = this.char.rig.weps[0];
-      if (I.t >= 1) this.cancelInspect(); else if (w) { const s = inspectSample(I.kind, I.t, I.v), sg = this.side === 'L' ? -1 : 1;
-        if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
-        I.last = I.t;   /* inspecionar fica SEM som (o som da troca de arma continua) */ } }
-    if (this._dr && !this._in) { const D = this._dr; D.t += dt / D.dur; const w = this.char.rig.weps[0]; if (D.t >= 1) { this._dr = null; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } } else if (w) { const s = drawSample(D.kind, D.t), sg = this.side === 'L' ? -1 : 1;
-        if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
-        for (const [t, nm] of DRAW_EVENTS[D.kind] || []) if (D.last < t && D.t >= t) this.onInspectSfx?.(nm, D.kind); D.last = D.t; } }
+    /* (ANTES de inspecionar/sacar: este bloco REESCREVE a posição base da mão de apoio a cada passo; a inspeção/saque soma o deslocamento DEPOIS, e só então os braços são resolvidos) */
     // === movimento da arma IDÊNTICO ao base.html: group.position.x = -rec · group.rotation.z = rec*.35 - tilt(recarga) · (unidades do Arsenal ×0,3)
     this.rec *= Math.pow(5e-4, dt); if (this.rec < 1e-4) this.rec = 0;
     if (this._drops?.length) this._stepDrops(dt);
@@ -211,6 +211,14 @@ export class Avatar {
         if (M && this._mw > 0) { const pl = _mv.copy(M.cL).addScaledVector(M.dL, M.gk * M.DL).applyMatrix4(M.node.matrix).applyMatrix4(M.model.matrix).applyMatrix4(M.agroup.matrix).applyMatrix4(M.orient.matrix), u = Math.max(0, Math.min(1, (this._ms - 1.3) / 0.6)), w = this._mw, ox = (this._sup.g[0] === 'L' ? -1 : 1) * 0.012;
           g[0] += (pl.x + ox - 0.05 * u * (this._sup.g[0] === 'L' ? -1 : 1) - g[0]) * w; g[1] += (pl.y - g[1]) * w; g[2] += (pl.z - 0.09 * u - g[2]) * w; } }
     }
+    if (this._in) {   // INSPECIONAR em curso: calcula os deslocamentos e entrega ao rig (as mãos acompanham a arma)
+      const I = this._in; I.t += dt / I.dur; const w = this.char.rig.weps[0];
+      if (I.t >= 1) this.cancelInspect(); else if (w) { const s = inspectSample(I.kind, I.t, I.v), sg = this.side === 'L' ? -1 : 1;
+        if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
+        I.last = I.t;   /* inspecionar fica SEM som (o som da troca de arma continua) */ } }
+    if (this._dr && !this._in) { const D = this._dr; D.t += dt / D.dur; const w = this.char.rig.weps[0]; if (D.t >= 1) { this._dr = null; if (w) w.ix = null; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0]; g[1] = b[1]; g[2] = b[2]; } } else if (w) { const s = drawSample(D.kind, D.t), sg = this.side === 'L' ? -1 : 1;
+        if (s.melee) w.ix = { arm: s.arm, out: s.out, twirl: s.twirl, tilt: s.tilt, fore: s.fore, shake: s.shake }; else { w.ix = [s.lift, s.fwd, -s.pitch, s.yaw * sg, s.roll * sg]; if (this._sup) { const g = this._sup.g[1], b = this._sup.base; g[0] = b[0] - 0.05 * s.sup * sg; g[1] = b[1] - 0.16 * s.sup; g[2] = b[2] + 0.1 * s.sup + s.supF * 0.7; } }
+        for (const [t, nm] of DRAW_EVENTS[D.kind] || []) if (D.last < t && D.t >= t) this.onInspectSfx?.(nm, D.kind); D.last = D.t; } }
     /* AS MÃOS SEGUEM A ARMA EXATAMENTE: primeiro a arma recebe a pose FINAL deste passo (recuo, inclinação da recarga, giro, balanço...); só então os braços são resolvidos por IK em cima do ponto de empunhadura JÁ transformado por essa mesma pose (matriz inteira do modelo). Uma única fonte de verdade: a mão nunca fica um passo atrás nem 'solta' da arma, em nenhum FPS ou modo. */
     { const w0 = this.char.rig.weps[0]; if (w0) { if (this.orient && this.agroup) { this.agroup.updateMatrix(); (w0.recM ||= new THREE.Matrix4()).copy(this.orient.matrix).multiply(this.agroup.matrix).multiply(_ri.copy(this.orient.matrix).invert()); } else w0.recM = null; } }
     this.char.animate(dt, spd, sgn, pitch, air);
