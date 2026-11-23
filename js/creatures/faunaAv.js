@@ -5,7 +5,7 @@ import { Creature } from './creatureRig.js';
 export class FaunaAv {
   static voice = null;   // gancho de SOM (o jogo liga: golpe, dor e morte da fera fazem barulho); fora do jogo (bestiário, tela final) fica nulo
   constructor(speciesId, scale = 1) {
-    this.cr = new Creature(speciesId); this.scale = scale; this.group = new THREE.Group(); const h = new THREE.Group(); h.rotation.y = Math.PI; h.scale.setScalar(scale); h.add(this.cr.group); this.group.add(h);
+    this.id = speciesId; this.cr = new Creature(speciesId); this.scale = scale; this.group = new THREE.Group(); const h = new THREE.Group(); h.rotation.y = Math.PI; h.scale.setScalar(scale); h.add(this.cr.group); this.group.add(h);
     this.weapon = null; this.dead = false; this.isFauna = true;
   }
   update(dt, st = {}) { const spd = (st.spd || 0) * (this.animK || 1);   /* animK: dinossauro de jogador anda mais rápido, mas as pernas continuam no ritmo de antes */ this.cr.setMotion(spd, spd > this.cr.sp.walk * 1.25 ? 'flee' : 'calm'); this.cr.update(dt); }

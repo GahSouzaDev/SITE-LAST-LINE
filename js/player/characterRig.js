@@ -773,7 +773,7 @@ if(spc){const lea=M('#4a2e1a',.1,.7),gold=M('#d9a441',.8,.3),wh=M('#eef1f3',.1,.
    bx(sp,[.04,.5*H,.2*B+.08],[0,.3*H,0],M('#4a8a3a',0,.9),[0,0,.6]);mesh(sp,new THREE.TorusGeometry(.09,.03,6,12),lf,[0,.52*H,0],[T/2,0,0]);mesh(hips,new CylinderGeometry(.14*B,.2*B,.2*H,10),lf,[0,-.14*H,0])}
   if(SPK==='ninja'){const bk=M('#0d0e12',0,.9),rd2=M('#c1121f',0,.8),bd=M('#c1121f',0,.8);bd.side=THREE.DoubleSide;
    part(bk,1.07,0,T,0);
-   for(const sd of [1,-1]){const x=sd*RX*.4,y=RY*.08,zm=RZ*.989+.004;bx(head,[.05*hs,.03*hs,.004],[x,y,zm-.002],skin);ball(head,.011*hs,[x,y,zm+.002],M('#f4f4f1',0,.4),[1.3,.7,.3]);ball(head,.005*hs,[x,y,zm+.006],M('#0a0a0a'),[1,1,.3])}
+   /* (sem os olhos FALSOS fixos por cima: os olhos de verdade do rosto aparecem e piscam) */
    mesh(head,new CylinderGeometry(1,1,.04,26,1,true),bd,[0,RY*.45,0],[0,0,0],[RX*1.01,1,RZ*1.01]);
    bx(head,[.03,.2,.008],[.02,-.08,-RZ-.045],rd2,[.25,0,.25]);bx(head,[.03,.17,.008],[-.02,-.07,-RZ-.04],rd2,[.2,0,-.3]);
    ov(bk,1.95,.34);bx(sp,[.04,.5*H,.2*B+.08],[0,.3*H,0],M('#2a2d34',0,.9),[0,0,.55]);mesh(sp,new THREE.TorusGeometry(.07,.022,8,16),rd2,[0,.52*H,0],[T/2,0,0]);bx(sp,[sw*1.7,.05,.2*B+.03],[0,0,0],rd2);
@@ -1042,7 +1042,7 @@ if(spc){const lea=M('#4a2e1a',.1,.7),gold=M('#d9a441',.8,.3),wh=M('#eef1f3',.1,.
    for(const sd of [1,-1]){const x=sd*RX*.4,y=RY*.08;ball(head,.02*hs,[x,y,fz(x,y)+.008],go2,[1,.7,.5])}
    ball(sp,.05,[0,.38*H,zf],go2,[1,1,.5]);
    const au=mesh(root,new SphereGeometry(1,24,16),new THREE.MeshBasicMaterial({color:'#ffcf3a',transparent:true,opacity:.14,depthWrite:false}),[0,1.3,0],[0,0,0],[.5,1.05,.5]);
-   const gr=mesh(root,new THREE.CircleGeometry(.8,32),new THREE.MeshBasicMaterial({color:'#ffcf3a',transparent:true,opacity:.35,depthWrite:false}),[0,.05,0],[-T/2,0,0]);
+   const gr=mesh(root,new THREE.CircleGeometry(.8,32),new THREE.MeshBasicMaterial({color:'#ffcf3a',transparent:true,opacity:.35,depthWrite:false}),[0,.05,0],[-T/2,0,0]);gr.visible=false;   /* sem o disco de luz no chão (luz aleatória aos pés) */
    const cn=[];for(let i=0;i<10;i++)cn.push(cyl(root,.06,.012,[0,0,0],gm));embersG(root,24,.5,.2,2,'#ffcf3a',.4);
    live(t=>{rig.hips.position.y+=.28+Math.sin(t*2)*.05;hl.rotation.z=t;au.scale.set(.5+Math.sin(t*2)*.03,1.05,.5+Math.sin(t*2)*.03);gr.material.opacity=.3+Math.sin(t*2)*.1;
     cn.forEach((c,i)=>{const a=t*1.5+i*.63;c.position.set(Math.cos(a)*(.7+Math.sin(t+i)*.1),.9+Math.sin(t*2+i)*.5,Math.sin(a)*(.7+Math.sin(t+i)*.1));c.rotation.set(t*3+i,t*2,0)})})}
@@ -1234,8 +1234,7 @@ if(spc){const lea=M('#4a2e1a',.1,.7),gold=M('#d9a441',.8,.3),wh=M('#eef1f3',.1,.
  if(SPK==='saci'&&rig.tR)rig.tR.visible=false;
  if(spc&&!s.noAura){const rl=(L.special.find(x=>x[0]===SPK)||[0,''])[1],rc=/Mítica/.test(rl)?'#ff3df2':/Lendária/.test(rl)?'#ffb52e':/Épica/.test(rl)?'#a45bff':'#3fa3ff';
   const am=new THREE.MeshStandardMaterial({color:rc,emissive:rc,emissiveIntensity:3.5,transparent:true,opacity:.85});
-  const r1=new THREE.Mesh(new THREE.TorusGeometry(.62,.018,8,64),am);r1.rotation.x=T/2;r1.position.y=.07;root.add(r1);
-  const r2=new THREE.Mesh(new THREE.TorusGeometry(.5,.01,8,64),am);r2.rotation.x=T/2;r2.position.y=.07;root.add(r2);
+  /* (sem os anéis de luz no CHÃO aos pés: pareciam uma luz aleatória no lugar da sombra; fica o brilho da roupa/olhos e as faíscas em volta) */
   const spk=new THREE.Group();root.add(spk);for(let i=0;i<12;i++)ball(spk,.014,[Math.cos(i*.52)*.55,.3+i*.1,Math.sin(i*.52)*.55],am);
   rig.aura=am;rig.spark=spk}
  neonPass();tagFP();
@@ -1295,8 +1294,8 @@ function optimize(rt){
     const pt=new THREE.Points(g,new THREE.PointsMaterial({size:clamp(l.reduce((a,q)=>a+q.r,0)/l.length*9,.1,.5),map:glowTex,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.9}));
     pt.material.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\ngl_Position=projectionMatrix*(mvPosition+vec4(0.,0.,.09,0.));')};pt.material.customProgramCacheKey=()=>'glowpt';
     pt.frustumCulled=false;pt.renderOrder=3;bn.add(pt);(rig.neon||(rig.neon=[])).push(pt.material)}
-   // luz neon no chão: 1 quad aditivo com a cor média do neon (parece luz projetada, sem custo de luz dinâmica)
-   if(glw.length){const cc=new THREE.Color(0,0,0);glw.forEach(q=>cc.add(q.c));cc.multiplyScalar(1/glw.length);const m=Math.max(cc.r,cc.g,cc.b)||1;cc.multiplyScalar(1/m);
+   /* SEM a "luz neon no chão" (quad aditivo aos pés com a cor média do neon): parecia uma luz aleatória no lugar da sombra. O neon continua brilhando na roupa e nos olhos. */
+   if(false&&glw.length){const cc=new THREE.Color(0,0,0);glw.forEach(q=>cc.add(q.c));cc.multiplyScalar(1/glw.length);const m=Math.max(cc.r,cc.g,cc.b)||1;cc.multiplyScalar(1/m);
     const gm=new THREE.MeshBasicMaterial({map:glowTex,color:cc,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.5}),gq=new THREE.Mesh(new THREE.PlaneGeometry(2.2,2.2),gm);
     gq.rotation.x=-T/2;gq.position.y=.052;gq.renderOrder=1;gq.userData.fp=false;rt.add(gq);(rig.neon||(rig.neon=[])).push(gm)}}}
  for(const g of gs){const by=new Map();
@@ -1359,14 +1358,14 @@ function ik0(arm,fore,sd,T3){ // braço de 2 ossos: leva o PULSO até o ponto da
  fore.quaternion.setFromUnitVectors(Y_DN,_t.copy(T3).sub(_e).normalize().applyQuaternion(_q.copy(arm.quaternion).invert()));
  {const k=sd>0?'L':'R',W=rig.weps&&rig.weps[0],hs=W&&W.hs,body=!!(hs&&hs.mode==='body'&&W.supSd===k),kk2=body?hs.k:0,cf=W&&W.cfg&&W.cfg[k],r=((globalThis.__HR&&globalThis.__HR[k]!=null)?globalThis.__HR[k]:HROLL.L*kk2)+(cf?cf.r:0);if(r)fore.quaternion.multiply(_rq2.setFromAxisAngle(_ay,r));const wb=rig['w'+k];if(wb){const t=(globalThis.__WR&&globalThis.__WR[k])||[WRIST.L[0]*kk2,WRIST.L[1]*kk2,WRIST.L[2]*kk2];wb.rotation.set(t[0]+(cf?cf.w[0]:0),t[1]+(cf?cf.w[1]:0),t[2]+(cf?cf.w[2]:0))}}   /* + ajuste do jogador (Configurações › MÃOS) */   /* estilo da mão por arma: 'body' (sem pente) = palma para cima + inclinada; 'mag' (segura o pente), pistola e duplas = mão normal */   /* GIRO DA MÃO em torno do antebraço: o IK só aponta o antebraço; sem isto a palma ficava virada para qualquer lado em vez de abraçar a arma */
 }
-const cur={};let ph=0,crouch=0,lkS=0,lkP=0;
+const cur={};let ph=0,crouch=0,lkS=0,lkP=0,bobK=0;
 function animate(dt,spd,sgn,pitch,air){
  if(rig.fx&&rig.fx.length){const ft=performance.now()/1000;for(const f of rig.fx)f(ft)}   // partes animadas das skins vivas
  if(rig.neon){const tn=performance.now()/1000;rig.neon.forEach((m,i)=>m.opacity=((i===rig.neon.length-1&&rig.neon.length>1?.42:.78)+.2*Math.sin(tn*3+i*1.7))*NEONK)}
  if(rig.aura){const tt=performance.now()/1000;rig.aura.emissiveIntensity=(1.2+Math.sin(tt*3)*.6)*2.5;if(rig.spark){rig.spark.rotation.y=tt*.9;rig.spark.children.forEach((c,i)=>{c.position.y=.25+((i*.13)%1.4)+Math.sin(tt*2+i)*.06})}}
  const key=S.mode==='zombie'?'zombie':S.pose,P=POSES[key];
  for(const k in P){const c=cur[k]||(cur[k]=P[k].slice());for(let i=0;i<3;i++)c[i]+=(P[k][i]-c[i])*dec(dt, 9)}
- const mv=spd>.1,A=mv?.28+.32*Math.min(1,spd/4.6):0;if(mv)ph+=dt*spd*2.4*sgn;
+ const mv=spd>.1;bobK+=((mv?1:0)-bobK)*dec(dt,10);const A=(.28+.32*Math.min(1,spd/4.6))*bobK;if(mv)ph+=dt*spd*2.4*sgn;   /* a amplitude do passo sobe/desce SUAVE (antes ligava/desligava de uma vez = tranco ao começar/parar) */
  const w=Math.sin(ph)*A,armed=key==='armed'||key==='aim'||key==='zombie',aw=armed?.1:.9,br=Math.sin(performance.now()/1000*1.7)*.012;
  const set=(o,v,x=0,y=0,zz=0)=>o.rotation.set(rad(v[0])+x,rad(v[1])+y,rad(v[2])+zz);
  const tb=performance.now()/1000,bp=tb%3.7,bl=bp<.14?Math.sin(bp/.14*Math.PI):0;
@@ -1389,7 +1388,7 @@ function animate(dt,spd,sgn,pitch,air){
  rig.tL.rotation.set(-w*cw-crouch*1.3-tuck,0,0);rig.tR.rotation.set(w*cw-crouch*1.3,0,0);
  rig.sL.rotation.set(Math.max(0,Math.cos(ph))*A*1.2*cw*(mv?1:0)+crouch*1.75+tuck*1.2,0,0);
  rig.sR.rotation.set(Math.max(0,-Math.cos(ph))*A*1.2*cw*(mv?1:0)+crouch*1.75,0,0);
- rig.hips.position.y=rig.hips.userData.y-crouch*.36*S.height+(mv?Math.abs(Math.sin(ph))*.025*cw:0);
+ rig.hips.position.y=rig.hips.userData.y-crouch*.36*S.height+bobK*(1-Math.cos(2*ph))*.5*(armed?.012:.025)*cw;   /* balanço do passo SUAVE (antes era |sin|, com quina a cada passo = 'pulinho'; ligar/desligar também é suavizado) e bem menor com arma na mão */
  const act=(key==='armed'||key==='aim')&&rig.weps.length>0;aimT+=((key==='aim'?1:0)-aimT)*dec(dt, 10);
  const wsw=w;for(const w of rig.weps){w.g.visible=act;if(!act)continue;
   if(w.hand){const sd=w.side==='L'?'L':'R',sg=sd==='R'?1:-1,ar=rig['a'+sd],fo=rig['f'+sd],oa=rig[sd==='R'?'aL':'aR'],of=rig[sd==='R'?'fL':'fR'],sm=(t)=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
@@ -1414,8 +1413,8 @@ function animate(dt,spd,sgn,pitch,air){
    if(w.two&&w.twoAt!=null){ar.updateMatrixWorld(true);_o.set(0,0,w.twoAt);w.g.localToWorld(_o);rig.spine.worldToLocal(_o);ik(oa,of,sd==='R'?1:-1,_o)}   // OUTRA MÃO NO CABO de verdade (IK até um ponto do cabo, certo para cada arma), não num ângulo fixo
    continue;}
   const pz=WP[w.type],m=(w.side==='L'?-1:1)*(rig.weps.length>1?1.45:1),Hh=S.height;
-  w.g.position.set(m*(pz[0][0]+(pz[1][0]-pz[0][0])*aimT),Hh*(pz[0][1]+(pz[1][1]-pz[0][1])*aimT)+(mv?Math.sin(ph*2)*A*.012:br),pz[0][2]+(pz[1][2]-pz[0][2])*aimT-(w.pull||0));   /* 3ª pessoa: a arma fica mais perto do corpo (cotovelos dobrados, como na vida real) */
-  _t.copy(w.g.position);_t.y-=.6*Hh;_t.applyAxisAngle(AX,-pitch);w.g.position.set(_t.x,_t.y+.6*Hh,_t.z);w.g.rotation.set(-pitch,0,0);
+  w.g.position.set(m*(pz[0][0]+(pz[1][0]-pz[0][0])*aimT),Hh*(pz[0][1]+(pz[1][1]-pz[0][1])*aimT)+(mv?Math.sin(ph*2)*A*.012:br),pz[0][2]+(pz[1][2]-pz[0][2])*aimT-(w.pull||0));if(w.tp&&w.gcfg){w.g.position.x+=w.gcfg.p[0];w.g.position.y+=w.gcfg.p[1];w.g.position.z+=w.gcfg.p[2]}   /* ajuste da ARMA no corpo (admin › Mãos das armas › ARMA): vale em 3ª pessoa */    /* 3ª pessoa: a arma fica mais perto do corpo (cotovelos dobrados, como na vida real) */
+  _t.copy(w.g.position);_t.y-=.6*Hh;_t.applyAxisAngle(AX,-pitch);w.g.position.set(_t.x,_t.y+.6*Hh,_t.z);w.g.rotation.set(-pitch,0,0);if(w.tp&&w.gcfg){w.g.rotation.x+=w.gcfg.rx;w.g.rotation.y+=w.gcfg.ry}
   if(swp>=0&&swk==='pour'){const e=Math.sin(Math.PI*Math.min(1,swp*5))*(swp<.9?1:Math.max(0,(1-swp)*10));w.g.position.y-=.25*Hh*e;w.g.position.z+=.12*Hh*e;w.g.rotation.x+=.5*e}
   else if(swp>=0){const k=swk,q=swp,z=Hh;let ox=0,oy=0,oz=0,rx=0,rz=0;
    if(k==='slash'){ox=(.5-q)*.7*z;oz=.25*sws*z;rz=(.5-q)*1.6}
@@ -1437,7 +1436,7 @@ build();
 function hasNeon(){let n=false;root.traverse(o=>{const m=o.isMesh&&o.material;if(m&&m!==rig.aura&&m.emissive&&m.userData.ei0>0&&(m.emissive.r+m.emissive.g+m.emissive.b)>0)n=true});return n}
 return {
   root, S, D, L, hasNeon, KITS, POSES, WP, WPS,
-  get rig() { return rig; }, rebuild() { build(); }, animate, ik,
+  get rig() { return rig; }, rebuild() { build(); }, animate, ik, ik0,
   swing(k,dur,t0){SW={t:(t0||0),k,dur,n:(SW?SW.n:0)+1};},
   endSwing(k){if(SW&&(!k||SW.k===k))SW=null;},
   setFists(on){rig.fists=!!on;for(const k of ['L','R']){const m=rig.hm&&rig.hm[k];if(!m)continue;m.geometry=on?fistGeom(m.userData.sd):m.userData.open}},   // PUNHOS: mãos fechadas de verdade + guarda de boxe; o soco estica o braço de fato

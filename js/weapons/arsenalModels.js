@@ -150,9 +150,9 @@ function hmgB(){const g=rifle({c:CS(MT.od,MT.steel,MT.black,MT.gold),L:1.4,hg:.7
  for(const [x,z] of[[.45,0],[-.35,.5],[-.35,-.5]])rod(g,[.1,-.3,0],[x*1.5+.1,-1.25,z*1.5],.035,MT.black,8);
  B(g,[.4,.12,.5],[-.7,.02,0],MT.black);for(const s of[-1,1])rod(g,[-.85,.02,s*.22],[-1.1,.02,s*.22],.03,MT.rubber);return g}
 function sawedB(){const g=new THREE.Group(),m=MT.steel,s=MT.wood;
- B(g,[.5,.26,.2],[0,-.03,0],MT.blued);P(g,[[-.34,-.1],[-.14,-.1],[-.2,-.58],[-.5,-.5]],.16,s);B(g,[.3,.025,.11],[-.1,-.2,0],MT.blued);
- for(const z of[-1,1]){C(g,.055,.055,.75,[.6,0,z*.055],m,12);mz(g,tipFx(g,.98,OV.tip||'none',.04,0,z*.055),0,z*.055)}
- B(g,[.75,.025,.1],[.6,.07,0],m);B(g,[.4,.12,.2],[.4,-.1,0],s);B(g,[.04,.1,.05],[-.2,.08,.1],MT.black,[0,0,.5]);sgt(g,'irons',-.2,.95,.3,.1,.3);return fin(g)}
+ B(g,[.46,.24,.2],[-.02,0,0],MT.blued);P(g,[[-.26,-.1],[-.08,-.1],[-.14,-.52],[-.34,-.46]],.14,s);B(g,[.26,.025,.1],[-.02,-.14,0],MT.blued);rod(g,[-.04,-.12,0],[.02,-.2,0],.02,MT.black,6);
+ for(const z of[-1,1]){C(g,.07,.07,.78,[.6,.02,z*.07],m,14);mz(g,tipFx(g,1.0,OV.tip||'none',.05,.02,z*.07),.02,z*.07)}
+ B(g,[.7,.03,.12],[.6,.1,0],m);B(g,[.34,.13,.22],[.48,-.1,0],s);B(g,[.04,.08,.05],[.98,.13,0],MT.steel);sgt(g,'irons',-.1,.97,.3,.12,.3);return fin(g)}
 function minigunB(){const g=new THREE.Group();
  B(g,[1,.42,.34],[0,0,0],MT.black);C(g,.21,.21,.55,[-.78,0,0],MT.steel,16);C(g,.16,.16,.2,[-1.1,0,0],MT.black,16);C(g,.17,.17,.12,[.58,0,0],MT.steel,16);
  const br=new THREE.Group();br.userData.role='gat';g.add(br);

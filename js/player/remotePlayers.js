@@ -176,6 +176,7 @@ export class RemotePlayers {
 
   remove(id, e = this.entities.get(id)) {
     if (!e) return;
+    if (e.rd) { try { e.rd.stop?.(); } catch { /* ok */ } e.rd = null; e.av.rag = null; }   /* devolve a vaga do corpo de pano: sem isso, cada corpo removido em movimento ficava contado para sempre e, depois de 6, ninguém mais virava boneco de pano */
     this.scene.remove(e.group); e.lamp?.material.dispose(); e.sprite?.material.map.dispose(); e.sprite?.material.dispose(); e.barTex.dispose(); e.bar.material.dispose();
     if (e.npc && e.ztype0 && this.zpool.length < 40 && !this.disposed) { try { const av = e.av; av.group.removeFromParent(); av.setDead(false); av.fall = 0; if (av._lod) for (const p of av._lod) p.o.visible = p.v0; av.group.position.set(0, 0, 0); av.group.rotation.set(0, 0, 0); this.zpool.push({ type: e.ztype0, av }); } catch { try { e.av.dispose(); } catch { /* ok */ } } }
     else { try { e.av.dispose(); } catch { /* ok */ } }

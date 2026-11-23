@@ -25,7 +25,37 @@ const _mv = new THREE.Vector3();
 // tempos da troca de pente (progresso da recarga 0..1): [pega, pega-fim=começa a puxar, solta, busca-fim, traz-fim, encaixa-fim, mão-volta-fim]
 const MAGT = { mag: [0.1, 0.2, 0.32, 0.42, 0.52, 0.66, 0.78], pistol: [0.08, 0.16, 0.26, 0.34, 0.42, 0.52, 0.6], lmg: [0.1, 0.24, 0.4, 0.5, 0.58, 0.74, 0.86], cell: [0.1, 0.2, 0.3, 0.4, 0.5, 0.62, 0.72] };
 function reloadKind(id) { const c = ARSENAL_BY_ID[id]?.cls; if (REVS.has(id)) return 'revolver'; if (PUMPS.has(id) || PER_SHELL.has(id)) return 'pump'; if (BOLTS.has(id)) return 'bolt'; if (c === 'pistol') return 'pistol'; if (c === 'lmg') return 'lmg'; if (c === 'launcher') return 'launcher'; if (c === 'energy' || c === 'special') return 'cell'; return 'mag'; }
-const wkey = (k) => { const c = ARSENAL_BY_ID[k]?.cls; return /^(pistol|deagle|revolver)$/.test(k) || (c === 'pistol' && !k.startsWith('dual')) ? 'pistol' : /^(smg|pdw|px90|dualsmg|dualpistol|dualrev)$/.test(k) || c === 'smg' ? 'smg' : /^(lmg|m60)$/.test(k) || c === 'lmg' ? 'lmg' : 'rifle'; };   // pela CLASSE da arma: toda pistola/SMG/metralhadora é segurada do jeito certo
+const OLDLEN = { bullpup: 0.72, cuca: 0.45 };   // comprimento declarado quando as mãos foram ajustadas no admin (a escala mudou depois)
+const GRIPK = { pdw: 0.6, badger: 0.6, aguas: 0.6, morcego: 0.6, sawed: 0.8, nailgun: 0.8, trovao: 0.85 };   // medido: queda da empunhadura em m (padrão das armas ≈ 0,18; estas tinham 0,21 a 0,34)
+let _kf = 0;
+/** escala da Kalash (fuzil de referência): a mesma para todos os fuzis */
+function kalashF() { if (_kf) return _kf; try { const m = cloneArs(rawWeapon('ak', {})), c = new THREE.Box3().setFromObject(m), ml = c.getSize(new THREE.Vector3()).x * 0.3, rr = ml / ARSENAL_BY_ID.ak.len; _kf = rr > 1.2 || rr < 0.8 ? 1 / rr : 1; } catch { _kf = 1; } return _kf; }
+/* MÃO TRAVADA NA ARMA (posição E giro do ajuste do admin, em qualquer tela, pose, skin, inclinação e acessório).
+   REFERÊNCIA: para cada arma, um personagem invisível segura a arma EXATAMENTE como o visualizador do admin (corpo padrão, sem acessórios, parado, arma reta) e a gente grava
+   onde fica o PULSO e para onde a MÃO aponta, medidos no sistema da PRÓPRIA arma. Depois, em qualquer personagem, o pulso é levado a esse ponto e a mão recebe esse mesmo giro em relação à arma.
+   Antes a mão só herdava o giro do antebraço, e o antebraço muda de direção com a pose (mirar, olhar para cima, corpo largo): a mão ficava torta e "segurando por telepatia". */
+const _lq = new THREE.Quaternion(), _lq2 = new THREE.Quaternion(), _lq3 = new THREE.Quaternion(), _lv = new THREE.Vector3(), _lv2 = new THREE.Vector3(), _lm = new THREE.Matrix4();
+let REF = null; const REFC = new Map();
+/** giro de um osso em relação a um ancestral (produto dos giros LOCAIS no caminho): exato mesmo quando algum ancestral acima tem escala não uniforme */
+function qIn(o, root, out) { out.identity(); for (let x = o; x && x !== root; x = x.parent) out.premultiply(x.quaternion); return out; }
+function handRef(id, side) {
+  const key = id + '|' + side + '|' + HC.ver; if (REFC.has(key)) return REFC.get(key);
+  let r = null;
+  try {
+    if (!REF) { REF = new Avatar({}); REF._isRef = true; }
+    REF.hold(id, {}, side, 'base'); REF.setFP(0);
+    const base = { spd: 0, pitch: 0, aiming: false, reload: 0, run: false };
+    for (let i = 0; i < 90; i++) REF.update(0.03, base);   /* até a pose ASSENTAR (o personagem de referência não pode herdar nada da arma anterior) */
+    REF.finalizeHands(); REF.group.updateMatrixWorld(true);
+    const fr = REF.agroup || REF.char.rig.weps[0]?.g;
+    if (fr && REF._gn) {
+      const sp = REF.char.rig.spine, inv = _lm.copy(fr.matrixWorld).invert(), qf = qIn(fr, sp, new THREE.Quaternion()).invert(); r = {};
+      for (const { sd } of REF._gn) { const wb = REF.char.rig['w' + sd]; if (!wb) continue; r[sd] = { p: wb.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv), q: qf.clone().multiply(qIn(wb, sp, new THREE.Quaternion())) }; }
+    }
+  } catch (e) { r = null; }
+  if (REFC.size > 400) REFC.clear(); REFC.set(key, r); return r;
+}
+const wkey = (k) => { const c = ARSENAL_BY_ID[k]?.cls; if (k === 'piranha') return 'pistol'; if (k === 'extinguisher' || k === 'nailgun' || k === 'torch') return 'smg'; return /^(pistol|deagle|revolver)$/.test(k) || (c === 'pistol' && !k.startsWith('dual')) ? 'pistol' : /^(smg|pdw|px90|dualsmg|dualpistol|dualrev)$/.test(k) || c === 'smg' ? 'smg' : /^(lmg|m60)$/.test(k) || c === 'lmg' ? 'lmg' : 'rifle'; };   // pela CLASSE da arma: toda pistola/SMG/metralhadora é segurada do jeito certo
 
 // INCLINAÇÃO DA ARMA BRANCA NA MÃO (rad; ~1,2 = lâmina para CIMA a 90° do antebraço, ~2,0 = lâmina PARA A FRENTE): NO JOGO toda arma branca aponta para a frente, empunhada pelo cabo (faca, espada, machado, lança, motosserra)
 const BLADE_X = { spear: 2.0, tridente: 2.0, chainsaw: 2.15, karambit: 1.85, caipora: 2.0, navalha: 2.0, paje: 2.0, cenoura: 1.9 }, BLADE_CLASS = { knife: 2.0, xknife: 2.0, machete: 2.0, katana: 2.05, sword: 2.0, plasma: 2.0, axe: 1.9, hammer: 1.9, bat: 1.9, foice: 1.95, facacurupira: 2.0 };
@@ -133,36 +163,38 @@ export class Avatar {
     if (!id || !ITEMS[id]?.gun || !BUILD[id]) { this.char.S.pose = 'idle'; return; }
     const dual = id.startsWith('dual') || ARSENAL_BY_ID[id]?.cls === 'dual', pist = wkey(id) === 'pistol' && !dual, T = Math.PI;
     setOV({ op: att.op && att.op !== 'def' ? att.op : undefined, tip: att.tip && att.tip !== 'def' ? att.tip : undefined, mag: att.mag | 0 });
-    const model = cloneArs(rawWeapon(id, att)), agroup = new THREE.Group(); applySkin(model, skin, id);   // cópia do protótipo (montado uma vez só, fundido por material)                                           // = renderWeapon() do base.html:
-    { const c = new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()); model.position.sub(c); }   //   model.position.sub(centro da caixa) — o modelo é CENTRADO antes do attach
-    agroup.add(model);
+    const model = cloneArs(rawWeapon(id, att)), agroup = new THREE.Group(); applySkin(model, skin, id);
+    /* REFERÊNCIA SEM ACESSÓRIOS: o centro, o comprimento e os PONTOS DE EMPUNHADURA saem sempre da arma SEM mira/boca/carregador (a mesma que o admin ajusta). Antes qualquer acessório mudava a caixa da arma e o ponto da mão, e o ajuste do admin caía em outro lugar. */
+    const defAtt = (!att.op || att.op === 'def') && (!att.tip || att.tip === 'def') && !(att.mag | 0), ref = defAtt ? model : cloneArs(rawWeapon(id, {}));   // cópia do protótipo (montado uma vez só, fundido por material)                                           // = renderWeapon() do base.html:
+    { const c = new THREE.Box3().setFromObject(ref).getCenter(new THREE.Vector3()); model.position.sub(c); if (ref !== model) ref.position.sub(c); }   //   model.position.sub(centro da caixa) — o modelo é CENTRADO antes do attach
+    agroup.add(model); if (ref !== model) agroup.add(ref);
     const orient = new THREE.Group(), holder = new THREE.Group(); holder.add(orient);
-    const b0 = new THREE.Box3().setFromObject(model), mlen = b0.getSize(new THREE.Vector3()).x * 0.3, mz = model.userData.mz[0].getWorldPosition(new THREE.Vector3()), z0 = -0.09;
+    const b0 = new THREE.Box3().setFromObject(ref), mlen = b0.getSize(new THREE.Vector3()).x * 0.3, mz = model.userData.mz[0].getWorldPosition(new THREE.Vector3()), z0 = -0.09;
     // PROPORÇÃO REAL: as pistolas/revólveres do modelo são muito maiores (até 2×) que na vida real e a PDW menor; normaliza ao comprimento real quando foge de ±20%
-    const real = ARSENAL_BY_ID[id]?.len, rr = real ? mlen / real : 1, f = rr > 1.2 || rr < 0.8 ? 1 / rr : 1, len = mlen * f;
+    const real = ARSENAL_BY_ID[id]?.len, rr = real ? mlen / real : 1, f0 = rr > 1.2 || rr < 0.8 ? 1 / rr : 1, f = (ARSENAL_BY_ID[id]?.cls === 'rifle' ? kalashF() : f0) * (GRIPK[id] ?? 1), len = mlen * f; { const ro = (OLDLEN[id] || real) ? mlen / (OLDLEN[id] || real) : 1, fo = ro > 1.2 || ro < 0.8 ? 1 / ro : 1; this._cfk = fo > 0 ? f / fo : 1; }   /* o ajuste de mão do admin foi feito com a escala antiga (f0): acompanha a escala nova */   /* TODO FUZIL na MESMA ESCALA da Kalash (empunhadura/coronha do mesmo tamanho em todos), sem olhar o comprimento declarado */   /* GRIPK: modelos com a EMPUNHADURA grande demais (quase o dobro das outras armas: dava para segurar com 5 mãos) encolhem até o cabo ficar do tamanho do das demais */
     orient.scale.setScalar(0.3 * f); orient.rotation.set(0, -T / 2, 0); orient.add(agroup); orient.position.set(0, -mz.y * 0.3 * f, z0 + len / 2);
     const tmp = new THREE.Group(); tmp.add(holder); holder.position.set(0, 0, 0); holder.rotation.set(0, 0, 0); tmp.updateMatrixWorld(true);
     const gr = (c, two) => { const bb = new THREE.Box3().setFromObject(c), cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2, zl = bb.max.z - bb.min.z, zn = bb.min.z;
       return two ? [['R', [cx, cy - 0.08, zn + zl * 0.27]], ['L', [cx, cy - 0.012, zn + zl * (SUPZ[ARSENAL_BY_ID[id]?.cls] ?? 0.62)]]] : [[cx > 0 ? 'L' : 'R', [cx, cy - 0.07, zn + zl * (pist ? 0.22 : 0.3)]]]; };
     let grips = [];
-    if (dual) model.children.filter((c) => c.userData.mz).forEach((c) => grips.push(...gr(c, false))); else grips = gr(model, !pist);
+    if (dual) ref.children.filter((c) => c.userData.mz).forEach((c) => grips.push(...gr(c, false))); else grips = gr(ref, !pist);
     if (pist) { const [sd, p] = grips[0]; grips = [[sd, p], [sd === 'R' ? 'L' : 'R', [p[0] + (sd === 'R' ? 0.04 : -0.04), p[1] + 0.012, p[2] + 0.01]]]; }   // PISTOLA SIMPLES: a outra mão fica JUNTO da que segura (empunhadura de duas mãos)
     if (side === 'L') grips = grips.map(([sd, p]) => [sd === 'R' ? 'L' : 'R', p]);
     const big = !dual && !pist;   // fuzil/metralhadora/escopeta/sniper: mão de trás um pouco mais à frente e para fora; pistola e duais ficam como eram
     grips = grips.map(([sd, p], i) => (dual || i === 0) ? [sd, [p[0] + (sd === 'R' ? (big ? -0.06 : -0.03) : 0.03), p[1], p[2] + (sd === 'R' && big ? 0.05 : 0)]] : [sd, p]);   // mão do gatilho um pouco PARA FORA: segura a arma em vez de ficar enterrada nela
     /* A MÃO DE APOIO TOCA A ARMA: o ponto de empunhadura da mão de apoio é posto na ALTURA REAL do guarda-mão naquele ponto (dois raios, de cima e de baixo, medem a superfície da arma; o meio dela é o centro do guarda-mão). Antes a altura vinha do centro da caixa da arma e a mão ficava solta embaixo, sem encostar. */
-    if (!dual && !pist && grips.length > 1) { try { tmp.updateMatrixWorld(true); const g1 = grips[1][1], rc = new THREE.Raycaster(), bb2 = new THREE.Box3().setFromObject(model), hits = (y0, dy) => { rc.set(new THREE.Vector3(g1[0], y0, g1[2]), new THREE.Vector3(0, dy, 0)); rc.far = 2; const h = rc.intersectObject(model, true); return h.length ? h[0].point.y : null; }, top = hits(bb2.max.y + 0.5, -1), bots = [-0.03, -0.015, 0, 0.015, 0.03].map((dx) => { rc.set(new THREE.Vector3(g1[0] + dx, bb2.min.y - 0.5, g1[2]), new THREE.Vector3(0, 1, 0)); rc.far = 2; const h = rc.intersectObject(model, true); return h.length ? h[0].point.y : null; }).filter((v) => v != null), bot = bots.length ? Math.max(...bots) : null;   /* superfície de baixo do CORPO da arma: pega a mais alta de 5 raios (ignora bipé/pernas finas que ficam penduradas) */ if (top != null && bot != null && top > bot && top - bot < 0.3) g1[1] = bot - 0.012;   /* a palma fica logo ABAIXO da superfície inferior da arma (a mão encosta por baixo e não atravessa o modelo) */   /* espingarda de bomba: a mão segura a MADEIRA (a bomba), que fica embaixo; as outras seguram o guarda-mão pelo meio */ let pn = null; model.traverse((o) => { if (!pn && o.userData?.role === 'pump') pn = o; }); if (pn) { const pb = new THREE.Box3().setFromObject(pn); if (!pb.isEmpty()) { g1[2] = (pb.min.z + pb.max.z) / 2 + 0.035; g1[1] = pb.min.y - 0.012; } }   /* tem BOMBA (pump): a mão de apoio segura a própria peça */ } catch { /* mantém a altura padrão */ } }
+    if (!dual && !pist && grips.length > 1) { try { tmp.updateMatrixWorld(true); const g1 = grips[1][1], rc = new THREE.Raycaster(), bb2 = new THREE.Box3().setFromObject(ref), hits = (y0, dy) => { rc.set(new THREE.Vector3(g1[0], y0, g1[2]), new THREE.Vector3(0, dy, 0)); rc.far = 2; const h = rc.intersectObject(ref, true); return h.length ? h[0].point.y : null; }, top = hits(bb2.max.y + 0.5, -1), bots = [-0.03, -0.015, 0, 0.015, 0.03].map((dx) => { rc.set(new THREE.Vector3(g1[0] + dx, bb2.min.y - 0.5, g1[2]), new THREE.Vector3(0, 1, 0)); rc.far = 2; const h = rc.intersectObject(ref, true); return h.length ? h[0].point.y : null; }).filter((v) => v != null), bot = bots.length ? Math.max(...bots) : null;   /* superfície de baixo do CORPO da arma: pega a mais alta de 5 raios (ignora bipé/pernas finas que ficam penduradas) */ if (top != null && bot != null && top > bot && top - bot < 0.3) g1[1] = bot - 0.012;   /* a palma fica logo ABAIXO da superfície inferior da arma (a mão encosta por baixo e não atravessa o modelo) */   /* espingarda de bomba: a mão segura a MADEIRA (a bomba), que fica embaixo; as outras seguram o guarda-mão pelo meio */ let pn = null; ref.traverse((o) => { if (!pn && o.userData?.role === 'pump') pn = o; }); if (pn) { const pb = new THREE.Box3().setFromObject(pn); if (!pb.isEmpty()) { g1[2] = (pb.min.z + pb.max.z) / 2 + 0.035; g1[1] = pb.min.y - 0.012; } }   /* tem BOMBA (pump): a mão de apoio segura a própria peça */ } catch { /* mantém a altura padrão */ } }
     /* MÃO DO GATILHO NA EMPUNHADURA REAL + ESTILO DA MÃO DE APOIO. gatilho: procura (de cima da arma, por raios) o ponto mais baixo entre 10% e 30% do comprimento (a empunhadura de pistola) e põe a palma ali. apoio: arma com PENTE → segura pelo pente com a mão normal; sem pente (bomba/guarda-mão) → por baixo, palma para cima (estilo 'body'); pistola e duplas → mão normal. */
     let style = 'none';
     if (!dual && !pist && grips.length > 1) { style = 'body'; try {
-      tmp.updateMatrixWorld(true); const rc2 = new THREE.Raycaster(), bb3 = new THREE.Box3().setFromObject(model), zn = bb3.min.z, zl = bb3.max.z - bb3.min.z, g0 = grips[0][1], g1b = grips[1][1];
-      const botAt = (x, z) => { let m = null; for (const dx of [-0.02, 0, 0.02]) { rc2.set(new THREE.Vector3(x + dx, bb3.min.y - 0.5, z), new THREE.Vector3(0, 1, 0)); rc2.far = 3; const h = rc2.intersectObject(model, true); if (h.length && (m == null || h[0].point.y > m)) m = h[0].point.y; } return m; };
+      tmp.updateMatrixWorld(true); const rc2 = new THREE.Raycaster(), bb3 = new THREE.Box3().setFromObject(ref), zn = bb3.min.z, zl = bb3.max.z - bb3.min.z, g0 = grips[0][1], g1b = grips[1][1];
+      const botAt = (x, z) => { let m = null; for (const dx of [-0.02, 0, 0.02]) { rc2.set(new THREE.Vector3(x + dx, bb3.min.y - 0.5, z), new THREE.Vector3(0, 1, 0)); rc2.far = 3; const h = rc2.intersectObject(ref, true); if (h.length && (m == null || h[0].point.y > m)) m = h[0].point.y; } return m; };
       let bz = null, by = 1e9; for (let t = 0.1; t <= 0.3; t += 0.02) { const z = zn + zl * t, y = botAt(g0[0], z); if (y != null && y < by) { by = y; bz = z; } }
       if (bz != null) { g0[2] = bz; g0[1] = by + 0.078; }
-      let mn = null; model.traverse((o) => { if (!mn && o.userData?.role === 'mag') mn = o; }); let pnn = null; model.traverse((o) => { if (!pnn && o.userData?.role === 'pump') pnn = o; });
+      let mn = null; ref.traverse((o) => { if (!mn && o.userData?.role === 'mag') mn = o; }); let pnn = null; ref.traverse((o) => { if (!pnn && o.userData?.role === 'pump') pnn = o; });
       if (mn && !pnn) { const mb = new THREE.Box3().setFromObject(mn); if (!mb.isEmpty()) { const c = mb.getCenter(new THREE.Vector3()); g1b[0] = c.x; g1b[1] = c.y + 0.015; g1b[2] = c.z; style = 'mag'; } }
     } catch { /* mantém */ } }
-    this._hstyle = style;
+    this._hstyle = style; if (ref !== model) agroup.remove(ref);
     this.char.WP.dual = [[0, 0.35, 0.34], [0, 0.55, 0.34]];
     this.char.rig.weps = [{ g: holder, grips, type: dual ? 'dual' : wkey(id), side, supSd: grips.length > 1 ? grips[1][0] : null, hs: { mode: this._hstyle || 'none', k: 1 } }];
     /* PONTOS DE EMPUNHADURA NA PRÓPRIA ARMA: um nó por empunhadura, filho do modelo (agroup). A mão é resolvida DE NOVO, no último instante antes de desenhar (finalizeHands), em cima da matriz mundial REAL desses nós: o que quer que mova a arma (recuo, recarga, giro, balanço, câmera, queda de FPS), a mão vai junto no mesmo quadro. */
@@ -189,11 +221,28 @@ export class Avatar {
   }
   /* AJUSTE DAS MÃOS (Configurações › MÃOS): lê o ajuste salvo desta arma e entrega ao rig por mão (trás = gatilho, frente = apoio) */
   applyHandCfg() {
-    this._hcv = HC.ver; this._hcw = this.weaponId; const w = this.char.rig.weps[0]; if (!w || w.hand || !w.grips) return; const c = getHC(this.weaponId), D = Math.PI / 180, mk = (o) => (o ? { p: [o.x / 100, o.y / 100, o.z / 100], r: o.r * D, w: [o.a * D, o.b * D, o.c * D] } : null);
+    this._hcv = HC.ver; this._hcw = this.weaponId; const w = this.char.rig.weps[0]; if (!w || w.hand || !w.grips) return; const c = getHC(this.weaponId), D = Math.PI / 180, mk = (o) => { if (!o) return null; const k = this._cfk || 1, p0 = [o.x / 100 * k, o.y / 100 * k, o.z / 100 * k], w0 = [o.a * D, o.b * D, o.c * D]; return { p: p0.slice(), r: o.r * D, w: w0.slice(), p0, r0: o.r * D, w0 }; };   /* p0/r0/w0 = o ajuste do admin inteiro; p/r/w = o que vale agora (o ajuste vai a zero na recarga, inspeção e saque) */
+    w.gcfg = c && c.g ? { p: [c.g.x / 100, c.g.y / 100, c.g.z / 100], rx: c.g.a * D, ry: c.g.b * D } : null;
     w.cfg = {}; if (c) { if (w.grips[0] && c.t) w.cfg[w.grips[0][0]] = mk(c.t); if (w.grips[1] && c.s) w.cfg[w.grips[1][0]] = mk(c.s); }
   }
   uprightGrenade() { const p = this._gup; if (!p || !p.parent) return; p.parent.updateWorldMatrix(true, false); p.parent.getWorldQuaternion(_uq); p.quaternion.copy(_uq).invert(); }
-  finalizeHands() {
+  /** trava as mãos na arma: pulso no ponto e mão no giro da referência do admin (ver handRef). Some suavemente na recarga, inspeção e saque (hs.k → 0) e volta depois. */
+  lockHands() {
+    if (this._isRef || this.dead || this._gup) return; const rig = this.char.rig, w = rig.weps[0]; if (!w || w.hand || !this._gn || !w.g.visible) return;
+    const pose = this.char.S.pose; if (pose !== 'aim' && pose !== 'armed') return;
+    const K = Math.max(0, Math.min(1, w.lk ?? 1));   /* arma nova já nasce TRAVADA (sem passar pela posição automática); só solta na recarga e na inspeção */ if (K < 0.002) return;
+    const ref = handRef(this.weaponId, this.side || 'R'); if (!ref) return;
+    const fr = this.agroup || w.g; this.group.updateMatrixWorld(true);
+    for (const { sd } of this._gn) {
+      const R = ref[sd], wb = rig['w' + sd], arm = rig['a' + sd], fore = rig['f' + sd]; if (!R || !wb || !arm || !fore) continue;
+      const cur = wb.getWorldPosition(_lv), tgt = _lv2.copy(R.p).applyMatrix4(fr.matrixWorld); cur.lerp(tgt, K); rig.spine.worldToLocal(cur);
+      this.char.ik0(arm, fore, sd === 'L' ? 1 : -1, cur); arm.updateMatrixWorld(true);
+      const sp = rig.spine, qT = qIn(fr, sp, _lq).multiply(R.q), qC = qIn(wb, sp, _lq2).slerp(qT, K);   /* giro desejado da mão, no espaço da coluna */
+      wb.quaternion.copy(qIn(wb.parent, sp, _lq3).invert().multiply(qC)); wb.updateMatrixWorld(true);
+    }
+  }
+  finalizeHands() { this._finalizeIK(); this.lockHands(); }
+  _finalizeIK() {
     if (this._gup) { this.group.updateMatrixWorld(true); this.uprightGrenade(); return; }
     const rig = this.char.rig, w = rig.weps[0], pose = this.char.S.pose; if (!this._gn || !w || !w.g.visible || (pose !== 'aim' && pose !== 'armed')) return;
     this.group.updateMatrixWorld(true);
@@ -246,7 +295,10 @@ export class Avatar {
     /* AS MÃOS SEGUEM A ARMA EXATAMENTE: primeiro a arma recebe a pose FINAL deste passo (recuo, inclinação da recarga, giro, balanço...); só então os braços são resolvidos por IK em cima do ponto de empunhadura JÁ transformado por essa mesma pose (matriz inteira do modelo). Uma única fonte de verdade: a mão nunca fica um passo atrás nem 'solta' da arma, em nenhum FPS ou modo. */
     { const w0 = this.char.rig.weps[0]; if (w0) { if (this.orient && this.agroup) { this.agroup.updateMatrix(); (w0.recM ||= new THREE.Matrix4()).copy(this.orient.matrix).multiply(this.agroup.matrix).multiply(_ri.copy(this.orient.matrix).invert()); } else w0.recM = null; } }
     if (this._hcv !== HC.ver || this._hcw !== this.weaponId) this.applyHandCfg();
-    { const wp0 = this.char.rig.weps[0]; if (wp0 && !wp0.hand) { wp0.pull = this.fp ? 0 : PULL_TP; if (wp0.hs) wp0.hs.k += (((reload > 0 || this._in || this._dr) ? 0 : 1) - wp0.hs.k) * dec(dt, 14); } }   /* mão virada/inclinada volta ao NORMAL durante recarga, inspeção e saque, e depois retoma */   /* em 3ª pessoa (eu de fora e os outros jogadores) a arma vem mais perto do corpo; na 1ª pessoa fica como sempre */
+    { const wp0 = this.char.rig.weps[0]; if (wp0 && !wp0.hand) { wp0.pull = this.fp ? 0 : PULL_TP; wp0.tp = !this.fp; if (wp0.hs) wp0.hs.k += (((reload > 0 || this._in || this._dr) ? 0 : 1) - wp0.hs.k) * dec(dt, 14);
+      wp0.lk = (wp0.lk ?? 1) + (((reload > 0 || this._in) ? 0 : 1) - (wp0.lk ?? 1)) * dec(dt, 14);   /* trava da mão: inteira inclusive ao SACAR (a mão já pega a arma no lugar configurado); some só na recarga e na inspeção */
+      /* AJUSTE DE MÃO DO ADMIN FIXO NA ARMA: vale por inteiro enquanto a arma está em uso normal e SOME suavemente (volta ao posicionamento automático) na recarga, na inspeção e no saque, e retorna depois. Posição, giro e inclinação do pulso vão juntos, então a mão não desliza nem fica torta na transição */
+      if (wp0.cfg && wp0.hs) { const K = Math.max(0, Math.min(1, wp0.hs.k)); for (const sd in wp0.cfg) { const c = wp0.cfg[sd]; if (!c || !c.p0) continue; c.p[0] = c.p0[0] * K; c.p[1] = c.p0[1] * K; c.p[2] = c.p0[2] * K; c.r = c.r0 * K; c.w[0] = c.w0[0] * K; c.w[1] = c.w0[1] * K; c.w[2] = c.w0[2] * K; } } } }   /* mão virada/inclinada volta ao NORMAL durante recarga, inspeção e saque, e depois retoma */   /* em 3ª pessoa (eu de fora e os outros jogadores) a arma vem mais perto do corpo; na 1ª pessoa fica como sempre */
     this.char.animate(dt, spd, sgn, pitch, air); if (this._gup) this.uprightGrenade();
     if (this._ch) { const hit = this._mUntil && performance.now() < this._mUntil; this._cp = (this._cp + dt * (hit ? 7 : 1.6)) % 1; chainAnim(this._ch, this._cp); this.chainRev = hit ? 1 : 0.3; if (this.holder) this.holder.position.x = Math.sin(performance.now() * 0.09) * (hit ? 0.006 : 0.002); }   // MOTOSSERRA: a corrente corre sempre (mais rápido ao serrar) e a arma vibra
     for (const o of this.parts || []) {                                                       // animação das partes móveis (loop do base.html)
@@ -258,6 +310,7 @@ export class Avatar {
     this.fall += ((this.dead ? 1 : 0) - this.fall) * (1 - Math.exp(-dt * (this.dead ? 7 : 20)));
     if (this.rag && this.dead) { this.group.rotation.set(0, 0, 0); this.group.position.y = 0; this.rag.limbs(this.char.rig); }   // CORPO DE PANO: quem gira o corpo é a simulação (ragdoll.js); aqui só braços/pernas/cabeça soltos
     else { const f = this.fall, d = this.fdir || 'f'; this.group.rotation.x = d === 'f' ? f * 1.5 : d === 'b' ? -f * 1.45 : f * 0.25; this.group.rotation.z = d === 'l' ? f * 1.45 : d === 'r' ? -f * 1.45 : 0; this.group.position.y = -f * (d === 'b' ? 0.1 : 0.04); }
+    this.lockHands();   /* mão travada na arma em QUALQUER tela (jogo, lobby, arsenal, 3ª pessoa), não só no admin */
   }
   dispose() {                                            // as geometrias/materiais da ARMA são compartilhados: unhold() antes
     this.unhold(); for (const d of this._drops || []) this._rmDrop(d); this._drops = null;

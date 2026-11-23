@@ -85,6 +85,8 @@ export function applyRare(model, k, melee = false) {
   const A = fxMaterial(k, false), B = fxMaterial(k, true), body = ['steel', 'chrome', 'tan', 'camo', 'gold'].map((x) => MT[x]).filter(Boolean), dark = ['blued', 'black', 'poly', 'od', 'navy'].map((x) => MT[x]).filter(Boolean), acc = ['red', 'glow', 'glow2', 'glowR'].map((x) => MT[x]).filter(Boolean);
   if (melee) model.traverse((o) => { if (!o.isMesh || !o.material || (o.material.emissive?.getHex?.() && o.material.emissiveIntensity > 0.8) || o.material.transparent) return; o.material = (o.material.metalness ?? 0) > 0.5 ? A : B; });   // ARMA BRANCA: lâmina/metal = material A, cabo = B
   else model.traverse((o) => { if (!o.isMesh) return; if (body.includes(o.material)) o.material = A; else if (dark.includes(o.material)) o.material = B; else if (acc.includes(o.material)) o.material = A; });
+  if (!melee) { let tot = 0, fx = 0; model.traverse((o) => { if (!o.isMesh || !o.material) return; tot++; if (o.material === A || o.material === B) fx++; });   /* armas com PALETA PRÓPRIA (as da loja: Trovão, Saci, Cuca, Onça…) quase não usam os materiais padrão e o efeito não pegava (arma parada, sem raios): nelas o efeito cobre as demais peças sólidas — metal = A, resto = B; brilhos e transparências ficam */
+    if (!tot || fx / tot < 0.4) model.traverse((o) => { const m = o.material; if (!o.isMesh || !m || Array.isArray(m) || m === A || m === B || m.transparent || !m.isMeshStandardMaterial || (m.emissive?.getHex?.() && m.emissiveIntensity > 0.8)) return; o.material = (m.metalness ?? 0) > 0.5 ? A : B; }); }
   particles(model, k); return true;
 }
 
