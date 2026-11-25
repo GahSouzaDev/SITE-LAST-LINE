@@ -201,11 +201,27 @@ function buildMelee(info, id) {
   } else if (id === 'sword') {
     g.add(bladeShape([[0, 0.027], [0.5, 0.029], [0.64, 0.0], [0.5, -0.029], [0, -0.027]], 0.006, 0, -0.02)); g.add(rb(0.26, 0.022, 0.024, gold, 0, 0, -0.02)); g.add(cylZ(0.015, 0.16, dark, 0, 0, 0.07, 10)); { const pm = new THREE.Mesh(new THREE.SphereGeometry(0.024, 10, 8), gold); pm.position.set(0, 0, 0.16); g.add(pm); } len = 0.9;
   } else if (id === 'axe') {
-    g.add(cylZ(0.017, 0.72, wood, 0, 0, 0.0, 10)); g.add(cylZ(0.021, 0.04, dark, 0, 0, 0.34, 10));
-    const head = bladeShape([[0, 0.034], [0.05, 0.038], [0.1, 0.11], [0.15, 0.135], [0.17, 0.0], [0.15, -0.135], [0.1, -0.11], [0.05, -0.038], [0, -0.034]], 0.034, 0, -0.3); g.add(head); g.add(rb(0.05, 0.05, 0.05, dark, 0, 0, -0.3)); len = 0.8;
+    /* MACHADO: cabo reto com bulbo no fim; a CABEÇA fica ao lado do cabo (olho de aço em volta do cabo) e a lâmina larga e curva se abre para +Y, com a barba descendo; atrás vai o martelo (nuca) */
+    g.add(cylZ(0.018, 0.82, wood, 0, 0, 0.0, 10)); g.add(cylZ(0.024, 0.07, wood, 0, 0, 0.4, 10)); g.add(cylZ(0.022, 0.03, dark, 0, 0, 0.34, 10));
+    g.add(rb(0.05, 0.09, 0.12, dark, 0, 0, -0.34)); g.add(rb(0.04, 0.05, 0.06, dark, 0, -0.065, -0.34)); g.add(rb(0.046, 0.03, 0.05, mat('hstl', 0x8a929a, 0.9, 0.3), 0, -0.11, -0.34));
+    const head = bladeShape([[0.0, 0.04], [0.1, 0.04], [0.15, 0.1], [0.2, 0.17], [0.235, 0.225], [0.2, 0.25], [0.12, 0.262], [0.04, 0.25], [-0.02, 0.23], [-0.05, 0.19], [-0.02, 0.12], [0.0, 0.06]], 0.016, 0, -0.22); head.scale.y = 0.8; g.add(head); len = 0.82;
   }
   else if (id === 'hammer') {
-    g.add(cylZ(0.02, 0.62, wood, 0, 0, 0.0, 10)); g.add(rb(0.1, 0.1, 0.24, mat('hstl', 0x8a929a, 0.9, 0.3), 0, 0, -0.3)); g.add(rb(0.04, 0.04, 0.26, dark, 0, 0, -0.3)); len = 0.62;
+    /* MARRETA: a cabeça é um bloco comprido ATRAVESSADO no topo do cabo (formando um T): as duas faces de bater ficam nas pontas, o cabo entra no meio */
+    const st = mat('hstl', 0x8a929a, 0.9, 0.3); g.add(cylZ(0.021, 0.7, wood, 0, 0, 0.0, 10)); g.add(cylZ(0.028, 0.06, dark, 0, 0, 0.35, 10)); g.add(cylZ(0.026, 0.05, dark, 0, 0, -0.27, 10));
+    g.add(rb(0.1, 0.18, 0.13, st, 0, 0, -0.34)); g.add(rb(0.115, 0.05, 0.145, st, 0, 0.115, -0.34)); g.add(rb(0.115, 0.05, 0.145, st, 0, -0.115, -0.34)); g.add(rb(0.04, 0.2, 0.15, dark, 0, 0, -0.34)); len = 0.7;
+  } else if (id === 'enxada') {
+    /* ENXADA DE CAPINAR: cabo longo de madeira; no fim, um pescoço curvo de ferro leva a uma lâmina larga e chata (quase perpendicular ao cabo), com o fio na ponta de baixo */
+    const fe = mat('hoefe', 0x6f767e, 0.85, 0.4); g.add(cylZ(0.017, 1.3, wood, 0, 0, 0.0, 10)); g.add(cylZ(0.024, 0.08, dark, 0, 0, -0.64, 10)); g.add(cylZ(0.021, 0.04, dark, 0, 0, 0.62, 10));
+    g.add(rb(0.034, 0.034, 0.13, fe, 0, 0, -0.7)); g.add(rb(0.04, 0.05, 0.04, fe, 0, 0.02, -0.76)); g.add(rb(0.24, 0.24, 0.014, fe, 0, 0.14, -0.775, 0.2, 0, 0)); g.add(rb(0.24, 0.016, 0.018, bladeMat(), 0, 0.258, -0.785, 0.2, 0, 0)); len = 1.3;
+  } else if (id === 'foicemorte') {
+    /* FOICE DA MORTE (a de filme): cabo longo e escuro, caveira no encaixe e uma lâmina enorme em meia-lua, muito curva, que sai para o lado e volta em direção ao cabo, com o fio roxo brilhando na parte de dentro */
+    const sn = mat('smwd', 0x1b1520, 0.1, 0.7), bone = mat('smbn', 0xe4dcc8, 0.05, 0.7), pur = mat('smpu', 0xb26bff, 0.3, 0.3, { emissive: 0x8a3cff, emissiveIntensity: 2.2 }), dk = mat('smbl', 0x2b2f3a, 0.92, 0.28);
+    g.add(cylZ(0.017, 1.7, sn, 0, 0, 0.0, 10)); for (let i = 0; i < 5; i++) g.add(cylZ(0.02, 0.012, bone, 0, 0, 0.1 + i * 0.13, 10)); g.add(cylZ(0.024, 0.06, dk, 0, 0, 0.84, 10));
+    g.add(cylZ(0.026, 0.1, dk, 0, 0, -0.82, 10)); { const sk = new THREE.Mesh(new THREE.SphereGeometry(0.036, 12, 10), bone); sk.scale.set(1, 1.05, 1.1); sk.position.set(0, 0.03, -0.9); g.add(sk); for (const sx of [-0.014, 0.014]) { const ey = new THREE.Mesh(new THREE.SphereGeometry(0.009, 6, 6), pur); ey.position.set(sx, 0.04, -0.93); g.add(ey); } }
+    const R = 0.52, PH = 1.55, N = 18, W = 0.085, outer = [], inner = [];
+    for (let i = 0; i <= N; i++) { const t = i / N, a = PH * t, w = W * Math.pow(1 - t, 0.85) + 0.004; outer.push([-R + (R + w) * Math.cos(a), (R + w) * Math.sin(a)]); inner.push([-R + R * Math.cos(a), R * Math.sin(a)]); }
+    { const bl = bladeShape(outer.concat(inner.reverse()), 0.008, 0.02, -0.8); bl.material = dk; g.add(bl); } { const ed2 = []; for (let i = 0; i <= N; i++) { const t = i / N, a = PH * t, r2 = R - 0.012; ed2.push([-R + R * Math.cos(a), R * Math.sin(a)]); } for (let i = N; i >= 0; i--) { const t = i / N, a = PH * t, r2 = R - 0.016 * (1 - t * 0.6); ed2.push([-R + r2 * Math.cos(a), r2 * Math.sin(a)]); } const gl = bladeShape(ed2, 0.012, 0.02, -0.8); gl.material = pur; g.add(gl); } len = 1.7;
   } else if (id === 'spear') {
     g.add(cylZ(0.014, 1.3, wood, 0, 0, 0.0, 10)); g.add(bladeShape([[0, 0.032], [0.12, 0.036], [0.26, 0.0], [0.12, -0.036], [0, -0.032]], 0.008, 0, -0.65)); g.add(cylZ(0.02, 0.05, dark, 0, 0, -0.62, 10)); len = 1.0;
   } else if (id === 'bat') {

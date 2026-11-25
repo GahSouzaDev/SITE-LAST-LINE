@@ -7,7 +7,7 @@ let lastExtra = '';
 
 // Configurações do jogador: local (instantâneo) + conta (sincroniza entre PCs).
 const KEY = 'lastline.settings';
-export const DEFAULTS = { cursorSet: 'lastline', cursorSize: 32, sens: 1, fov: 78, shadows: true, camera: 'fp', side: 'right', tpDistance: 2.9, volMaster: 0.9, volMusic: 0.3, volSfx: 0.9, volVoice: 1, musicOn: true, musicInGame: false, showFps: false, uiClick: true, uiClickWeapon: 'rifle', casings: true, magDrop: true, tutorialDone: false };
+export const DEFAULTS = { cursorSet: 'lastline', cursorSize: 32, sens: 1, fov: 90, shadows: true, camera: 'fp', side: 'right', tpDistance: 2.9, volMaster: 0.9, volMusic: 0.3, volSfx: 0.9, volVoice: 1, musicOn: true, musicInGame: false, showFps: false, uiClick: true, uiClickWeapon: 'rifle', casings: true, magDrop: true, tutorialDone: false };
 export const settings = (() => { try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return { ...DEFAULTS }; } })();
 // migração FINAL 11: clique com som de FUZIL e música mais baixa por padrão (uma vez)
 function migrate() { if ((settings.setv | 0) < 11) { settings.uiClickWeapon = 'rifle'; settings.volMusic = Math.min(Number(settings.volMusic) || 0.3, 0.3); settings.setv = 11; } }

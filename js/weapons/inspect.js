@@ -8,7 +8,7 @@ const kf = (p, pts) => { if (p <= pts[0][0]) return pts[0][1]; for (let i = 0; i
 const BOLTS = new Set(['scout', 'amr', 'hunter', 'santa', 'mosquete', 'dragao', 'cangaco', 'sniper']), PUMPS = new Set(['pump', 'spas', 'champ', 'confete', 'tucano', 'piranha', 'mula']);
 export function inspectKind(id) {
   const it = ITEMS[id]; if (!it) return 'rifle';
-  if (it.cls === 'melee') { if (id === 'chainsaw') return 'chainsaw'; if (['spear', 'tridente'].includes(id)) return 'polearm'; if (['axe', 'hammer', 'bat', 'foice'].includes(id)) return 'big'; if (['knife', 'xknife', 'karambit', 'caipora', 'navalha', 'paje', 'cenoura'].includes(id)) return 'knife'; return 'blade'; }
+  if (it.cls === 'melee') { if (id === 'chainsaw') return 'chainsaw'; if (['spear', 'tridente'].includes(id)) return 'polearm'; if (['axe', 'hammer', 'bat', 'foice', 'enxada', 'foicemorte'].includes(id)) return 'big'; if (['knife', 'xknife', 'karambit', 'caipora', 'navalha', 'paje', 'cenoura'].includes(id)) return 'knife'; return 'blade'; }
   if (it.slot === 'grenade' || id === 'bomb') return 'grenade';
   const c = ARSENAL_BY_ID[id]?.cls;
   if (BOLTS.has(id)) return 'bolt'; if (PUMPS.has(id) || c === 'shotgun') return 'shotgun';

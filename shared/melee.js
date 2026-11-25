@@ -11,6 +11,8 @@ export const MELEE = {
   bat:      { id: 'bat',      name: 'Taco pregado',       sub: 'Taco com pregos',      lv: 30, dmg: 72, cd: 0.7,  range: 2.3, speed: 0.99, desc: 'Madeira, fita e pregos. Brutal, rápido e sem frescura.' },
   plasma:   { id: 'plasma',   name: 'Lâmina de plasma',   sub: 'Espada de energia',    lv: 45, dmg: 78, cd: 0.45, range: 2.6, speed: 1.02, desc: 'Lâmina de energia: corta rápido, leve de empunhar e muito cara em nível.' },
   chainsaw: { id: 'chainsaw', name: 'Motosserra',         sub: 'Motosserra de combate', lv: 55, dmg: 130, cd: 1.4, range: 2.2, speed: 0.85, desc: 'DANO ABSURDO, mas lentíssima e pesada: um golpe derruba, errar custa caro.' },
+  enxada:   { id: 'enxada',   name: 'Enxada de capinar', sub: 'Ferramenta de roça',   lv: 100, dmg: 74, cd: 0.85, range: 2.6, speed: 0.97, desc: 'Cabo longo e lâmina larga de ferro: a ferramenta do capinador vira arma. Liberada no nível 100.' },
+  foicemorte: { id: 'foicemorte', name: 'Foice da Morte',  sub: 'Foice do ceifador',   lv: 100, dmg: 96, cd: 1.0, range: 3.0, speed: 0.95, desc: 'Lâmina em meia-lua e cabo longo: a foice de filme. Ceifa quem estiver à frente. Liberada no nível 100.' },
   axe:      { id: 'axe',      name: 'Machado de batalha', sub: 'Machado',              lv: 33, dmg: 100, cd: 1.15, range: 2.5, speed: 0.92, desc: 'O golpe mais forte do jogo (derruba em 1 golpe pesado + 1) e o mais demorado.' }
 };
 import { EVT_MELEE } from './arsenalMore.js';
@@ -18,3 +20,9 @@ Object.assign(MELEE, EVT_MELEE);   // armas brancas de EVENTO (visíveis para to
 // ALCANCE REAL: antes era medido do olho até a superfície e passava de 2 m (acertava de longe). Agora ~2/3 disso: só acerta o que a lâmina realmente alcança.
 for (const m of Object.values(MELEE)) m.range = Math.round(m.range * 0.68 * 100) / 100;
 export const MELEE_IDS = Object.keys(MELEE);
+
+/** INSTANTE DO CONTATO de cada golpe: fração da animação (0..1) em que a lâmina/cabeça da arma está À FRENTE do personagem. O dano e o som do golpe acontecem NESSE instante (não no começo do movimento). */
+export const STRIKE_FRAC = { stab: 0.53, slash: 0.5, slashD: 0.52, slashU: 0.58, chop: 0.58, heavy: 0.58, butt: 0.45, punch: 0.45, punchH: 0.5, saw: 0.35 };
+/** armas PESADAS: o contato vem mais tarde (a cabeça pesada leva mais tempo para chegar à frente) */
+export const HEAVY_LATE = { hammer: 0.14, axe: 0.12, bat: 0.1, foice: 0.1, enxada: 0.1, foicemorte: 0.1, tridente: 0.04 };
+export const strikeFrac = (kind, weaponId) => Math.min(0.85, (STRIKE_FRAC[kind] ?? 0.5) + (HEAVY_LATE[weaponId] || 0));

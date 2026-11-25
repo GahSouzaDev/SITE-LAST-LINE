@@ -65,6 +65,24 @@ class AudioEngine {
     try { this._hsSrc?.stop(); } catch { /* já terminou */ }
     const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); s.buffer = this.hsBuf; g.gain.value = 1; s.connect(g); g.connect(this.uiGain); s.start(); this._hsSrc = s;
   }
+  /* SONS DO CERCO (/sfx/cerco-*.mp3): carregados e decodificados na TELA DE CARREGAMENTO (nada de travar na hora de tocar).
+     bem-vindo e introdução entram depois do LUTAR, em volume moderado; vitória e derrota são baixos no arquivo e ganham reforço. */
+  loadCerco() {
+    if (!this.ctx) { try { this.init(); } catch { /* sem áudio */ } } if (!this.ctx || this._cs || this._csLoading) return Promise.resolve(); this._csLoading = true;
+    const L = (n) => fetch('/sfx/cerco-' + n + '.mp3').then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then((ab) => this.ctx.decodeAudioData(ab));
+    return Promise.all([L('bemvindo'), L('intro'), L('vitoria'), L('derrota')]).then(([bv, intro, win, lose]) => { this._cs = { bv, intro, win, lose }; this._csLoading = false; }).catch(() => { this._csLoading = false; });
+  }
+  _csPlay(buf, gain, onEnd) { if (!this.ctx || !buf) return null; if (this.ctx.state === 'suspended') this.ctx.resume(); const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); s.buffer = buf; g.gain.value = gain; s.connect(g); g.connect(this.uiGain); if (onEnd) s.onended = onEnd; s.start(); return s; }
+  /** depois do LUTAR: toca o BEM-VINDO e, quando ele termina, a MÚSICA DE INTRODUÇÃO (ambos em volume moderado) */
+  cercoOpening(welcome = true) {
+    this._endPlayed = false; this.cercoStopOpening(); if (!this._cs) { this.loadCerco(); return; }
+    const tk = this._csTk = (this._csTk | 0) + 1;
+    if (!welcome) { this._csA = this._csPlay(this._cs.intro, 0.3); return; }   /* sem a fala: só a música de introdução */
+    this._csA = this._csPlay(this._cs.bv, 0.5); setTimeout(() => { if (tk !== this._csTk) return; this._csB = this._csPlay(this._cs.intro, 0.3); }, Math.max(0, (this._cs.bv.duration - 1.3) * 1000));   /* a música de introdução entra um pouco ANTES de a fala terminar */
+  }
+  cercoStopOpening() { this._csTk = (this._csTk | 0) + 1; for (const k of ['_csA', '_csB']) { try { this[k]?.stop(); } catch { /* já terminou */ } this[k] = null; } }
+  /** VITÓRIA ou DERROTA: só quando o texto aparece na tela, uma vez por partida; reforço de ganho porque os arquivos são baixos */
+  cercoResult(won) { if (this._endPlayed) return; this._endPlayed = true; this.cercoStopOpening(); if (!this._cs) return; this._csPlay(won ? this._cs.win : this._cs.lose, 2.2); }
   setLoadMute(on) { this.loadMute = !!on; if (this.ctx) this.applyVolumes(); }   // tela de carregamento: o jogo fica MUDO até a partida de fato começar
   // a música é um <audio> comum e NÃO depende do AudioContext (que só nasce no primeiro clique): o volume dela é aplicado sempre, senão ao recarregar a página ela tocava a 100% até o primeiro clique
   musicVol() { if (this.music) this.music.volume = this._horror ? 0 : this.musicShouldPlay() ? Math.min(1, settings.volMusic * settings.volMaster * 0.55) : 0; }
@@ -104,19 +122,24 @@ class AudioEngine {
 
   listener(cam) {
     if (!this.ctx) return;
-    const l = this.ctx.listener, p = cam.position;
+    const l = this.ctx.listener, p = cam.position; (this._lp || (this._lp = { x: 0, y: 0, z: 0 })).x = p.x; this._lp.y = p.y; this._lp.z = p.z;
     const V = cam.position.constructor, f = (this._f || (this._f = new V())).set(0, 0, -1).applyQuaternion(cam.quaternion), u = (this._u || (this._u = new V())).set(0, 1, 0).applyQuaternion(cam.quaternion);
     if (l.positionX) { const t = this.ctx.currentTime; l.positionX.setValueAtTime(p.x, t); l.positionY.setValueAtTime(p.y, t); l.positionZ.setValueAtTime(p.z, t); l.forwardX.setValueAtTime(f.x, t); l.forwardY.setValueAtTime(f.y, t); l.forwardZ.setValueAtTime(f.z, t); l.upX.setValueAtTime(u.x, t); l.upY.setValueAtTime(u.y, t); l.upZ.setValueAtTime(u.z, t); }
     else { l.setPosition(p.x, p.y, p.z); l.setOrientation(f.x, f.y, f.z, u.x, u.y, u.z); }
   }
+  /* LIMITE DE VOZES COM PRIORIDADE: cada som curto pede uma vaga. Quanto mais vozes ativas, mais alto precisa ser o volume do som para entrar (passos e ruídos baixos saem primeiro; tiros, explosões e UI nunca são cortados). Antes, dezenas de sons ao mesmo tempo (tropas do Cerco) estouravam o processamento de áudio e o navegador calava tudo. */
+  _voice(g, dur) { const n = this._nv | 0, lim = n > 60 ? 0.55 : n > 44 ? 0.3 : n > 28 ? 0.14 : 0; if (g < lim) return false; this._nv = n + 1; setTimeout(() => { this._nv--; }, (dur + 0.15) * 1000); return true; }
   // nó de saída: posicional (HRTF, volume cai com a distância) ou direto (UI)
   out(pos, dest = this.sfx, ref = 2, roll = 1.2) {
     if (!pos) return dest;
-    const pn = this.ctx.createPanner(); pn.panningModel = 'HRTF'; pn.distanceModel = 'inverse'; pn.refDistance = ref; pn.rolloffFactor = roll; pn.maxDistance = 400;
+    const lp = this._lp; if (lp) { const dx = pos.x - lp.x, dz = pos.z - lp.z; if (dx * dx + dz * dz > 130 * 130) return this._sink || (this._sink = this.ctx.createGain());   /* longe demais para ouvir: o som vai para um nó SEM saída (não é processado) */ }
+    const np = this._np | 0; this._np = np + 1; setTimeout(() => { this._np--; }, 2500);
+    const pn = this.ctx.createPanner(); pn.panningModel = np > 18 ? 'equalpower' : 'HRTF';   /* HRTF é o panner mais pesado: com muitos sons, os extras usam o leve */ pn.distanceModel = 'inverse'; pn.refDistance = ref; pn.rolloffFactor = roll; pn.maxDistance = 400;
     if (pn.positionX) { pn.positionX.value = pos.x; pn.positionY.value = pos.y; pn.positionZ.value = pos.z; } else pn.setPosition(pos.x, pos.y, pos.z);
     pn.connect(dest); return pn;
   }
   nz(dest, t, { dur = 0.2, f = 2000, q = 0.7, type = 'lowpass', g = 0.5, f2 = null, att = 0.002, wet = 0 }) {
+    if (!this._voice(g, dur)) return;
     const s = this.ctx.createBufferSource(); s.buffer = this.noise; const fl = this.ctx.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur); fl.Q.value = q;
     const gn = this.ctx.createGain(); gn.gain.setValueAtTime(0.0001, t); gn.gain.linearRampToValueAtTime(g, t + att); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     s.connect(fl); fl.connect(gn); gn.connect(dest); if (wet > 0) { const w = this.ctx.createGain(); w.gain.value = wet; gn.connect(w); w.connect(this.verb()); } s.start(t, Math.random()); s.stop(t + dur + 0.05);
@@ -189,6 +212,7 @@ class AudioEngine {
     this.nz(d, t + 0.02, { dur: 1.1, f: 500, f2: 2600, q: 0.7, type: 'bandpass', g: 0.5, att: 0.12 }); this.nz(d, t + 0.05, { dur: 1.3, f: 900, f2: 200, q: 0.4, g: 0.35, att: 0.1 });
   }
   tn(dest, t, { f = 440, f2 = null, dur = 0.2, type = 'sine', g = 0.3, wet = 0 }) {
+    if (!this._voice(g, dur)) return;
     const o = this.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
     const gn = this.ctx.createGain(); gn.gain.setValueAtTime(g, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(gn); gn.connect(dest); if (wet > 0) { const w = this.ctx.createGain(); w.gain.value = wet; gn.connect(w); w.connect(this.verb()); } o.start(t); o.stop(t + dur + 0.02);
   }
@@ -266,7 +290,7 @@ class AudioEngine {
     else if (kind === 'melee') { this.nz(d, t, { dur: 0.2, f: 900, f2: 4200, g: 0.28, type: 'bandpass', q: 1.4, att: 0.05 }); this.nz(d, t + 0.1, { dur: 0.12, f: 3800, f2: 800, g: 0.14, type: 'bandpass', q: 2 }); }   // golpe cortando o ar
     else if (kind === 'hit_blade') { this.nz(d, t, { dur: 0.09, f: 2600, f2: 900, type: 'bandpass', q: 2, g: 0.5 }); this.tn(d, t, { f: 3100, f2: 2200, dur: 0.14, type: 'triangle', g: 0.14 }); this.nz(d, t + 0.02, { dur: 0.1, f: 500, f2: 160, g: 0.4 }); this.tn(d, t + 0.02, { f: 150, f2: 60, dur: 0.1, g: 0.35 }); }   // lâmina: corte metálico + carne
     else if (kind === 'hit_blunt') { this.nz(d, t, { dur: 0.08, f: 420, f2: 120, g: 0.6 }); this.tn(d, t, { f: 110, f2: 45, dur: 0.16, g: 0.7 }); this.tn(d, t + 0.015, { f: 240, f2: 90, dur: 0.1, type: 'triangle', g: 0.3 }); }   // pancada pesada (taco, marreta, soco)
-    else if (kind === 'hit_saw') { this.nz(d, t, { dur: 0.35, f: 1800, f2: 900, type: 'bandpass', q: 1.2, g: 0.45 }); this.tn(d, t, { f: 90, f2: 70, dur: 0.35, type: 'sawtooth', g: 0.3 }); this.nz(d, t, { dur: 0.12, f: 500, f2: 150, g: 0.4 }); }   // motosserra cortando
+    else if (kind === 'hit_saw') { this.nz(d, t, { dur: 0.35, f: 1800, f2: 900, type: 'bandpass', q: 1.2, g: 0.135 }); this.tn(d, t, { f: 90, f2: 70, dur: 0.35, type: 'sawtooth', g: 0.09 }); this.nz(d, t, { dur: 0.12, f: 500, f2: 150, g: 0.12 }); }   // motosserra cortando
     else if (kind === 'stab') { this.nz(d, t, { dur: 0.1, f: 700, f2: 200, g: 0.5 }); this.tn(d, t, { f: 180, f2: 70, dur: 0.1, g: 0.4 }); this.tn(d, t + 0.01, { f: 2800, f2: 1900, dur: 0.12, type: 'triangle', g: 0.1 }); }
     else if (kind === 'pin') { click(0, 2100, 0.22); this.tn(d, t + 0.05, { f: 4200, f2: 3600, dur: 0.35, type: 'sine', g: 0.07 }); this.nz(d, t + 0.1, { dur: 0.05, f: 5200, type: 'bandpass', q: 5, g: 0.2 }); this.tn(d, t + 0.16, { f: 2600, f2: 2100, dur: 0.18, type: 'triangle', g: 0.09 }); }   // pino saindo + a alavanca "ping"
     else if (kind === 'bounce') { this.tn(d, t, { f: 240, f2: 120, dur: 0.08, g: 0.4 }); this.nz(d, t, { dur: 0.05, f: 2600, f2: 700, g: 0.3 }); }
@@ -458,6 +482,8 @@ class AudioEngine {
   }
   // MOTOSSERRA ligada: motor 2 tempos que fica em ralenti (borbulhando) e ACELERA ao serrar, com a corrente zunindo. list: {id,x,y,z,rev (0..1),own}. Só as 3 mais próximas (até 40 m).
   // SAIU DA PARTIDA: corta na hora todo som contínuo (motores, motosserras, esteiras de tanque, sirene, trem) — antes ficavam tocando no menu
+  /** FIM DE PARTIDA: para TODO som que ficou em loop (nada de som travado na tela de resultado) */
+  endMatchSilence() { try { this.silenceLoops(); this.cercoStopOpening(); } catch { /* ok */ } for (const f of ['chargeStop', 'mapStop', 'parkStop', 'trainStop']) { try { this[f]?.(); } catch { /* ok */ } } try { this.horrorStop?.(300); } catch { /* ok */ } }
   silenceLoops() {
     if (!this.ctx) return; const t = this.ctx.currentTime;
     for (const key of ['_eng', '_csw', '_tkE']) {
@@ -484,7 +510,7 @@ class AudioEngine {
       }
       e.rev += ((v.rev ?? 0.3) - e.rev) * 0.25; const r = e.rev, f = 52 + 70 * r;
       e.o1.frequency.setTargetAtTime(f, t, 0.05); e.o2.frequency.setTargetAtTime(f * 1.5, t, 0.05); e.lp.frequency.setTargetAtTime(500 + 2600 * r, t, 0.06); e.lf.frequency.setTargetAtTime(18 + 26 * r, t, 0.08); e.bp.frequency.setTargetAtTime(1800 + 2600 * r, t, 0.08); e.ng.gain.setTargetAtTime(0.05 + 0.2 * r, t, 0.08);
-      e.g.gain.setTargetAtTime((v.own ? 0.16 : 0.26) * (0.45 + 0.75 * r), t, 0.06);
+      e.g.gain.setTargetAtTime((v.own ? 0.16 : 0.26) * 0.3 * (0.45 + 0.75 * r), t, 0.06);   /* motosserra a 30% do volume antigo */
       if (e.pn.positionX) { e.pn.positionX.setTargetAtTime(v.x, t, 0.05); e.pn.positionY.setTargetAtTime(v.y, t, 0.05); e.pn.positionZ.setTargetAtTime(v.z, t, 0.05); } else e.pn.setPosition(v.x, v.y, v.z);
     }
   }

@@ -494,7 +494,7 @@ function build(){
   if(!z){const ly=y+.0125*hs*fcE;bx(head,[.034*hs*fcE,f?.0045:.0028,.006],[x,ly,fz(x,ly)+.003],lashM);
    if(f){const lx=x+sd*.017*hs;bx(head,[.012*hs,.003,.005],[lx,ly,fz(lx,ly)+.004],lashM,[0,0,sd*.4])}}
   mesh(head,new SphereGeometry(.02*hs*fcR,14,10),skin,[sd*(RX+.003),-.005,-.005],[0,0,0],[.3,1.05,.62]);
-  if(!LOW)mesh(head,new THREE.TorusGeometry(.016*hs*fcR,.0032*hs,8,18,T*1.7),skin,[sd*(RX+.007),-.003,-.007],[0,sd*T/2,T*.2],[1,1.3,1]);ball(head,.007*hs*fcR,[sd*(RX+.004),-.027*hs*fcR,-.004],skin,[.7,1,.8]);
+  if(!LOW)mesh(head,new THREE.TorusGeometry(.016*hs*fcR,.0032*hs,8,18,T*1.7),skin,[sd*(RX+.007),-.003,-.007],[0,-T/2,T*.2],[1,1.3,1]);ball(head,.007*hs*fcR,[sd*(RX+.004),-.027*hs*fcR,-.004],skin,[.7,1,.8]);
  }
  bx(head,[.014*hs*fcN,.04*hs,.02*fcN],[0,-RY*.12,fz(0,-RY*.12)+.004],skin);ball(head,.011*hs*fcN,[0,-RY*.27,fz(0,-RY*.27)+.002+.003*(fcN-1)],skin);
  if(!LOW)for(const sd of [1,-1])ball(head,.0068*hs*fcN,[sd*.0088*hs*fcN,-RY*.265,fz(0,-RY*.265)-.0004],skin,[1,.9,.8]);
