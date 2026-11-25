@@ -287,6 +287,7 @@ function buildMelee(info, id) {
     const N = 38, ch = new THREE.InstancedMesh(new THREE.BoxGeometry(0.02, 0.012, 0.014), tooth, N); ch.frustumCulled = false; ch.castShadow = false; ch.userData.chain = { N, Lb, Rn, zb }; g.add(ch); chainAnim(ch, 0);
     len = 0.62;
   }
+  if (id === 'axe' || id === 'enxada' || id === 'foicemorte') { const fl = new THREE.Group(); fl.name = 'flipY'; fl.scale.y = -1; for (const k of g.children.slice()) fl.add(k); g.add(fl); }   // a lâmina nascia para TRÁS na mão: espelha em Y para o fio apontar para a FRENTE
   info.kind = 'knife'; info.grip.set(0, 0, 0.06); info.support.set(0, -0.1, 0.1); info.adsY = -0.05; info.length = len;
   info.muzzle.position.set(0, 0, -len * 0.8); g.add(info.muzzle);
   return info;
@@ -354,3 +355,5 @@ function buildClaws(info) {
   info.kind = 'claws'; info.grip.set(0, 0, 0); info.support.set(0, 0, 0); info.adsY = -0.05; info.length = 0.25;
   info.muzzle.position.set(0, 0, -0.26); g.add(info.muzzle); info.noHands = false; return info;
 }
+
+export const unflip = (m) => { const f = m?.getObjectByName?.('flipY'); if (f) f.scale.y = 1; return m; };   // só para MOSTRAR a arma (vitrine/ícone): em pé, como antes; na mão do boneco a lâmina fica para a frente
