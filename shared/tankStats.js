@@ -2,16 +2,16 @@
 // 10/10/10 = o equilíbrio; cada ponto a mais vale +step% naquele atributo, e o ponto que sobe em um sai de outro: nenhum tanque é melhor que os outros, só diferente.
 // Os números base vêm do admin (Jogo › Batalha de Tanques) e ficam em TANK_CFG (o servidor atualiza em gamecfg.apply).
 // O mesmo arquivo roda no cliente e no servidor: o cliente usa para prever o movimento e mostrar recargas; o servidor decide o dano.
-export const TANK_CFG = { hp: 500, speed: 8, shell: 150, mg: 28, step: 5, reload: 4000, mgCd: 300, splash: 4.5, range: 260 };   // vida 500 · tiro do canhão 150 (área de 4,5 m) · metralhadora 28 por tiro, 1 tiro a cada 0,3 s · recarga do canhão 4 s
-export const TANK_PTS = {
-  onca: { hp: 8, spd: 13, dmg: 9 },        // ONÇA: ágil, frágil: foge e contorna
-  anta: { hp: 13, spd: 7, dmg: 10 },       // ANTA: pesada, lenta, aguenta muito
-  tatu: { hp: 12, spd: 8, dmg: 10 },       // TATU: blindado, bem lento
-  gaviao: { hp: 7, spd: 11, dmg: 12 },     // GAVIÃO: rápido e com canhão forte, mas de papel
+export const TANK_CFG = { hp: 500, speed: 8, shell: 150, mg: 28, step: 4, reload: 4000, mgCd: 300, splash: 4.5, range: 260 };   // vida 500 · tiro do canhão 150 (área de 4,5 m) · metralhadora 28 por tiro, 1 tiro a cada 0,3 s · recarga do canhão 4 s
+export const TANK_PTS = {   // EQUILÍBRIO (25/11/2026): cada tanque só varia 9–12 pontos (±8% no máximo): diferença pequena, mas existe
+  onca: { hp: 9, spd: 12, dmg: 9 },        // ONÇA: a mais ágil, casco mais fraco
+  anta: { hp: 12, spd: 9, dmg: 9 },        // ANTA: a mais resistente, mais lenta
+  tatu: { hp: 11, spd: 9, dmg: 10 },       // TATU: blindado e lento
+  gaviao: { hp: 9, spd: 10, dmg: 11 },     // GAVIÃO: canhão forte, casco fraco
   jacare: { hp: 10, spd: 10, dmg: 10 },    // JACARÉ: o equilibrado
-  tucano: { hp: 9, spd: 9, dmg: 12 },      // TUCANO: canhão forte, casco mediano
-  lobo: { hp: 10, spd: 11, dmg: 9 },       // LOBO-GUARÁ: rápido, canhão fraco
-  tamandua: { hp: 11, spd: 8, dmg: 11 }    // TAMANDUÁ: forte de frente, devagar
+  tucano: { hp: 10, spd: 9, dmg: 11 },     // TUCANO: canhão forte, um pouco lento
+  lobo: { hp: 10, spd: 11, dmg: 9 },       // LOBO-GUARÁ: rápido, canhão mais fraco
+  tamandua: { hp: 11, spd: 10, dmg: 9 }    // TAMANDUÁ: casco bom, canhão mais fraco
 };
 export const TANK_IDS = Object.keys(TANK_PTS);
 /* SUPERAQUECIMENTO da metralhadora (munição infinita, mas com barra de calor): cada tiro enche 20% (≈7 tiros seguidos enchem), esfria 12%/s soltando o gatilho; ao encher TRAVA e só volta a atirar quando esfriar TUDO (35%/s, ~3 s). Cliente e servidor usam esta mesma conta. */

@@ -5,7 +5,7 @@ import { ARSENAL_BY_ID } from './arsenalData.js';
 //   pente estendido: +30% balas, recarga +12%, mobilidade −4 pts · tambor: +70%, recarga +35%, mobilidade −12 pts
 //   silenciador: ruído ×0,3, dano ×0,95, alcance ×0,95, recuo ×0,9 · freio: recuo ×0,8, ruído ×1,1 · compensador: recuo ×0,7
 //   laser: precisão +10% no quadril, mas revela quem atira (ruído de luz — atrai zumbis)
-export const SHOT_PELLET_MUL = 0.82;                // escopetas: cada balim causa 18% menos dano (o total só aparece de PERTO, com o cone aberto)
+export const SHOT_PELLET_MUL = 0.92;                // escopetas: cada balim causa 8% menos dano (o total só aparece de PERTO, com o cone aberto)
 export const RANGE_SCALE = 0.2;                     // unidades do Arsenal -> metros do jogo
 export const MAG_OPTS = { 0: { cap: 1, reload: 1, mob: 0 }, 1: { cap: 1.3, reload: 1.12, mob: 0.04 }, 2: { cap: 1.7, reload: 1.35, mob: 0.12 } };   // mais realista: estendido +30%, tambor +70% (antes +50% / +150%)
 export const MUZZLE_OPTS = { def: {}, supp: { noise: 0.3, dmg: 0.95, range: 0.95, recoil: 0.9 }, brake: { recoil: 0.8, noise: 1.1 }, comp: { recoil: 0.7 } };

@@ -6,21 +6,22 @@ export const FAUNA_KINDS = { dino: 'Dinossauro', mamifero: 'Mamífero pré-hist�
 // rig 'biped' = duas pernas, cauda de equilíbrio e braços; rig 'quad' = quatro patas.
 // biped: legL = altura do quadril, bodyL/bodyH = tronco, neckL/headL, tailL, armL (braço), w = largura do corpo
 // quad:  legL = comprimento da pata, bodyL/bodyH/bodyW = tronco, neckL/headL, tailL
+// DINOSSAUROS atacam SÓ com mordida (sem garra/cabeçada): pedido do jogo
 export const DINOS = {
   trex:   { id: 'trex',   name: 'Tiranossauro', kind: 'dino', rig: 'biped', temper: 'agressivo', colors: { sk: '#5f7a3a', bl: '#cdbb82', ac: '#26361a' }, legL: 2.5, bodyL: 4.2, bodyH: 2.0, w: 1.5, neckL: 1.3, headL: 1.7, tailL: 4.4, armL: 0.7, armK: 0.55,
     hp: 650, walk: 2.6, run: 7.5, dmg: 18, reach: 3.4, cd: 2.4, hear: 90, sight: 110, atk: ['bite'], hit: { r: 1.4, h: 3.8 } },
   raptor: { id: 'raptor', name: 'Velociraptor', kind: 'dino', rig: 'biped', temper: 'agressivo', colors: { sk: '#c9772a', bl: '#f0dcae', ac: '#1d1a16' }, legL: 1.0, bodyL: 1.6, bodyH: 0.62, w: 0.5, neckL: 0.55, headL: 0.62, tailL: 1.9, armL: 0.55, armK: 0.9,
-    hp: 220, walk: 3.2, run: 9.5, dmg: 8, reach: 1.7, cd: 1.3, hear: 70, sight: 95, atk: ['bite', 'claw'], hit: { r: 0.55, h: 1.5 } },
+    hp: 220, walk: 3.2, run: 9.5, dmg: 8, reach: 1.7, cd: 1.3, hear: 70, sight: 95, atk: ['bite'], hit: { r: 0.55, h: 1.5 } },
   dilo:   { id: 'dilo',   name: 'Dilofossauro', kind: 'dino', rig: 'biped', temper: 'agressivo', colors: { sk: '#3f9a6a', bl: '#d9e8b0', ac: '#d9302a' }, legL: 1.2, bodyL: 1.9, bodyH: 0.7, w: 0.55, neckL: 0.75, headL: 0.7, tailL: 2.2, armL: 0.55, armK: 0.8,
     hp: 240, walk: 3, run: 8.5, dmg: 8, reach: 1.9, cd: 1.5, hear: 70, sight: 95, atk: ['bite'], hit: { r: 0.6, h: 1.9 }, frill: true },
   carno:  { id: 'carno',  name: 'Carnotauro', kind: 'dino', rig: 'biped', temper: 'agressivo', colors: { sk: '#a8321f', bl: '#e0b98a', ac: '#1a1a1a' }, legL: 2.0, bodyL: 3.4, bodyH: 1.7, w: 1.2, neckL: 1.0, headL: 1.3, tailL: 3.4, armL: 0.5, armK: 0.25,
     hp: 420, walk: 2.8, run: 8, dmg: 14, reach: 2.8, cd: 2.1, hear: 85, sight: 105, atk: ['bite'], hit: { r: 1.1, h: 3.1 } },
   spino:  { id: 'spino',  name: 'Espinossauro', kind: 'dino', rig: 'biped', temper: 'agressivo', colors: { sk: '#2f6f8a', bl: '#cfe0c0', ac: '#e07a1f' }, legL: 2.2, bodyL: 4.6, bodyH: 1.7, w: 1.1, neckL: 1.5, headL: 1.9, tailL: 5.0, armL: 1.1, armK: 0.9,
-    hp: 520, walk: 2.5, run: 7, dmg: 15, reach: 3.2, cd: 2.3, hear: 85, sight: 105, atk: ['bite', 'claw'], hit: { r: 1.2, h: 3.6 }, sail: true },
+    hp: 520, walk: 2.5, run: 7, dmg: 15, reach: 3.2, cd: 2.3, hear: 85, sight: 105, atk: ['bite'], hit: { r: 1.2, h: 3.6 }, sail: true },
   teri:   { id: 'teri',   name: 'Terizinossauro', kind: 'dino', rig: 'biped', temper: 'agressivo', colors: { sk: '#8a6a4a', bl: '#d9c9a0', ac: '#3a2a1a' }, legL: 1.9, bodyL: 3.0, bodyH: 1.9, w: 1.4, neckL: 2.3, headL: 0.8, tailL: 1.8, armL: 1.5, armK: 1.4,
-    hp: 380, walk: 2.4, run: 6.5, dmg: 12, reach: 3.0, cd: 2.2, hear: 75, sight: 100, atk: ['claw'], hit: { r: 1.2, h: 4.2 } },
+    hp: 380, walk: 2.4, run: 6.5, dmg: 12, reach: 3.0, cd: 2.2, hear: 75, sight: 100, atk: ['bite'], hit: { r: 1.2, h: 4.2 } },
   pachy:  { id: 'pachy',  name: 'Paquicefalossauro', kind: 'dino', rig: 'biped', temper: 'agressivo', colors: { sk: '#7a5a8a', bl: '#d9c0a0', ac: '#2a1a30' }, legL: 1.1, bodyL: 1.9, bodyH: 0.9, w: 0.75, neckL: 0.5, headL: 0.55, tailL: 1.8, armL: 0.5, armK: 0.55,
-    hp: 360, walk: 2.8, run: 7.5, dmg: 12, reach: 1.8, cd: 2.0, hear: 70, sight: 90, atk: ['headbutt'], hit: { r: 0.8, h: 1.8 } },
+    hp: 360, walk: 2.8, run: 7.5, dmg: 12, reach: 1.8, cd: 2.0, hear: 70, sight: 90, atk: ['bite'], hit: { r: 0.8, h: 1.8 } },
   ovi:    { id: 'ovi',    name: 'Oviraptor', kind: 'dino', rig: 'biped', temper: 'agressivo', colors: { sk: '#e0902a', bl: '#fff0d0', ac: '#12b8b0' }, legL: 1.1, bodyL: 1.5, bodyH: 0.62, w: 0.5, neckL: 0.7, headL: 0.5, tailL: 1.5, armL: 0.7, armK: 0.8,
     hp: 200, walk: 3.4, run: 9, dmg: 7, reach: 1.6, cd: 1.2, hear: 70, sight: 95, atk: ['bite'], hit: { r: 0.5, h: 1.9 } }
 };
