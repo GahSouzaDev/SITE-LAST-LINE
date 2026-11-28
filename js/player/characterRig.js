@@ -678,9 +678,9 @@ if(spc){const lea=M('#4a2e1a',.1,.7),gold=M('#d9a441',.8,.3),wh=M('#eef1f3',.1,.
    live(t=>{b.position.set(Math.cos(t*spd)*rad,y+Math.sin(t*2)*.08,Math.sin(t*spd*1.3)*rad);b.rotation.y=-t*spd;wb.forEach(([w,sd])=>w.rotation.z=sd*Math.sin(t*30)*.7)})};
   if(SPK==='saci'){const rd=M('#c01f1f',0,.85),pp=M('#3a2616',0,.8),dm=M('#c9a46b',0,1);
    rig.tR.visible=false;
-   mesh(head,new SphereGeometry(1,32,18,0,T*2,0,T*.47),rd,[0,0,-.004],[-.1,0,0],[RX*1.05,RY*1.05,RZ*1.05]);
-   mesh(head,new THREE.TorusGeometry(RX*.99,.011,8,32),rd,[0,RY*.3,-.004],[T/2-.1,0,0],[1,RZ/RX,1]);
-   {const hh=.34*hs,cg=new THREE.ConeGeometry(RX*.8,hh,20,12);cg.translate(0,hh/2,0);const cp=cg.attributes.position;for(let i=0;i<cp.count;i++){const t=cp.getY(i)/hh;cp.setZ(i,cp.getZ(i)-.2*hs*t*t);cp.setY(i,cp.getY(i)-.1*hs*t*t)}
+   mesh(head,new SphereGeometry(1,32,18,0,T*2,0,T*.47),rd,[0,0,-.004],[-.1,0,0],[RX*1.11,RY*1.1,RZ*1.12]);
+   mesh(head,new THREE.TorusGeometry(RX*1.06,.011,8,32),rd,[0,RY*.3,-.004],[T/2-.1,0,0],[1,RZ/RX,1]);
+   {const hh=.34*hs,cg=new THREE.ConeGeometry(RX*.88,hh,20,12);cg.translate(0,hh/2,0);const cp=cg.attributes.position;for(let i=0;i<cp.count;i++){const t=cp.getY(i)/hh;cp.setZ(i,cp.getZ(i)-.2*hs*t*t);cp.setY(i,cp.getY(i)-.1*hs*t*t)}
     mesh(head,cg,rd,[0,RY*.82,-RZ*.12],[-.35,0,0]);ball(head,.012*hs,[0,RY*.82+.2*hs,-RZ*.12-.3*hs],rd)}
    rib(head,[0,.3*hs,-.14*hs],.45,'#c01f1f',0,.07);rib(head,[0,.27*hs,-.1*hs],.3,'#c01f1f',1.5,.05);
    bx(head,[.01,.01,.12],[RX*.3,-RY*.45,fz(0,-RY*.45)+.07],pp);ball(head,.02,[RX*.3,-RY*.45+.012,fz(0,-RY*.45)+.13],pp);embersG(head,10,.05,-RY*.4,.5,'#cfc8b8',.4);
