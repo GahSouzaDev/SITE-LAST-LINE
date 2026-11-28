@@ -477,7 +477,7 @@ class AudioEngine {
     else if (nm === 'thunk') { this.tn(d, t, { f: 120, f2: 60, dur: 0.14, type: 'sine', g: 0.4 }); this.nz(d, t, { dur: 0.06, f: 700, f2: 250, type: 'lowpass', g: 0.2 }); }
     else if (nm === 'flip') { this.nz(d, t, { dur: 0.2, f: 1100, f2: 4200, type: 'bandpass', q: 1.4, g: 0.12, att: 0.04 }); this.tn(d, t + 0.16, { f: 2600, f2: 2000, dur: 0.05, type: 'triangle', g: 0.08 }); }
     else if (nm === 'ping') { this.tn(d, t, { f: 3400, f2: 3300, dur: 0.5, type: 'sine', g: 0.1 }); this.tn(d, t, { f: 5100, f2: 5000, dur: 0.3, type: 'sine', g: 0.05 }); this.nz(d, t, { dur: 0.04, f: 6000, type: 'highpass', g: 0.1 }); }
-    else if (nm === 'rev') { this.nz(d, t, { dur: 0.38, f: 300, f2: 900, type: 'bandpass', q: 1.2, g: 0.22, att: 0.04 }); this.tn(d, t, { f: 55, f2: 150, dur: 0.38, type: 'sawtooth', g: 0.2 }); for (let i = 0; i < 5; i++) c(i * 0.06, 800 + i * 150, 0.1); }
+    else if (nm === 'rev') { this.nz(d, t, { dur: 0.38, f: 300, f2: 900, type: 'bandpass', q: 1.2, g: 0.07, att: 0.04 }); this.tn(d, t, { f: 55, f2: 150, dur: 0.38, type: 'sawtooth', g: 0.06 }); for (let i = 0; i < 5; i++) c(i * 0.06, 800 + i * 150, 0.03); }   /* acelerada da motosserra (sacar/inspecionar) a 30%, como o resto dela */
     else if (nm === 'hum') { this.tn(d, t, { f: 180, f2: 260, dur: 0.5, type: 'sine', g: 0.12 }); this.tn(d, t, { f: 360, f2: 520, dur: 0.5, type: 'triangle', g: 0.05 }); }
   }
   // MOTOSSERRA ligada: motor 2 tempos que fica em ralenti (borbulhando) e ACELERA ao serrar, com a corrente zunindo. list: {id,x,y,z,rev (0..1),own}. Só as 3 mais próximas (até 40 m).

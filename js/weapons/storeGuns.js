@@ -73,7 +73,7 @@ export const STORE_GUNS_BUILD = {
     const q = [mat(0xaee0ff, { m: 0.1, r: 0.1, e: 0x4aa8ff, ei: 0.7 }), mat(0xffb3e6, { m: 0.1, r: 0.1, e: 0xff4fb3, ei: 0.6 }), mat(0xc8ffe8, { m: 0.1, r: 0.1, e: 0x2affb0, ei: 0.6 })];
     for (let i = 0; i < 9; i++) { const x = b.x0 + 0.1 + (i / 8) * (b.x1 - b.x0 - 0.2), h = 0.08 + (i % 3) * 0.05, k = co(g, 0.025, h, [x, b.y1 - 0.01 + h / 2 - 0.02, 0], q[i % 3], 'y', 5); k.rotation.z = (i % 2 ? 1 : -1) * 0.25; }
     for (let i = 0; i < 4; i++) co(g, 0.02, 0.09, [b.cx - 0.1 + i * 0.12, -0.07, 0.04 * (i % 2 ? 1 : -1)], q[(i + 1) % 3], 'ny', 5); }),
-  lobisomem: themed('lobisomem', 'ar', { poly: P(0x3a3a44, 0.1, 0.8), black: P(0x15151a), steel: P(0x9a9aa8, 0.6, 0.35), blued: P(0x2a2a34, 0.4, 0.4), tan: P(0x4a4a58, 0.1, 0.8) }, (g, b) => {   // Fuzil Lobisomem: pelo cinza, lua cheia, garras
+  lobisomem: themed('lobisomem', 'ar', { poly: P(0x0e0e11, 0.05, 0.96), black: P(0x0a0a0c, 0.05, 0.96), steel: P(0x1c1c21, 0.25, 0.92), blued: P(0x121216, 0.1, 0.94), tan: P(0x15151a, 0.05, 0.96), od: P(0x0d0d10, 0.05, 0.96), gold: P(0x2c2c32, 0.35, 0.85), navy: P(0x0d0d10, 0.05, 0.96) }, (g, b) => {   // Fuzil Lobisomem: pelo cinza, lua cheia, garras
     sp(g, 0.07, [b.cx - 0.05, b.y1 + 0.1, 0], mat(0xf4f1e6, { r: 0.6, e: 0xfff2c0, ei: 0.7 })); sp(g, 0.06, [b.cx - 0.03, b.y1 + 0.11, 0.01], mat(0x14141c, { r: 0.8 }), [1, 1, 0.3]).visible = false;
     for (let i = 0; i < 3; i++) bx(g, 0.012, 0.16, 0.012, [b.cx + 0.04 + i * 0.035, 0, 0.056], glow(0xd8321f, 1.6), [0, 0, 0.45]);
     for (let i = 0; i < 7; i++) co(g, 0.02, 0.09, [b.x0 + 0.03 + i * 0.05, 0.05 + (i % 2) * 0.015, 0.04 * (i % 2 ? 1 : -1)], mat(0x5a5a68, { r: 0.9 }), 'nx'); }),
