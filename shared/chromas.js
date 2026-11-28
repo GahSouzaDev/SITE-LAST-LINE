@@ -32,7 +32,7 @@ export const CHROMAS = {
     { id: 'ouro', n: 'Boxeador Dourado', gl: '#d9a441', p: { pants: '#d9a441', shoes: '#d9a441' } },
     { id: 'mascara', n: 'Lutador Mascarado', gl: '#6a1b9a', p: { pants: '#6a1b9a', mask: 'balaclava' } }
   ] },
-  ninja: { unique: false, list: [ { id: 'samurai', n: 'Ninja Samurai', as: 'samurai', mult: 1.1, p: {} } ] },
+  ninja: { unique: false, list: [ { id: 'samurai', n: 'Samurai Negro', as: 'samurai', sat: -1, lit: -0.42, mult: 1.1, p: {} } ] },
   guara: { unique: false, list: [
     { id: 'lobomau', n: 'Lobo Mau', sat: -1, lit: -0.12, tintSkin: true, p: {} },
     { id: 'neve', n: 'Lobo da Neve', sat: -1, lit: 0.3, tintSkin: true, p: {} }
